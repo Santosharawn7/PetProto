@@ -1,0 +1,241 @@
+// src/RegistrationForm.jsx
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const RegistrationForm = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    preferredUsername: '',
+    phone: '',
+    email: '',
+    sex: '',
+    address: '',
+    password: '',
+  });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+
+  // Update state when an input in formData changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Update state for confirm password field
+  const handleConfirmChange = (e) => {
+    setConfirmPassword(e.target.value);
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.password !== confirmPassword) {
+      setMessage("Passwords do not match");
+      return;
+    }
+    try {
+      const response = await axios.post('http://127.0.0.1:5000/register', formData);
+      setMessage(response.data.message);
+      // After successful registration, redirect to the login page
+      navigate('/login');
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Registration failed');
+    }
+  };
+
+  return (
+    <div className="max-w-4xl max-sm:max-w-lg mx-auto p-6 mt-6">
+      <div className="text-center mb-12 sm:mb-16">
+        <a href="javascript:void(0)">
+          <img src="https://readymadeui.com/readymadeui.svg" alt="logo" className="w-44 inline-block" />
+        </a>
+        <h4 className="text-slate-600 text-base mt-6">Sign up into your account</h4>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        {/* Grid section for basic inputs */}
+        <div className="grid sm:grid-cols-2 gap-8">
+          {/* First Name */}
+          <div>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              First Name
+            </label>
+            <input
+              name="firstName"
+              type="text"
+              placeholder="Enter first name"
+              value={formData.firstName}
+              onChange={handleChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            />
+          </div>
+          {/* Last Name */}
+          <div>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              Last Name
+            </label>
+            <input
+              name="lastName"
+              type="text"
+              placeholder="Enter last name"
+              value={formData.lastName}
+              onChange={handleChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            />
+          </div>
+          {/* Email Address */}
+          <div>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              Email Id
+            </label>
+            <input
+              name="email"
+              type="email"
+              placeholder="Enter email"
+              value={formData.email}
+              onChange={handleChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            />
+          </div>
+          {/* Mobile No. */}
+          <div>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              Mobile No.
+            </label>
+            <input
+              name="phone"
+              type="tel"
+              placeholder="Enter mobile number"
+              value={formData.phone}
+              onChange={handleChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            />
+          </div>
+          {/* Password */}
+          <div>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              Password
+            </label>
+            <input
+              name="password"
+              type="password"
+              placeholder="Enter password"
+              value={formData.password}
+              onChange={handleChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            />
+          </div>
+          {/* Confirm Password */}
+          <div>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              Confirm Password
+            </label>
+            <input
+              name="cpassword"
+              type="password"
+              placeholder="Enter confirm password"
+              value={confirmPassword}
+              onChange={handleConfirmChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Additional fields section */}
+        <div className="mt-8 grid sm:grid-cols-2 gap-8">
+          {/* Preferred Username */}
+          <div>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              Preferred Username
+            </label>
+            <input
+              name="preferredUsername"
+              type="text"
+              placeholder="Enter your preferred username"
+              value={formData.preferredUsername}
+              onChange={handleChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            />
+          </div>
+          {/* Sex */}
+          <div>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              Sex
+            </label>
+            <select
+              name="sex"
+              value={formData.sex}
+              onChange={handleChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            >
+              <option value="">Select Sex</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          {/* Address */}
+          <div className="sm:col-span-2">
+            <label className="text-slate-800 text-sm font-medium mb-2 block">
+              Address
+            </label>
+            <input
+              name="address"
+              type="text"
+              placeholder="Enter your address"
+              value={formData.address}
+              onChange={handleChange}
+              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                         focus:bg-transparent outline-blue-500 transition-all"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <button
+            type="submit"
+            className="mx-auto block py-3 px-6 text-sm font-medium tracking-wider rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+          >
+            Sign up
+          </button>
+        </div>
+        <div className="mt-4 text-center">
+            <p className="text-slate-600 text-sm">
+              Already have an account?{' '}
+              <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+                Sign In
+              </a>
+            </p>
+          </div>
+
+        {message && (
+          <div className="mt-4">
+            <p className="text-center text-red-500 font-bold">{message}</p>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+};
+
+export default RegistrationForm;

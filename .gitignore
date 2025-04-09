@@ -1,0 +1,15 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment files
+.env
+
+# Service account keys - DO NOT COMMIT SECRETS TO GIT
+serviceAccountKey.json
+
+# Logs
+*.log
