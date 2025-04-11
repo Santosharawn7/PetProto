@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+// src/Login.jsx
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import GoogleSignIn from './GoogleSignIn'; // Ensure you create this component as described below
+import GoogleSignIn from './GoogleSignIn';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -11,18 +12,32 @@ const Login = () => {
   });
   const [message, setMessage] = useState('');
 
-  // Update state when inputs change
+  // Redirect to home if session exists
+  useEffect(() => {
+    const token = localStorage.getItem('userToken');
+    if (token) {
+      navigate('/home');
+    }
+  }, [navigate]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle traditional login form submission
+  // Handle login submission (traditional email/username + password)
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post('http://127.0.0.1:5000/login', formData);
+      
+      // Assume backend returns a token in response.data.token; otherwise store a flag
+      if (response.data.token) {
+        localStorage.setItem('userToken', response.data.token);
+      } else {
+        localStorage.setItem('userToken', 'true');
+      }
+      
       setMessage("Login successful");
-      // After successful login, redirect to the home page
       navigate('/home');
     } catch (error) {
       setMessage(error.response?.data?.error || 'Login failed');
@@ -34,11 +49,7 @@ const Login = () => {
       <div className="max-w-4xl w-full max-sm:max-w-lg mx-auto p-6 mt-6 bg-white rounded shadow">
         <div className="text-center mb-12 sm:mb-16">
           <a href="javascript:void(0)">
-            <img 
-              src="https://readymadeui.com/readymadeui.svg" 
-              alt="logo" 
-              className="w-44 inline-block" 
-            />
+            <img src="https://readymadeui.com/readymadeui.svg" alt="logo" className="w-44 inline-block" />
           </a>
           <h4 className="text-slate-600 text-base mt-6">Sign in to your account</h4>
         </div>
@@ -56,7 +67,6 @@ const Login = () => {
         {/* Traditional Login Form */}
         <form onSubmit={handleSubmit}>
           <div className="grid gap-8">
-            {/* Identifier Field */}
             <div>
               <label className="text-slate-800 text-sm font-medium mb-2 block">
                 Email or Username
@@ -72,7 +82,6 @@ const Login = () => {
                 required
               />
             </div>
-            {/* Password Field */}
             <div>
               <label className="text-slate-800 text-sm font-medium mb-2 block">
                 Password

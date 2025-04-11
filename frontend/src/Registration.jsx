@@ -1,10 +1,12 @@
 // src/RegistrationForm.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
+
+  // Form state for all fields required by your backend
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,13 +17,23 @@ const RegistrationForm = () => {
     address: '',
     password: '',
   });
+
+  // Separate state for password confirmation
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
 
-  // Update state when an input in formData changes
+  // If the user is already logged in (session exists), redirect to home
+  useEffect(() => {
+    const token = localStorage.getItem('userToken');
+    if (token) {
+      navigate('/home');
+    }
+  }, [navigate]);
+
+  // Update formData for normal inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Update state for confirm password field
@@ -29,17 +41,22 @@ const RegistrationForm = () => {
     setConfirmPassword(e.target.value);
   };
 
-  // Handle form submission
+  // Handle form submission by posting registration data to the backend
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check that password and confirmation match
     if (formData.password !== confirmPassword) {
       setMessage("Passwords do not match");
       return;
     }
+
     try {
+      // Post registration data to your backend endpoint
       const response = await axios.post('http://127.0.0.1:5000/register', formData);
       setMessage(response.data.message);
-      // After successful registration, redirect to the login page
+
+      // After successful registration, redirect user to the login page
       navigate('/login');
     } catch (error) {
       setMessage(error.response?.data?.error || 'Registration failed');
@@ -56,13 +73,10 @@ const RegistrationForm = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Grid section for basic inputs */}
         <div className="grid sm:grid-cols-2 gap-8">
           {/* First Name */}
           <div>
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              First Name
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">First Name</label>
             <input
               name="firstName"
               type="text"
@@ -70,15 +84,13 @@ const RegistrationForm = () => {
               value={formData.firstName}
               onChange={handleChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             />
           </div>
           {/* Last Name */}
           <div>
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              Last Name
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">Last Name</label>
             <input
               name="lastName"
               type="text"
@@ -86,15 +98,13 @@ const RegistrationForm = () => {
               value={formData.lastName}
               onChange={handleChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             />
           </div>
-          {/* Email Address */}
+          {/* Email ID */}
           <div>
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              Email Id
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">Email Id</label>
             <input
               name="email"
               type="email"
@@ -102,15 +112,13 @@ const RegistrationForm = () => {
               value={formData.email}
               onChange={handleChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             />
           </div>
           {/* Mobile No. */}
           <div>
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              Mobile No.
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">Mobile No.</label>
             <input
               name="phone"
               type="tel"
@@ -118,15 +126,13 @@ const RegistrationForm = () => {
               value={formData.phone}
               onChange={handleChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             />
           </div>
           {/* Password */}
           <div>
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              Password
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">Password</label>
             <input
               name="password"
               type="password"
@@ -134,15 +140,13 @@ const RegistrationForm = () => {
               value={formData.password}
               onChange={handleChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             />
           </div>
           {/* Confirm Password */}
           <div>
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              Confirm Password
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">Confirm Password</label>
             <input
               name="cpassword"
               type="password"
@@ -150,19 +154,16 @@ const RegistrationForm = () => {
               value={confirmPassword}
               onChange={handleConfirmChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             />
           </div>
         </div>
 
-        {/* Additional fields section */}
         <div className="mt-8 grid sm:grid-cols-2 gap-8">
           {/* Preferred Username */}
           <div>
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              Preferred Username
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">Preferred Username</label>
             <input
               name="preferredUsername"
               type="text"
@@ -170,21 +171,19 @@ const RegistrationForm = () => {
               value={formData.preferredUsername}
               onChange={handleChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             />
           </div>
           {/* Sex */}
           <div>
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              Sex
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">Sex</label>
             <select
               name="sex"
               value={formData.sex}
               onChange={handleChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             >
               <option value="">Select Sex</option>
@@ -195,9 +194,7 @@ const RegistrationForm = () => {
           </div>
           {/* Address */}
           <div className="sm:col-span-2">
-            <label className="text-slate-800 text-sm font-medium mb-2 block">
-              Address
-            </label>
+            <label className="text-slate-800 text-sm font-medium mb-2 block">Address</label>
             <input
               name="address"
               type="text"
@@ -205,7 +202,7 @@ const RegistrationForm = () => {
               value={formData.address}
               onChange={handleChange}
               className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                         focus:bg-transparent outline-blue-500 transition-all"
+                         focus:bg-white outline-blue-500 transition-all"
               required
             />
           </div>
@@ -219,20 +216,21 @@ const RegistrationForm = () => {
             Sign up
           </button>
         </div>
-        <div className="mt-4 text-center">
-            <p className="text-slate-600 text-sm">
-              Already have an account?{' '}
-              <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                Sign In
-              </a>
-            </p>
-          </div>
 
         {message && (
           <div className="mt-4">
             <p className="text-center text-red-500 font-bold">{message}</p>
           </div>
         )}
+
+        <div className="mt-4 text-center">
+          <p className="text-slate-600 text-sm">
+            Already have an account?{' '}
+            <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+              Sign in
+            </a>
+          </p>
+        </div>
       </form>
     </div>
   );
