@@ -1,7 +1,7 @@
-// src/Login.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import GoogleSignIn from './GoogleSignIn'; // Ensure you create this component as described below
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,13 +16,13 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle form submission
+  // Handle traditional login form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post('http://127.0.0.1:5000/login', formData);
       setMessage("Login successful");
-      // After successful login, redirect to the welcome page
+      // After successful login, redirect to the home page
       navigate('/home');
     } catch (error) {
       setMessage(error.response?.data?.error || 'Login failed');
@@ -34,11 +34,26 @@ const Login = () => {
       <div className="max-w-4xl w-full max-sm:max-w-lg mx-auto p-6 mt-6 bg-white rounded shadow">
         <div className="text-center mb-12 sm:mb-16">
           <a href="javascript:void(0)">
-            <img src="https://readymadeui.com/readymadeui.svg" alt="logo" className="w-44 inline-block" />
+            <img 
+              src="https://readymadeui.com/readymadeui.svg" 
+              alt="logo" 
+              className="w-44 inline-block" 
+            />
           </a>
           <h4 className="text-slate-600 text-base mt-6">Sign in to your account</h4>
         </div>
 
+        {/* Google Sign In Section */}
+        <div className="mb-8">
+          <GoogleSignIn />
+        </div>
+
+        {/* Divider */}
+        <div className="my-6 text-center text-sm font-medium text-slate-600">
+          OR
+        </div>
+
+        {/* Traditional Login Form */}
         <form onSubmit={handleSubmit}>
           <div className="grid gap-8">
             {/* Identifier Field */}
