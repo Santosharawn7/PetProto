@@ -12,7 +12,7 @@ const Login = () => {
   });
   const [message, setMessage] = useState('');
 
-  // Redirect to home if session exists
+  // Redirect to Home if already logged in
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (token) {
@@ -24,21 +24,20 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle login submission (traditional email/username + password)
+  // Handle traditional login submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post('http://127.0.0.1:5000/login', formData);
       
-      // Assume backend returns a token in response.data.token; otherwise store a flag
-      if (response.data.token) {
-        localStorage.setItem('userToken', response.data.token);
+      // Expect a valid Firebase ID token in response.data.idToken
+      if (response.data.idToken) {
+        localStorage.setItem('userToken', response.data.idToken);
+        setMessage("Login successful");
+        navigate('/home');
       } else {
-        localStorage.setItem('userToken', 'true');
+        setMessage("Login error: No valid token returned");
       }
-      
-      setMessage("Login successful");
-      navigate('/home');
     } catch (error) {
       setMessage(error.response?.data?.error || 'Login failed');
     }
@@ -77,7 +76,7 @@ const Login = () => {
                 placeholder="Enter email or username"
                 value={formData.identifier}
                 onChange={handleChange}
-                className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
+                className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded
                            focus:bg-white outline-blue-500 transition-all"
                 required
               />
@@ -97,6 +96,12 @@ const Login = () => {
                 required
               />
             </div>
+          </div>
+
+          <div className="mt-4 text-right">
+            <a href="/password-reset" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+              Forgot Password?
+            </a>
           </div>
 
           <div className="mt-12">

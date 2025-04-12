@@ -10,22 +10,42 @@ const GoogleSignIn = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      // Initiate Google sign in popup
       const result = await signInWithPopup(auth, googleProvider);
+      // Get the Firebase ID token from the user
       const idToken = await result.user.getIdToken();
       console.log("Google sign in token:", idToken);
+      
+      // Send token to your backend's Google sign in endpoint (for any additional server-side verification)
+      const googleRes = await axios.post('http://127.0.0.1:5000/google_signin', { idToken });
+      console.log("Backend google_signin response:", googleRes.data);
+      
+      // Store the valid Firebase ID token in localStorage
+      localStorage.setItem('userToken', idToken);
 
-      // Send the ID token to your backend for verification
-      // Use localhost or 127.0.0.1 as appropriate. Here we use localhost.
-      const response = await axios.post('http://127.0.0.1:5000/google_signin', { idToken });
-      console.log("Backend response:", response.data);
-
-      // On success, store session token (if returned) or a flag in localStorage
-      if (response.data.token) {
-        localStorage.setItem('userToken', response.data.token);
+      // Now fetch the current user's registration info from the backend
+      const userRes = await axios.get('http://127.0.0.1:5000/current_user', {
+          headers: { Authorization: `Bearer ${idToken}` }
+      });
+      console.log("Current user data:", userRes.data);
+      const userData = userRes.data;
+      
+      // Required registration fields from a standard registration:
+      // firstName, lastName, preferredUsername, phone, sex, and address
+      if (
+        !userData.firstName ||
+        !userData.lastName ||
+        !userData.preferredUsername ||
+        !userData.phone ||
+        !userData.sex ||
+        !userData.address
+      ) {
+        // Registration info incomplete: redirect to update registration page
+        navigate('/update_registration');
       } else {
-        localStorage.setItem('userToken', 'true');
+        // Registration info is complete: proceed to Home page
+        navigate('/home');
       }
-      navigate('/home');
     } catch (error) {
       console.error("Google sign in error:", error);
     }
