@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const PetProfile = () => {
   const navigate = useNavigate();
   
-  // State for pet profile data
+  // pet profile state
   const [petProfile, setPetProfile] = useState({
     species: '',
     breed: '',
@@ -16,72 +16,96 @@ const PetProfile = () => {
     location: '',
     name: '',
   });
-  // Keep a copy of the original data to revert if needed
   const [originalPetProfile, setOriginalPetProfile] = useState(null);
-  
-  // Editing toggle state
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Loading state and messages
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
-  // On mount, fetch current pet profile (from /current_user endpoint)
+  // dropdown data
+  const [speciesList, setSpeciesList] = useState([]);
+  const [breedList, setBreedList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
+
+  // fetch global species list and cities on mount
+  useEffect(() => {
+    // static species example
+    setSpeciesList(['Dog', 'Cat', 'Bird', 'Fish', 'Reptile', 'Rabbit', 'Rodent']);
+
+    // fetch world cities + country
+    axios.get('https://countriesnow.space/api/v0.1/countries')
+      .then(res => {
+        const cities = [];
+        res.data.data.forEach(ctry => {
+          ctry.cities.forEach(city => {
+            cities.push(`${city}, ${ctry.country}`);
+          });
+        });
+        setLocationList(cities);
+      })
+      .catch(() => {
+        // ignore errors
+      });
+  }, []);
+
+  // fetch existing pet profile
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (!token) {
       navigate('/login');
       return;
     }
-    axios
-      .get('http://127.0.0.1:5000/current_user', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(response => {
-        const userData = response.data;
-        if (userData.petProfile) {
-          const data = {
-            species: userData.petProfile.species || '',
-            breed: userData.petProfile.breed || '',
-            sex: userData.petProfile.sex || '',
-            colour: userData.petProfile.colour || '',
-            image: userData.petProfile.image || '',
-            location: userData.petProfile.location || '',
-            name: userData.petProfile.name || '',
-          };
-          setPetProfile(data);
-          setOriginalPetProfile(data);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Failed to load pet profile:", err);
-        setLoading(false);
-      });
+    axios.get('http://127.0.0.1:5000/current_user', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      const pp = res.data.petProfile || {};
+      const data = {
+        name:     pp.name     || '',
+        species:  pp.species  || '',
+        breed:    pp.breed    || '',
+        sex:      pp.sex      || '',
+        colour:   pp.colour   || '',
+        location: pp.location || '',
+        image:    pp.image    || '',
+      };
+      setPetProfile(data);
+      setOriginalPetProfile(data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Failed to load pet profile:", err);
+      setLoading(false);
+    });
   }, [navigate]);
 
-  // Handler to update local state on changes when editing
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setPetProfile(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Switch to edit mode
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  // Cancel changes: revert to original data
-  const handleCancel = () => {
-    if (originalPetProfile) {
-      setPetProfile(originalPetProfile);
+  // fetch breed list when species changes
+  useEffect(() => {
+    setBreedList([]);
+    setPetProfile(p => ({ ...p, breed: '' }));
+    const sp = petProfile.species;
+    if (sp === 'Dog') {
+      axios.get('https://api.thedogapi.com/v1/breeds')
+        .then(res => setBreedList(res.data.map(b => b.name)))
+        .catch(() => {});
+    } else if (sp === 'Cat') {
+      axios.get('https://api.thecatapi.com/v1/breeds')
+        .then(res => setBreedList(res.data.map(b => b.name)))
+        .catch(() => {});
     }
+  }, [petProfile.species]);
+
+  // form handlers
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setPetProfile(p => ({ ...p, [name]: value }));
+  };
+  const handleEdit = () => setIsEditing(true);
+  const handleCancel = () => {
+    setPetProfile(originalPetProfile);
     setIsEditing(false);
     setMessage('');
   };
-
-  // Save changes: send update to backend and exit edit mode
-  const handleSave = async (e) => {
+  const handleSave = async e => {
     e.preventDefault();
     const token = localStorage.getItem('userToken');
     if (!token) {
@@ -89,19 +113,17 @@ const PetProfile = () => {
       return;
     }
     try {
-      const response = await axios.post(
+      const res = await axios.post(
         'http://127.0.0.1:5000/update_pet_profile',
         petProfile,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMessage(response.data.message);
-      // Update the original data with the new state
+      setMessage(res.data.message);
       setOriginalPetProfile(petProfile);
       setIsEditing(false);
-      // Redirect to home page if desired
       navigate('/home');
-    } catch (error) {
-      setMessage(error.response?.data?.error || 'Pet profile update failed');
+    } catch (err) {
+      setMessage(err.response?.data?.error || 'Pet profile update failed');
     }
   };
 
@@ -114,7 +136,6 @@ const PetProfile = () => {
       <div className="max-w-3xl w-full mx-auto p-6 bg-white rounded shadow">
         <h2 className="text-center text-3xl font-bold mb-6">Your Pet Profile</h2>
         
-        {/* Read-only view when not editing */}
         {!isEditing ? (
           <div>
             {petProfile.image && (
@@ -133,132 +154,149 @@ const PetProfile = () => {
             <div className="mt-6 flex justify-center space-x-4">
               <button
                 onClick={handleEdit}
-                className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
+                className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Edit
               </button>
               <button
                 onClick={() => navigate('/home')}
-                className="py-2 px-4 bg-gray-600 text-white rounded hover:bg-gray-700 focus:outline-none"
+                className="py-2 px-4 bg-gray-600 text-white rounded hover:bg-gray-700"
               >
                 Home
               </button>
             </div>
             {message && (
-              <div className="mt-4">
-                <p className="text-center text-red-500 font-bold">{message}</p>
-              </div>
+              <p className="mt-4 text-center text-red-500 font-bold">{message}</p>
             )}
           </div>
         ) : (
-          // Editable form view
           <form onSubmit={handleSave} className="space-y-6">
+            {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <label className="block text-sm font-medium">Name</label>
               <input
-                type="text"
                 name="name"
-                placeholder="Pet's name"
                 value={petProfile.name}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
+                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
+
+            {/* Species */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Species</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium">Species</label>
+              <select
                 name="species"
-                placeholder="Pet's species"
                 value={petProfile.species}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
-              />
+                className="mt-1 block w-full px-4 py-3 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">Select species</option>
+                {speciesList.map(sp => (
+                  <option key={sp} value={sp}>{sp}</option>
+                ))}
+              </select>
             </div>
+
+            {/* Breed */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Breed</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium">Breed</label>
+              <select
                 name="breed"
-                placeholder="Pet's breed"
                 value={petProfile.breed}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                disabled={breedList.length === 0}
                 required
-              />
+                className="mt-1 block w-full px-4 py-3 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">Select breed</option>
+                {breedList.map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
             </div>
+
+            {/* Sex */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Sex</label>
+              <label className="block text-sm font-medium">Sex</label>
               <select
                 name="sex"
                 value={petProfile.sex}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
+                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               >
-                <option value="">Select pet sex</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                <option value="">Select sex</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
               </select>
             </div>
+
+            {/* Colour */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Colour</label>
+              <label className="block text-sm font-medium">Colour</label>
               <input
-                type="text"
                 name="colour"
-                placeholder="Pet's colour"
                 value={petProfile.colour}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
+                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
+
+            {/* Location */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Location</label>
+              <label className="block text-sm font-medium">Location</label>
               <input
-                type="text"
+                list="cities"
                 name="location"
-                placeholder="Pet's location"
                 value={petProfile.location}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="e.g. Toronto, Canada"
                 required
+                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
+              <datalist id="cities">
+                {locationList.map(loc => (
+                  <option key={loc} value={loc} />
+                ))}
+              </datalist>
             </div>
+
+            {/* Image URL */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Image URL</label>
+              <label className="block text-sm font-medium">Image URL</label>
               <input
-                type="text"
                 name="image"
-                placeholder="URL for pet's image"
                 value={petProfile.image}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
+                className="mt-1 block w-full px-4 py-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
+
+            {/* Save / Cancel */}
             <div className="flex space-x-4">
               <button
                 type="submit"
-                className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
+                className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Save
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="py-2 px-4 bg-gray-600 text-white rounded hover:bg-gray-700 focus:outline-none"
+                className="py-2 px-4 bg-gray-600 text-white rounded hover:bg-gray-700"
               >
                 Cancel
               </button>
             </div>
+
             {message && (
-              <div className="mt-4">
-                <p className="text-center text-red-500 font-bold">{message}</p>
-              </div>
+              <p className="mt-4 text-center text-red-500 font-bold">{message}</p>
             )}
           </form>
         )}

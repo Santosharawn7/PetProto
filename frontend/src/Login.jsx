@@ -24,22 +24,30 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle traditional login submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage('');  // clear any old message
     try {
       const response = await axios.post('http://127.0.0.1:5000/login', formData);
-      
-      // Expect a valid Firebase ID token in response.data.idToken
+
       if (response.data.idToken) {
         localStorage.setItem('userToken', response.data.idToken);
-        setMessage("Login successful");
         navigate('/home');
       } else {
         setMessage("Login error: No valid token returned");
       }
     } catch (error) {
-      setMessage(error.response?.data?.error || 'Login failed');
+      if (error.response) {
+        // If your backend returns 404 for missing user:
+        if (error.response.status === 404) {
+          setMessage('User not found');
+        } else {
+          setMessage(error.response.data.error || 'Login failed');
+        }
+      } else {
+        // Network / other errors
+        setMessage('Login failed – please check your connection');
+      }
     }
   };
 
@@ -59,9 +67,7 @@ const Login = () => {
         </div>
 
         {/* Divider */}
-        <div className="my-6 text-center text-sm font-medium text-slate-600">
-          OR
-        </div>
+        <div className="my-6 text-center text-sm font-medium text-slate-600">OR</div>
 
         {/* Traditional Login Form */}
         <form onSubmit={handleSubmit}>
@@ -76,8 +82,7 @@ const Login = () => {
                 placeholder="Enter email or username"
                 value={formData.identifier}
                 onChange={handleChange}
-                className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded
-                           focus:bg-white outline-blue-500 transition-all"
+                className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded focus:bg-white outline-blue-500 transition-all"
                 required
               />
             </div>
@@ -91,8 +96,7 @@ const Login = () => {
                 placeholder="Enter password"
                 value={formData.password}
                 onChange={handleChange}
-                className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded 
-                           focus:bg-white outline-blue-500 transition-all"
+                className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded focus:bg-white outline-blue-500 transition-all"
                 required
               />
             </div>
@@ -107,8 +111,7 @@ const Login = () => {
           <div className="mt-12">
             <button
               type="submit"
-              className="mx-auto block py-3 px-6 text-sm font-medium tracking-wider rounded 
-                         text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+              className="mx-auto block py-3 px-6 text-sm font-medium tracking-wider rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
             >
               Login
             </button>
