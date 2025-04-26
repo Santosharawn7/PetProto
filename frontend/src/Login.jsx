@@ -30,8 +30,8 @@ const Login = () => {
     try {
       const response = await axios.post('http://127.0.0.1:5000/login', formData);
 
-      if (response.data.idToken) {
-        localStorage.setItem('userToken', response.data.idToken);
+      if (response.data.idToken) { // Checks if the backend response includes an idToken
+        localStorage.setItem('userToken', response.data.idToken); //  Stores the idToken in the browser’s local storage under the key "userToken", so you can use it later to authenticate protected routes or API requests.
         navigate('/home');
       } else {
         setMessage("Login error: No valid token returned");

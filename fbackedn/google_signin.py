@@ -25,12 +25,12 @@ def google_signin():
 
     try:
         # Verify the Google ID token using Firebase Admin SDK
-        decoded_token = auth.verify_id_token(id_token)
+        decoded_token = auth.verify_id_token(id_token) # Decodes it and returns a dictionary of user infos
         uid = decoded_token['uid']
         
         # Optionally, you might get or create the user in Firebase Authentication:
         try:
-            user = auth.get_user(uid)
+            user = auth.get_user(uid) # Tries to fetch this user from Firebase Authentication
         except firebase_admin.auth.UserNotFoundError:
             # If user does not exist, create one (if you wish)
             user = auth.create_user(

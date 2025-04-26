@@ -2,9 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+
 
 const RegistrationForm = () => {
+
   const navigate = useNavigate();
+  const auth = getAuth();
 
   // Form state for all fields required by your backend
   const [formData, setFormData] = useState({
@@ -24,7 +28,7 @@ const RegistrationForm = () => {
 
   // If the user is already logged in (session exists), redirect to home
   useEffect(() => {
-    const token = localStorage.getItem('userToken');
+    const token = localStorage.getItem('userToken'); // You're reading from the browser's localStorage to check if the user has previously logged in.
     if (token) {
       navigate('/home');
     }
@@ -43,7 +47,7 @@ const RegistrationForm = () => {
 
   // Handle form submission by posting registration data to the backend
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // prevents the browser from reloading the page when the form is submitted — which is default behavior for HTML forms. 
 
     // Check that password and confirmation match
     if (formData.password !== confirmPassword) {
@@ -51,16 +55,38 @@ const RegistrationForm = () => {
       return;
     }
 
-    try {
-      // Post registration data to your backend endpoint
-      const response = await axios.post('http://127.0.0.1:5000/register', formData);
-      setMessage(response.data.message);
+    // try {
+    //   // Post registration data to your backend endpoint
+    //   const response = await axios.post('http://127.0.0.1:5000/register', formData);
+    //   setMessage(response.data.message);
 
-      // After successful registration, redirect user to the login page
-      navigate('/login');
+    //   // After successful registration, redirect user to the login page
+    //   navigate('/login');
+    // } catch (error) {
+    //   setMessage(error.response?.data?.error || 'Registration failed');
+    // }
+
+    try {
+      // Register user with Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password); // userCredential contains info about the newly created user  
+      const user = userCredential.user; // actual Firebase user object
+
+      // Send email verification
+      await sendEmailVerification(user, { // The email uses the default Firebase template.
+        url: 'http://localhost:5173/login',  
+      });
+
+      // Save user info in Firestore via backend
+      const backendData = { ...formData, uid: user.uid };
+      await axios.post('http://127.0.0.1:5000/register', backendData);
+
+      setMessage("Registration successful! Please check your email to verify.");
+      setTimeout(() => navigate('/login'), 3000); // After 3 seconds, it redirects the user to the login page
+      
     } catch (error) {
-      setMessage(error.response?.data?.error || 'Registration failed');
+      setMessage(error.message || 'Registration failed');
     }
+
   };
 
   return (
