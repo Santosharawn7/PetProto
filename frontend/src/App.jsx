@@ -9,6 +9,7 @@ import Home from './Home';
 import PasswordReset from './PasswordReset';
 import PetProfile from './PetProfile';
 import UpdateRegistration from './UpdateRegistration';
+import MatchPetProfile from './MatchPetProfile';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/register" element={<RegistrationForm />} />
         <Route path="/login" element={<Login />} />
         <Route path="/password-reset" element={<PasswordReset />} />
+        <Route path="/match" element={<MatchPetProfile />} />
         <Route
           path="/home"
           element={
