@@ -7,6 +7,7 @@ build/
 
 # Environment files
 .env
+venv
 
 # Service account keys - DO NOT COMMIT SECRETS TO GIT
 serviceAccountKey.json
@@ -15,4 +16,5 @@ serviceAccountKey.json
 *.log
 package-lock.json
 frontend/package-lock.json
+fbackedn/__pycache__
 
