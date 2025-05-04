@@ -1,21 +1,26 @@
 // src/pages/Home.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 import { getWorldCities } from '../services/countryService';
 import { getBreedsBySpecies } from '../services/breedService';
 import { getCurrentUser } from '../services/userService';
-import { getMatches } from '../services/matchService';
+import { getMatches as getPetMatches } from '../services/matchService';
 import Header from '../components/Header';
-import Filters from '../components/Filter'
+import Filters from '../components/Filter';
 import MatchingCarousel from '../components/MatchingCarousel';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 const Home = () => {
   const navigate = useNavigate();
 
   const [matches, setMatches] = useState([]);
   const [error, setError] = useState('');
-  const [speciesList] = useState(['Dog', 'Cat', 'Bird', 'Fish', 'Reptile', 'Rabbit', 'Rodent']);
+  const [speciesList] = useState([
+    'Dog','Cat','Bird','Fish','Reptile','Rabbit','Rodent'
+  ]);
   const [breedList, setBreedList] = useState([]);
   const [locationList, setLocationList] = useState([]);
 
@@ -37,17 +42,32 @@ const Home = () => {
       if (!token) return navigate('/login');
 
       try {
-        const [userRes, matchesRes, cities] = await Promise.all([
+        // Load current user and city list in parallel
+        const [userRes, cities] = await Promise.all([
           getCurrentUser(token),
-          getMatches(token),
           getWorldCities()
         ]);
 
         const userSpecies = userRes.data.petProfile?.species || 'All';
         setFilterSpecies(userSpecies);
         setLocationList(cities);
-        setMatches(matchesRes.data.matches);
 
+        // Attempt combined pet+sentiment matches first
+        let matchData;
+        try {
+          const sentimentRes = await axios.get(
+            `${API_URL}/sentiment-matches`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          matchData = sentimentRes.data.matches;
+        } catch {
+          // Fallback to pet-only matches
+          const petRes = await getPetMatches(token);
+          matchData = petRes.data.matches;
+        }
+        setMatches(matchData);
+
+        // Load breed list for this species
         const breeds = await getBreedsBySpecies(userSpecies);
         setBreedList(breeds);
       } catch (err) {
@@ -61,18 +81,25 @@ const Home = () => {
     init();
   }, [navigate]);
 
+  // Apply filters and sort by finalMatchScore (fall back to petMatchScore if final missing)
   const sortedMatches = matches
     .filter(u => {
       const p = u.petProfile || {};
       if (filterSpecies !== 'All' && p.species !== filterSpecies) return false;
-      if (filterBreed !== 'All' && p.breed !== filterBreed) return false;
-      if (filterSex !== 'All' && p.sex !== filterSex) return false;
-      if (filterColour !== 'All' && p.colour !== filterColour) return false;
-      if (filterLocation && !p.location?.toLowerCase().includes(filterLocation.toLowerCase()))
-        return false;
+      if (filterBreed   !== 'All' && p.breed   !== filterBreed)   return false;
+      if (filterSex     !== 'All' && p.sex     !== filterSex)     return false;
+      if (filterColour  !== 'All' && p.colour  !== filterColour)  return false;
+      if (
+        filterLocation &&
+        !p.location?.toLowerCase().includes(filterLocation.toLowerCase())
+      ) return false;
       return true;
     })
-    .sort((a, b) => (b.petMatchScore || 0) - (a.petMatchScore || 0));
+    .sort((a, b) => {
+      const aScore = (a.finalMatchScore ?? a.petMatchScore) || 0;
+      const bScore = (b.finalMatchScore ?? b.petMatchScore) || 0;
+      return bScore - aScore;
+    });
 
   if (loading) {
     return (
@@ -84,7 +111,7 @@ const Home = () => {
 
   return (
     <div className="p-6">
-      <Header/>
+      <Header />
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <Filters
@@ -102,7 +129,10 @@ const Home = () => {
         setFilterLocation={setFilterLocation}
       />
 
-      <MatchingCarousel matches={sortedMatches} onMatchClick={handleMatchClick} />
+      <MatchingCarousel
+        matches={sortedMatches}
+        onMatchClick={handleMatchClick}
+      />
     </div>
   );
 };

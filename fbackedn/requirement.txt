@@ -2,3 +2,4 @@ Flask
 firebase-admin
 requests
 flask_cors
+textblob

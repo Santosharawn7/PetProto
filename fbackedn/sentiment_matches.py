@@ -1,119 +1,114 @@
 # sentiment_matches.py
-# A Flask blueprint that calculates pet match scores based on sentiment analysis of users' survey responses
+# A Flask blueprint that calculates pet match scores based on sentiment analysis
+# of users' survey responses, sums with pet-attribute scores, and filters by species.
 
 from flask import Blueprint, request, jsonify
-from firebase_admin import auth, firestore
 from flask_cors import cross_origin
+from firebase_admin import auth, firestore
 from textblob import TextBlob
-from matches import calculate_pet_match_score  # import pet-attribute match function
+from matches import calculate_pet_match_score
 
 sentiment_bp = Blueprint('sentiment_bp', __name__)
 
-
 def analyze_sentiment(text):
     """
-    Analyze the sentiment polarity of the given text.
-    Returns a float between -1.0 (very negative) and 1.0 (very positive).
+    Analyze sentiment polarity of the text (-1.0 to 1.0).
     """
-    blob = TextBlob(text)
-    return blob.sentiment.polarity
+    return TextBlob(text).sentiment.polarity
 
-
-def calculate_sentiment_match_score(current_responses, other_responses):
+def calculate_sentiment_match_score(curr_responses, other_responses):
     """
-    Compare sentiment of responses between two users.
-    Returns a score scaled from 0 to 10 based on average sentiment similarity.
+    Compute a 0–10 score based on average sentiment similarity.
     """
-    score = 0.0
+    total_similarity = 0.0
     count = 0
-    for question, curr_resp in current_responses.items():
-        other_resp = other_responses.get(question)
-        if curr_resp and other_resp:
-            curr_sent = analyze_sentiment(curr_resp)
-            other_sent = analyze_sentiment(other_resp)
-            diff = abs(curr_sent - other_sent)
+    for question, curr in curr_responses.items():
+        other = other_responses.get(question, "")
+        if curr and other:
+            diff = abs(analyze_sentiment(curr) - analyze_sentiment(other))
             similarity = max(0.0, 1.0 - diff)
-            score += similarity
+            total_similarity += similarity
             count += 1
 
-    if count > 0:
-        return (score / count) * 10
-    return 0.0
-
+    return (total_similarity / count * 10) if count else 0.0
 
 @sentiment_bp.route('/sentiment-matches', methods=['GET', 'OPTIONS'])
 @cross_origin()
 def get_sentiment_matches():
-    """
-    Endpoint to retrieve a list of users sorted by combined pet and sentiment match score.
-    Reads each user's survey under users/{uid}/surveyResponses/sentimentSurvey.
-    """
+    # Handle CORS preflight
     if request.method == 'OPTIONS':
         return jsonify({}), 200
 
-    # Verify Firebase Auth token
-    token_header = request.headers.get('Authorization')
-    if not token_header:
-        return jsonify({'error': 'Missing token'}), 401
+    # Verify Firebase token
+    auth_header = request.headers.get('Authorization', '')
+    parts = auth_header.split()
+    if len(parts) != 2 or parts[0] != 'Bearer':
+        return jsonify({'error': 'Missing or malformed token'}), 401
+
     try:
-        token = token_header.split()[1]
-        decoded = auth.verify_id_token(token)
-        current_uid = decoded['uid']
+        uid = auth.verify_id_token(parts[1])['uid']
     except Exception as e:
         return jsonify({'error': 'Invalid token: ' + str(e)}), 401
 
     db = firestore.client()
 
-    # Fetch current user's pet profile
-    current_user_doc = db.collection('users').document(current_uid).get()
-    if not current_user_doc.exists:
+    # Load current user's petProfile
+    user_snap = db.collection('users').document(uid).get()
+    if not user_snap.exists:
         return jsonify({'error': 'User not found'}), 404
-    current_user = current_user_doc.to_dict()
-    current_pet = current_user.get('petProfile', {})
 
-    # Fetch current user's survey responses
-    survey_doc = db.collection('users').document(current_uid) \
-                  .collection('surveyResponses').document('sentimentSurvey').get()
-    if not survey_doc.exists:
-        return jsonify({'error': 'No survey responses found for current user'}), 400
-    survey_data = survey_doc.to_dict()
-    current_responses = survey_data.get('responses', {})
+    user_data = user_snap.to_dict()
+    current_pet = user_data.get('petProfile', {})
+    species = current_pet.get('species', '').strip().lower()
+
+    # Load current user's survey responses (or empty)
+    survey_snap = (
+        db.collection('users').document(uid)
+          .collection('surveyResponses').document('sentimentSurvey')
+          .get()
+    )
+    curr_responses = survey_snap.to_dict().get('responses', {}) if survey_snap.exists else {}
 
     matches = []
-    # Iterate through all users
-    users = db.collection('users').stream()
-    for doc in users:
-        uid = doc.id
-        if uid == current_uid:
+    # Iterate all other users
+    for doc in db.collection('users').stream():
+        other_uid = doc.id
+        if other_uid == uid:
             continue
-        user_data = doc.to_dict()
-        other_pet = user_data.get('petProfile', {})
 
-        # Fetch other user's survey
-        other_survey_doc = db.collection('users').document(uid) \
-                           .collection('surveyResponses').document('sentimentSurvey').get()
-        if not other_survey_doc.exists:
+        other_data = doc.to_dict()
+        other_pet = other_data.get('petProfile', {})
+        other_species = other_pet.get('species', '').strip().lower()
+
+        # **Filter by species match only**
+        if not species or other_species != species:
             continue
-        other_survey = other_survey_doc.to_dict()
-        other_responses = other_survey.get('responses', {})
 
-        # Compute scores
-        sentiment_score = calculate_sentiment_match_score(current_responses, other_responses)
+        # Load other user's survey
+        other_survey_snap = (
+            db.collection('users').document(other_uid)
+              .collection('surveyResponses').document('sentimentSurvey')
+              .get()
+        )
+        other_responses = other_survey_snap.to_dict().get('responses', {}) if other_survey_snap.exists else {}
+
+        # Calculate scores
         pet_score = calculate_pet_match_score(current_pet, other_pet)
+        sentiment_score = calculate_sentiment_match_score(curr_responses, other_responses)
         final_score = pet_score + sentiment_score
 
-        # Build match entry
-        match_entry = {
-            'uid': uid,
+        matches.append({
+            'uid': other_uid,
             'petProfile': other_pet,
             'petMatchScore': pet_score,
             'sentimentMatchScore': sentiment_score,
             'finalMatchScore': final_score
-        }
-        matches.append(match_entry)
+        })
 
-    # Sort by finalMatchScore descending
-    matches.sort(key=lambda x: x['finalMatchScore'], reverse=True)
+    # Sort by combined score descending
+    matches.sort(key=lambda m: m['finalMatchScore'], reverse=True)
     return jsonify({'matches': matches}), 200
 
-# Note: Requires textblob corpora: python -m textblob.download_corpora
+# Note: Requires textblob:
+#   pip install textblob
+#   python -m textblob.download_corpora
