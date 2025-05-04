@@ -220,7 +220,7 @@ export default function EditPetProfile() {
             Cancel
           </button>
         </div>
-        {message && <p className="mt-4 text-center text-red-500">{message}</p>}
+        {message && <p className="mt-4 text-center text-red-800">{message}</p>}
       </form>
     </div>
   );
