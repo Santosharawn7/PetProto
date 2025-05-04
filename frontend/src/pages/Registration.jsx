@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail } from 'firebase/auth';
 
 
 const RegistrationForm = () => {
@@ -55,18 +55,15 @@ const RegistrationForm = () => {
       return;
     }
 
-    // try {
-    //   // Post registration data to your backend endpoint
-    //   const response = await axios.post('http://127.0.0.1:5000/register', formData);
-    //   setMessage(response.data.message);
-
-    //   // After successful registration, redirect user to the login page
-    //   navigate('/login');
-    // } catch (error) {
-    //   setMessage(error.response?.data?.error || 'Registration failed');
-    // }
-
     try {
+
+      // Check if this email is already registered via Google
+      const methods = await fetchSignInMethodsForEmail(auth, formData.email);
+      if (methods.includes('google.com')) {
+        setMessage("This email is already registered via Google Sign-In. Please use the Google login option.");
+        return;
+      }
+
       // Register user with Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password); // userCredential contains info about the newly created user  
       const user = userCredential.user; // actual Firebase user object
