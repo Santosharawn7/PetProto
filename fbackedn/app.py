@@ -10,6 +10,7 @@ from matches import matches_bp
 from update_pet_profile import update_pet_profile_bp
 from update_registration import update_registration_bp
 from current_user import current_user_bp
+from sentiment_matches import sentiment_bp
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS globally
@@ -29,6 +30,7 @@ app.register_blueprint(matches_bp)
 app.register_blueprint(update_pet_profile_bp)
 app.register_blueprint(update_registration_bp)
 app.register_blueprint(current_user_bp)
+app.register_blueprint(sentiment_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)

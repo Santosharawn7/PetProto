@@ -6,6 +6,7 @@ import axios from 'axios';
 export default function EditPetProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);      // separate loading for save/next
   const [message, setMessage] = useState('');
   const [petProfile, setPetProfile] = useState({
     name: '',
@@ -43,18 +44,19 @@ export default function EditPetProfile() {
     .then(res => {
       const pp = res.data.petProfile || {};
       setPetProfile({
-        name: pp.name || '',
-        species: pp.species || '',
-        breed: pp.breed || '',
-        sex: pp.sex || '',
-        colour: pp.colour || '',
+        name:     pp.name     || '',
+        species:  pp.species  || '',
+        breed:    pp.breed    || '',
+        sex:      pp.sex      || '',
+        colour:   pp.colour   || '',
         location: pp.location || '',
-        image: pp.image || ''
+        image:    pp.image    || ''
       });
-      setLoading(false);
     })
     .catch(err => {
       console.error(err);
+    })
+    .finally(() => {
       setLoading(false);
     });
   }, []);
@@ -79,25 +81,50 @@ export default function EditPetProfile() {
     setPetProfile(prev => ({ ...prev, [name]: value }));
   };
 
+  const saveProfile = async () => {
+    const token = localStorage.getItem('userToken');
+    const res = await axios.post(
+      'http://127.0.0.1:5000/update_pet_profile',
+      petProfile,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data.message;
+  };
+
   const handleSave = async e => {
     e.preventDefault();
-    const token = localStorage.getItem('userToken');
+    setSaving(true);
+    setMessage('');
     try {
-      const res = await axios.post(
-        'http://127.0.0.1:5000/update_pet_profile',
-        petProfile,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMessage(res.data.message);
-      // Navigate to home so user can view or find other matches without survey
+      const msg = await saveProfile();
+      setMessage(msg);
       navigate('/home');
     } catch (err) {
       console.error(err);
       setMessage('Save failed');
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (loading) return <p className="p-6 text-center">Loading…</p>;
+  const handleNext = async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const msg = await saveProfile();
+      setMessage(msg);
+      navigate('/survey');
+    } catch (err) {
+      console.error(err);
+      setMessage('Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <p className="p-6 text-center">Loading…</p>;
+  }
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-6">
@@ -125,7 +152,9 @@ export default function EditPetProfile() {
             className="mt-1 w-full p-3 border rounded bg-white"
           >
             <option value="">Select species</option>
-            {speciesList.map(sp => <option key={sp} value={sp}>{sp}</option>)}
+            {speciesList.map(sp => (
+              <option key={sp} value={sp}>{sp}</option>
+            ))}
           </select>
         </div>
         {/* Breed */}
@@ -140,7 +169,9 @@ export default function EditPetProfile() {
             className="mt-1 w-full p-3 border rounded bg-white"
           >
             <option value="">Select breed</option>
-            {breedList.map(b => <option key={b} value={b}>{b}</option>)}
+            {breedList.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
           </select>
         </div>
         {/* Sex */}
@@ -183,7 +214,9 @@ export default function EditPetProfile() {
             className="mt-1 w-full p-3 border rounded"
           />
           <datalist id="cities">
-            {locationList.map(loc => <option key={loc} value={loc}/>)}
+            {locationList.map(loc => (
+              <option key={loc} value={loc} />
+            ))}
           </datalist>
         </div>
         {/* Image URL */}
@@ -201,16 +234,18 @@ export default function EditPetProfile() {
         <div className="flex space-x-4">
           <button
             type="submit"
+            disabled={saving}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Save
+            {saving ? 'Saving…' : 'Save'}
           </button>
           <button
             type="button"
-            onClick={() => navigate('/survey')}
+            onClick={handleNext}
+            disabled={saving}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
-            Next
+            {saving ? 'Saving…' : 'Next'}
           </button>
           <button
             type="button"
@@ -220,7 +255,9 @@ export default function EditPetProfile() {
             Cancel
           </button>
         </div>
-        {message && <p className="mt-4 text-center text-red-800">{message}</p>}
+        {message && (
+          <p className="mt-4 text-center text-red-800">{message}</p>
+        )}
       </form>
     </div>
   );
