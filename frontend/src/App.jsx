@@ -1,15 +1,17 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import RegistrationForm from './Registration';
-import Landing from './Landing';
-import Login from './Login';
+import RegistrationForm from './pages/Registration';
+import Landing from './components/Landing';
+import Login from './pages/Login';
 import PrivateRoute from './PrivateRoute';
-import Home from './Home';
-import PasswordReset from './PasswordReset';
-import PetProfile from './PetProfile';
-import UpdateRegistration from './UpdateRegistration';
-import MatchPetProfile from './MatchPetProfile';
+import Home from './pages/Home';
+import PetProfile from './pages/PetProfile';
+import UpdateRegistration from './pages/UpdateRegistration';
+import MatchPetProfile from './components/MatchPetProfile';
+import PasswordReset from './pages/PasswordReset';
+import SurveyPage from './components/Survey';
+import EditPetProfile from './pages/EditPetProfile';
 
 function App() {
   return (
@@ -29,10 +31,26 @@ function App() {
           }
         />
         <Route
+          path="/survey"
+          element={
+            <PrivateRoute>
+              <SurveyPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/pet-profile"
           element={
             <PrivateRoute>
               <PetProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/edit-pet"
+          element={
+            <PrivateRoute>
+              <EditPetProfile />
             </PrivateRoute>
           }
         />

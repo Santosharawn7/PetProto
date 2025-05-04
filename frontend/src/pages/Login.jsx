@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import GoogleSignIn from './GoogleSignIn';
+import GoogleSignIn from '../components/GoogleSignIn';
 
 const Login = () => {
   const navigate = useNavigate();
