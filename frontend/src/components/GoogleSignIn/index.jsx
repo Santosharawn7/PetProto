@@ -1,12 +1,12 @@
 // src/GoogleSignIn.jsx
 import React from 'react';
-import { auth, googleProvider } from './firebase';
 import { 
   signInWithPopup, 
   fetchSignInMethodsForEmail, 
   linkWithCredential, 
   GoogleAuthProvider 
 } from 'firebase/auth';
+import { auth, googleProvider } from '../../firebase';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
