@@ -136,7 +136,7 @@ const Login = () => {
     //   </div>
     // </div>
     <section
-      className="py-24 md:py-32 bg-[#EDE8D0]"
+      className="py-24 md:py-32"
       style={{
         backgroundImage: "url('flex-ui-assets/elements/pattern-white.svg')",
         backgroundPosition: 'center',

@@ -87,7 +87,7 @@ const RegistrationForm = () => {
   };
 
   return (
-    <div className="max-w-4xl max-sm:max-w-lg mx-auto p-6 mt-6 bg-[#EDE8D0]">
+    <div className="max-w-4xl max-sm:max-w-lg mx-auto p-6 mt-6">
       {/* <div className="text-center mb-12 sm:mb-16">
         <a href="javascript:void(0)">
           <img src="https://readymadeui.com/readymadeui.svg" alt="logo" className="w-44 inline-block" />
