@@ -10,6 +10,8 @@ import { getMatches as getPetMatches } from '../services/matchService';
 import Header from '../components/Header';
 import Filters from '../components/Filter';
 import MatchingCarousel from '../components/MatchingCarousel';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPaw } from '@fortawesome/free-solid-svg-icons';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
@@ -104,7 +106,7 @@ const Home = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+        <FontAwesomeIcon icon={faPaw} className="text-blue-600 text-5xl animate-spin" />
       </div>
     );
   }

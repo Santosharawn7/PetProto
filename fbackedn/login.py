@@ -57,22 +57,35 @@ def login():
     
     firebase_response = requests.post(sign_in_url, json=payload)
     
-    # if firebase_response.status_code == 200:
-    #     return jsonify(firebase_response.json()), 200
-    # else:
-    #     return jsonify(firebase_response.json()), firebase_response.status_code
-
+    # Handle login failure
     if firebase_response.status_code != 200:
-        return jsonify(firebase_response.json()), firebase_response.status_code
+        fb_error = firebase_response.json().get('error', {})
+        message = fb_error.get('message', 'Authentication failed')
 
+        # Map Firebase error codes to friendly messages
+        friendly_messages = {
+            "EMAIL_NOT_FOUND": "No account found with that email.",
+            "INVALID_PASSWORD": "Incorrect password.",
+            "USER_DISABLED": "This account has been disabled.",
+            "INVALID_EMAIL": "Invalid email format."
+        }
+
+        return jsonify({'error': friendly_messages.get(message, message)}), 401
+
+    # Login succeeded
     data = firebase_response.json()
-    # Check email verification
-    if not data.get('emailVerified', False):
-        # Firebase REST does not return `emailVerified`, need to fetch user details
-        lookup_url = f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}"
-        id_token = data['idToken']
-        verify_response = requests.post(lookup_url, json={"idToken": id_token})
-        if verify_response.status_code != 200 or not verify_response.json()['users'][0]['emailVerified']:
-            return jsonify({'error': 'Email not verified. Please check your inbox.'}), 403 # 403 Forbidden client error: the server understood the request but refused to process it 
 
+    # Check if email is verified
+    lookup_url = f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}"
+    id_token = data['idToken']
+    verify_response = requests.post(lookup_url, json={"idToken": id_token})
+
+    if verify_response.status_code != 200:
+        return jsonify({'error': 'Failed to verify email status'}), 500
+
+    user_info = verify_response.json().get('users', [])[0]
+    if not user_info.get('emailVerified', False):
+        return jsonify({'error': 'Email not verified. Please check your inbox.'}), 403
+
+    # Everything OK
     return jsonify(data), 200

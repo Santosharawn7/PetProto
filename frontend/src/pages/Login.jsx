@@ -52,88 +52,168 @@ const Login = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-slate-50">
-      <div className="max-w-4xl w-full max-sm:max-w-lg mx-auto p-6 mt-6 bg-white rounded shadow">
-        <div className="text-center mb-12 sm:mb-16">
-          <a href="javascript:void(0)">
-            <img src="https://readymadeui.com/readymadeui.svg" alt="logo" className="w-44 inline-block" />
-          </a>
-          <h4 className="text-slate-600 text-base mt-6">Sign in to your account</h4>
-        </div>
+    // <div className="flex justify-center items-center min-h-screen bg-[#EDE8D0]">
+    //   <div className="max-w-4xl w-full max-sm:max-w-lg mx-auto p-6 mt-6">
+    //     <div className="text-center mb-12 sm:mb-16">
+    //       <a href="javascript:void(0)">
+    //         <img src="https://readymadeui.com/readymadeui.svg" alt="logo" className="w-44 inline-block" />
+    //       </a>
+    //       <h4 className="text-slate-600 text-base mt-8">Sign in to your account</h4>
+    //     </div>
 
-        {/* Google Sign In Section */}
-        <div className="mb-8">
-          <GoogleSignIn />
-        </div>
+    //     {/* Traditional Login Form */}
+    //     <form onSubmit={handleSubmit}>
+    //       <div className="grid gap-8">
+    //         <div>
+    //           <label className="text-slate-800 text-sm font-medium mb-2 block">
+    //             Email or Username
+    //           </label>
+    //           <input
+    //             type="text"
+    //             name="identifier"
+    //             placeholder="Enter email or username"
+    //             value={formData.identifier}
+    //             onChange={handleChange}
+    //             className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded focus:bg-white outline-blue-500 transition-all"
+    //             required
+    //           />
+    //         </div>
+    //         <div>
+    //           <label className="text-slate-800 text-sm font-medium mb-2 block">
+    //             Password
+    //           </label>
+    //           <input
+    //             type="password"
+    //             name="password"
+    //             placeholder="Enter password"
+    //             value={formData.password}
+    //             onChange={handleChange}
+    //             className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded focus:bg-white outline-blue-500 transition-all"
+    //             required
+    //           />
+    //         </div>
+    //       </div>
 
-        {/* Divider */}
-        <div className="my-6 text-center text-sm font-medium text-slate-600">OR</div>
+    //       <div className="mt-4 text-right">
+    //         <a href="/password-reset" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+    //           Forgot Password?
+    //         </a>
+    //       </div>
 
-        {/* Traditional Login Form */}
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-8">
-            <div>
-              <label className="text-slate-800 text-sm font-medium mb-2 block">
-                Email or Username
-              </label>
+    //       <div className="mt-12">
+    //         <button
+    //           type="submit"
+    //           className="mx-auto block py-3 px-6 text-sm font-medium tracking-wider rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+    //         >
+    //           Login
+    //         </button>
+    //       </div>
+
+    //       {message && (
+    //         <div className="mt-4">
+    //           <p className="text-center text-red-500 font-bold">{message}</p>
+    //         </div>
+    //       )}
+
+    //       <div className="mt-4 text-center">
+    //         <p className="text-slate-600 text-sm">
+    //           Don't have an account?{' '}
+    //           <a href="/register" className="text-blue-600 hover:text-blue-700 font-medium">
+    //             Sign up
+    //           </a>
+    //         </p>
+    //       </div>
+    //     </form>
+
+    //     {/* Divider */}
+    //     <div className="my-6 text-center text-sm font-medium text-slate-600">OR</div>
+
+    //     {/* Google Sign In Section */}
+    //     <div className="mb-8">
+    //       <GoogleSignIn />
+    //     </div>
+
+    //   </div>
+    // </div>
+    <section
+      className="py-24 md:py-32"
+      style={{
+        backgroundImage: "url('flex-ui-assets/elements/pattern-white.svg')",
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="container px-4 mx-auto">
+        <div className="max-w-sm mx-auto">
+          <div className="mb-6 text-center">
+            <a className="inline-block mb-6" href="#">
+              <img className="h-20 w-50" src="https://web.petbridge.org/wp-content/uploads/2022/03/PetBridge-Meta-Image.png" alt="Logo" />
+            </a>
+            <p className="text-lg text-coolGray-500 font-medium">
+              Sign in to your account
+            </p>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-6">
+              <label className="block mb-2 text-coolGray-800 font-medium">Email or Username*</label>
               <input
                 type="text"
                 name="identifier"
                 placeholder="Enter email or username"
                 value={formData.identifier}
                 onChange={handleChange}
-                className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded focus:bg-white outline-blue-500 transition-all"
+                className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
                 required
               />
             </div>
-            <div>
-              <label className="text-slate-800 text-sm font-medium mb-2 block">
-                Password
-              </label>
+            <div className="mb-4">
+              <label className="block mb-2 text-coolGray-800 font-medium">Password*</label>
               <input
                 type="password"
                 name="password"
                 placeholder="Enter password"
                 value={formData.password}
                 onChange={handleChange}
-                className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded focus:bg-white outline-blue-500 transition-all"
+                className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
                 required
               />
             </div>
-          </div>
-
-          <div className="mt-4 text-right">
-            <a href="/password-reset" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-              Forgot Password?
-            </a>
-          </div>
-
-          <div className="mt-12">
-            <button
+            <div className="my-4 text-right">
+                <a href="/password-reset" className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                     Forgot Password?
+                </a>
+           </div>
+            
+           <button
               type="submit"
-              className="mx-auto block py-3 px-6 text-sm font-medium tracking-wider rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+              className="inline-block py-3 px-7 mb-4 w-full text-base text-green-50 font-medium text-center leading-6 bg-blue-600 hover:bg-blue-800 focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 rounded-md shadow-sm"
             >
               Login
-            </button>
-          </div>
+           </button>
+           <div className="mb-6">
+                <GoogleSignIn />
+            </div>
+            <p className="text-center">
+              <span className="text-sm font-medium">Don't have an account?</span>{' '}
+              <a
+                className="inline-block text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                href="/register"
+              >
+                Sign Up
+              </a>
+            </p>
 
-          {message && (
+            {message && (
             <div className="mt-4">
               <p className="text-center text-red-500 font-bold">{message}</p>
             </div>
           )}
 
-          <div className="mt-4 text-center">
-            <p className="text-slate-600 text-sm">
-              Don't have an account?{' '}
-              <a href="/register" className="text-blue-600 hover:text-blue-700 font-medium">
-                Sign up
-              </a>
-            </p>
-          </div>
-        </form>
+          </form>
+
+        </div>
       </div>
-    </div>
+    </section>
+
   );
 };
 

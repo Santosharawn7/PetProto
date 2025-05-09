@@ -51,13 +51,13 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
             style={{ scrollSnapAlign: 'center' }}
           >
             <div
-              className="relative w-[32rem] h-[40rem] cursor-pointer rounded-2xl overflow-hidden shadow-xl"
+              className="relative w-[28rem] h-[36rem] bg-black cursor-pointer rounded-2xl overflow-hidden shadow-xl"
               onClick={() => onMatchClick(u)}
             >
               <img
                 src={u.petProfile.image}
                 alt={u.petProfile.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
               <h3 className="absolute bottom-4 left-4 text-4xl font-semibold text-white drop-shadow-xl">
                 {u.petProfile.name}
