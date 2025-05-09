@@ -12,6 +12,8 @@ import MatchPetProfile from './components/MatchPetProfile';
 import PasswordReset from './pages/PasswordReset';
 import SurveyPage from './components/Survey';
 import EditPetProfile from './pages/EditPetProfile';
+import ChatPage from './components/ChatPage';
+import CommunityPage from './components/CommunityPage';
 
 function App() {
   return (
@@ -62,6 +64,23 @@ function App() {
             </PrivateRoute>
           }
         />
+         <Route
+          path="/chat/:chatId"
+          element={
+            <PrivateRoute>
+              <ChatPage/>
+            </PrivateRoute>
+          }
+        />
+         <Route
+          path="community"
+          element={
+            <PrivateRoute>
+              <CommunityPage/>
+            </PrivateRoute>
+          }
+        />
+        
       </Routes>
     </BrowserRouter>
   );

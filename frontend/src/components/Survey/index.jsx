@@ -1,17 +1,14 @@
 // src/components/Survey/SurveyPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../../firebase';
+import { auth, db } from '../../firebase';
 import {
-  getFirestore,
   doc,
   collection,
   setDoc,
   getDoc,
   serverTimestamp
 } from 'firebase/firestore';
-
-const db = getFirestore();
 
 const questions = [
   "What is your pet's favorite game or toy?",
@@ -35,14 +32,19 @@ export default function SurveyPage() {
 
   // Pre-fill any existing answers
   useEffect(() => {
-    auth.currentUser?.getIdToken().then(async token => {
-      const snap = await getDoc(
-        doc(db, 'users', auth.currentUser.uid, 'surveyResponses', 'sentimentSurvey')
-      );
+    if (!auth.currentUser) return;
+    const uid = auth.currentUser.uid;
+    getDoc(
+      doc(db, 'users', uid, 'surveyResponses', 'sentimentSurvey')
+    ).then(snap => {
       if (snap.exists()) {
         const data = snap.data();
-        if (data.responses) setResponses(data.responses);
+        if (data.responses) {
+          setResponses(data.responses);
+        }
       }
+    }).catch(err => {
+      console.error('Failed to load existing survey:', err);
     });
   }, []);
 
@@ -53,28 +55,31 @@ export default function SurveyPage() {
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Please log in to submit your pet survey.');
 
+      const uid = user.uid;
+
       // Overwrite the single sentimentSurvey doc
       await setDoc(
-        doc(collection(db, 'users', user.uid, 'surveyResponses'), 'sentimentSurvey'),
+        doc(collection(db, 'users', uid, 'surveyResponses'), 'sentimentSurvey'),
         { questions, responses, createdAt: serverTimestamp() },
         { merge: false }
       );
 
       // Also merge into the main user doc
       await setDoc(
-        doc(db, 'users', user.uid),
+        doc(db, 'users', uid),
         { sentimentResponses: responses },
         { merge: true }
       );
 
-      // Once saved, go back to Home—home page’s carousel will pick up the new scores
+      // Navigate home so matching picks up new data
       navigate('/home');
     } catch (err) {
-      console.error(err);
+      console.error('Survey save failed:', err);
       alert(err.message || 'Failed to submit survey. Please try again.');
     } finally {
       setLoading(false);

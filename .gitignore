@@ -1,13 +1,38 @@
 # Node modules
 node_modules/
 
-# Build output
+# Byte‐compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Editor folders
+.idea/
+.vscode/
+
+# Mac files
+.DS_Store
+
+# Python packaging
+*.egg-info/
 dist/
 build/
 
-# Environment files
-.env
-venv
+# Logs and databases
+*.log
+*.sqlite3
+
+# Optional: service account keys (if you don't want them in the repo)
+# serviceAccountKey.jso
+
 
 # Service account keys - DO NOT COMMIT SECRETS TO GIT
 serviceAccountKey.json
@@ -16,5 +41,4 @@ serviceAccountKey.json
 *.log
 package-lock.json
 frontend/package-lock.json
-fbackedn/__pycache__
 
