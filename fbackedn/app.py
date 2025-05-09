@@ -11,6 +11,11 @@ from update_pet_profile import update_pet_profile_bp
 from update_registration import update_registration_bp
 from current_user import current_user_bp
 from sentiment_matches import sentiment_bp
+from social_requests import requests_bp
+from social_chats import chat_bp
+from social_search import search_bp
+from social_events import events_bp
+from social_reactions import reactions_bp
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS globally
@@ -31,6 +36,11 @@ app.register_blueprint(update_pet_profile_bp)
 app.register_blueprint(update_registration_bp)
 app.register_blueprint(current_user_bp)
 app.register_blueprint(sentiment_bp)
+app.register_blueprint(requests_bp)
+app.register_blueprint(chat_bp)
+app.register_blueprint(search_bp)
+app.register_blueprint(events_bp)
+app.register_blueprint(reactions_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)
