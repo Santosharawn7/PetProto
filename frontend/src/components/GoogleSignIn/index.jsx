@@ -78,9 +78,14 @@ const GoogleSignIn = () => {
   return (
     <button
       onClick={handleGoogleSignIn}
-      className="py-2 px-4 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none w-full"
+      className="flex items-center justify-center w-full gap-3 py-4 px-4 border border-gray-300 bg-white text-black rounded-lg shadow-md hover:bg-gray-100 transition duration-300"
     >
-      Sign in with Google
+      <img
+        src="https://developers.google.com/identity/images/g-logo.png"
+        alt="Google logo"
+        className="w-5 h-5"
+      />
+      <span className="text-sm font-medium">Sign in with Google</span>
     </button>
   );
 };
