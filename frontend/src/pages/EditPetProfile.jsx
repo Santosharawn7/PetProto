@@ -6,7 +6,7 @@ import axios from 'axios';
 export default function EditPetProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);      // separate loading for save/next
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [petProfile, setPetProfile] = useState({
     name: '',
@@ -15,7 +15,8 @@ export default function EditPetProfile() {
     sex: '',
     colour: '',
     location: '',
-    image: ''
+    image: '',
+    dob: '' // <-- Add dob state
   });
   const [speciesList, setSpeciesList] = useState([]);
   const [breedList, setBreedList] = useState([]);
@@ -50,7 +51,8 @@ export default function EditPetProfile() {
         sex:      pp.sex      || '',
         colour:   pp.colour   || '',
         location: pp.location || '',
-        image:    pp.image    || ''
+        image:    pp.image    || '',
+        dob:      pp.dob      || ''
       });
     })
     .catch(err => {
@@ -196,6 +198,18 @@ export default function EditPetProfile() {
           <input
             name="colour"
             value={petProfile.colour}
+            onChange={handleChange}
+            required
+            className="mt-1 w-full p-3 border rounded"
+          />
+        </div>
+        {/* Date of Birth */}
+        <div>
+          <label className="block text-sm font-medium">Date of Birth</label>
+          <input
+            type="date"
+            name="dob"
+            value={petProfile.dob}
             onChange={handleChange}
             required
             className="mt-1 w-full p-3 border rounded"

@@ -14,11 +14,15 @@ import SurveyPage from './components/Survey';
 import EditPetProfile from './pages/EditPetProfile';
 import ChatPage from './components/ChatPage';
 import CommunityPage from './components/CommunityPage';
+import FriendList from './components/FriendList';
+import PreHome from './components/Prehome';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+      <Route path="/prehome" element={<PreHome />} />
+
         <Route path="/" element={<Landing />} />
         <Route path="/register" element={<RegistrationForm />} />
         <Route path="/login" element={<Login />} />
@@ -80,6 +84,15 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/friends"
+          element={
+            <PrivateRoute>
+              <FriendList />
+            </PrivateRoute>
+          }
+        />
+
         
       </Routes>
     </BrowserRouter>

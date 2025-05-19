@@ -1,10 +1,23 @@
-// src/components/MatchPetProfile.jsx
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
+// Helper: compute years from dob ("YYYY-MM-DD")
+function getPetAge(dob) {
+  if (!dob) return null;
+  const dobDate = new Date(dob);
+  if (isNaN(dobDate.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - dobDate.getFullYear();
+  const m = now.getMonth() - dobDate.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dobDate.getDate())) {
+    age--;
+  }
+  return age;
+}
 
 const MatchPetProfile = () => {
   const navigate = useNavigate();
@@ -59,6 +72,7 @@ const MatchPetProfile = () => {
   const petScore = match.petMatchScore ?? 0;
   const personalityScore = match.sentimentMatchScore ?? 0;
   const totalScore = match.finalMatchScore ?? petScore + personalityScore;
+  const petAge = getPetAge(p.dob);
 
   const handleSendRequest = async () => {
     setSending(true);
@@ -85,7 +99,7 @@ const MatchPetProfile = () => {
 
   return (
     <div className="p-6 flex justify-center">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow overflow-hidden">
+      <div className="max-w-md w-full bg-black text-white rounded-2xl shadow overflow-hidden">
         {p.image && (
           <img
             src={p.image}
@@ -98,6 +112,8 @@ const MatchPetProfile = () => {
           <p className="mb-2"><strong>Species:</strong> {p.species}</p>
           <p className="mb-2"><strong>Breed:</strong> {p.breed}</p>
           <p className="mb-2"><strong>Sex:</strong> {p.sex}</p>
+          {/* Age */}
+          <p className="mb-2"><strong>Age:</strong> {petAge !== null ? `${petAge} year${petAge === 1 ? '' : 's'}` : 'N/A'}</p>
           <p className="mb-2"><strong>Colour:</strong> {p.colour}</p>
           <p className="mb-2"><strong>Location:</strong> {p.location}</p>
 
