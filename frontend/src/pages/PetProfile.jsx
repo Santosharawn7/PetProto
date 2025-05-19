@@ -1,14 +1,26 @@
-// src/PetProfile.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+// Helper to compute age from dob string ("YYYY-MM-DD")
+function getPetAge(dob) {
+  if (!dob) return null;
+  const dobDate = new Date(dob);
+  if (isNaN(dobDate.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - dobDate.getFullYear();
+  const m = now.getMonth() - dobDate.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dobDate.getDate())) {
+    age--;
+  }
+  return age;
+}
 
 export default function PetProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [petProfile, setPetProfile] = useState(null);
 
-  // Fetch current user's pet profile
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (!token) {
@@ -47,6 +59,9 @@ export default function PetProfile() {
     );
   }
 
+  // Compute pet age
+  const age = getPetAge(petProfile.dob);
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-slate-50">
       <div className="max-w-3xl w-full mx-auto p-6 bg-white rounded shadow">
@@ -64,6 +79,10 @@ export default function PetProfile() {
         <p className="mb-2"><strong>Sex:</strong> {petProfile.sex}</p>
         <p className="mb-2"><strong>Colour:</strong> {petProfile.colour}</p>
         <p className="mb-2"><strong>Location:</strong> {petProfile.location}</p>
+        <p className="mb-2">
+          <strong>Age:</strong>{" "}
+          {age !== null ? `${age} year${age === 1 ? "" : "s"}` : "N/A"}
+        </p>
         <div className="mt-6 flex justify-center space-x-4">
           <button
             onClick={() => navigate('/edit-pet')}

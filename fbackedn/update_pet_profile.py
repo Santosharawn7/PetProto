@@ -25,7 +25,8 @@ def update_pet_profile():
         return jsonify({'error': 'Invalid token: ' + str(e)}), 401
 
     data = request.json
-    required_fields = ['species', 'breed', 'sex', 'colour', 'image', 'location', 'name']
+    # Add 'dob' as required field
+    required_fields = ['species', 'breed', 'sex', 'colour', 'image', 'location', 'name', 'dob']
     missing = [field for field in required_fields if field not in data]
     if missing:
         return jsonify({'error': 'Missing fields: ' + ', '.join(missing)}), 400
@@ -41,7 +42,8 @@ def update_pet_profile():
                 'colour': data.get('colour'),
                 'image': data.get('image'),
                 'location': data.get('location'),
-                'name': data.get('name')
+                'name': data.get('name'),
+                'dob': data.get('dob')  # <-- Added DOB field
             }
         })
         return jsonify({'message': 'Pet profile updated successfully'}), 200

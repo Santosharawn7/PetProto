@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail } from 'firebase/auth';
+import LogoOmniverse from '../assets/LogoOmniverse.png';
 
 
 const RegistrationForm = () => {
@@ -96,8 +97,11 @@ const RegistrationForm = () => {
       </div> */}
       <div className="mb-6 text-center">
         <a className="inline-block mb-6" href="#">
-          <img className="h-20 w-50" src="https://web.petbridge.org/wp-content/uploads/2022/03/PetBridge-Meta-Image.png" alt="Logo" />
-        </a>
+        <img
+    className="h-50 w-50"
+    src={LogoOmniverse}
+    alt="Logo"
+  />        </a>
         <p className="text-lg text-coolGray-500 font-medium">
           Sign up into your account
         </p>
