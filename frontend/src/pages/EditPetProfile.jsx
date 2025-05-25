@@ -1,7 +1,7 @@
-// src/EditPetProfile.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import characteristicsList from '../data/characteristics.json'; // <-- Import JSON
 
 export default function EditPetProfile() {
   const navigate = useNavigate();
@@ -16,7 +16,8 @@ export default function EditPetProfile() {
     colour: '',
     location: '',
     image: '',
-    dob: '' // <-- Add dob state
+    dob: '',
+    characteristics: []
   });
   const [speciesList, setSpeciesList] = useState([]);
   const [breedList, setBreedList] = useState([]);
@@ -52,7 +53,8 @@ export default function EditPetProfile() {
         colour:   pp.colour   || '',
         location: pp.location || '',
         image:    pp.image    || '',
-        dob:      pp.dob      || ''
+        dob:      pp.dob      || '',
+        characteristics: pp.characteristics || []
       });
     })
     .catch(err => {
@@ -81,6 +83,19 @@ export default function EditPetProfile() {
   const handleChange = e => {
     const { name, value } = e.target;
     setPetProfile(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle characteristics selection
+  const handleCharacteristicToggle = (char) => {
+    setPetProfile(prev => {
+      let current = prev.characteristics || [];
+      if (current.includes(char)) {
+        return { ...prev, characteristics: current.filter(c => c !== char) };
+      } else if (current.length < 3) {
+        return { ...prev, characteristics: [...current, char] };
+      }
+      return prev; // do nothing if already 3
+    });
   };
 
   const saveProfile = async () => {
@@ -243,6 +258,30 @@ export default function EditPetProfile() {
             required
             className="mt-1 w-full p-3 border rounded"
           />
+        </div>
+        {/* --- Top 3 Characteristics --- */}
+        <div>
+          <label className="block text-sm font-medium">Top 3 Characteristics</label>
+          <div className="flex flex-wrap gap-3 mt-2">
+            {characteristicsList.map((char) => (
+              <label key={char} className="flex items-center space-x-2 cursor-pointer border px-3 py-2 rounded hover:bg-blue-50">
+                <input
+                  type="checkbox"
+                  checked={petProfile.characteristics.includes(char)}
+                  onChange={() => handleCharacteristicToggle(char)}
+                  disabled={
+                    !petProfile.characteristics.includes(char) &&
+                    petProfile.characteristics.length >= 3
+                  }
+                  className="accent-blue-600"
+                />
+                <span>{char}</span>
+              </label>
+            ))}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            (Select up to 3 characteristics)
+          </div>
         </div>
         {/* Buttons */}
         <div className="flex space-x-4">

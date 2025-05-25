@@ -144,17 +144,20 @@ const MatchPetProfile = () => {
             </div>
           </div>
 
-          {/* Capsules for showing the personality of the pets, should draws data from backend */}
+          {/* Capsules for showing the personality of the pets, should draw data from backend */}
           <div className="flex flex-wrap justify-center gap-4 mt-4 mb-10">
-            <span className="px-8 py-2 bg-blue-200 text-blue-900 rounded-full font-bold border-4 border-dotted text-lg shadow">
-              Playful
-            </span>
-            <span className="px-8 py-2 bg-green-200 text-green-900 rounded-full font-bold border-4 border-dotted text-lg shadow">
-              Cute
-            </span>
-            <span className="px-8 py-2 bg-purple-200 text-purple-900 rounded-full font-bold border-4 border-dotted text-lg shadow">
-              Friendly
-            </span>
+            {(p.characteristics && p.characteristics.length > 0) ? (
+              p.characteristics.map(char => (
+                <span
+                  key={char}
+                  className="px-8 py-2 bg-blue-200 text-blue-900 rounded-full font-bold border-4 border-dotted text-lg shadow"
+                >
+                  {char}
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-400">No characteristics listed</span>
+            )}
           </div>
 
           {/* Buttons */}
@@ -194,4 +197,3 @@ const MatchPetProfile = () => {
 };
 
 export default MatchPetProfile;
-

@@ -65,7 +65,6 @@ export default function PetProfile() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="bg-white shadow-2xl rounded-3xl overflow-hidden flex flex-col md:flex-row w-full max-w-5xl">
-        
         {/* Left: Image */}
         <div className="md:w-1/2 bg-blue-50 flex items-center justify-center p-8">
           {petProfile.image ? (
@@ -80,12 +79,10 @@ export default function PetProfile() {
             </div>
           )}
         </div>
-
         {/* Right: Info */}
         <div className="md:w-1/2 p-8 flex flex-col justify-between">
           <div>
             <h2 className="text-6xl font-bold text-black mb-8">{petProfile.name}</h2>
-            
             {/* Grid Info */}
             <div className="grid grid-cols-2 gap-4 text-black text-lg mb-6">
               <p><strong>Species:</strong> {petProfile.species}</p>
@@ -96,17 +93,25 @@ export default function PetProfile() {
               <p><strong>Location:</strong> {petProfile.location}</p>
             </div>
 
-            {/* Capsules for showing the personality of the pets, should draws data from backend */}
+            {/* Capsules for showing the personality of the pets, dynamic from backend */}
             <div className="flex flex-wrap justify-center gap-4 mt-10 mb-8">
-              <span className="px-8 py-2 bg-blue-200 text-blue-900 rounded-full font-bold border-4 border-dotted text-lg shadow">
-                Playful
-              </span>
-              <span className="px-8 py-2 bg-green-200 text-green-900 rounded-full font-bold border-4 border-dotted text-lg shadow">
-                Cute
-              </span>
-              <span className="px-8 py-2 bg-purple-200 text-purple-900 rounded-full font-bold border-4 border-dotted text-lg shadow">
-                Friendly
-              </span>
+              {(petProfile.characteristics || []).map((char, idx) => (
+                <span
+                  key={char}
+                  className={
+                    "px-8 py-2 rounded-full font-bold border-4 border-dotted text-lg shadow " +
+                    (idx === 0
+                      ? "bg-blue-200 text-blue-900"
+                      : idx === 1
+                      ? "bg-green-200 text-green-900"
+                      : idx === 2
+                      ? "bg-purple-200 text-purple-900"
+                      : "bg-gray-200 text-gray-900")
+                  }
+                >
+                  {char}
+                </span>
+              ))}
             </div>
 
             {/* Buttons - Centered */}
@@ -130,4 +135,3 @@ export default function PetProfile() {
     </div>
   );
 }
-
