@@ -17,6 +17,7 @@ from social_search import search_bp
 from social_events import events_bp
 from social_events import posts_bp
 from social_reactions import reactions_bp
+from pet_characteristics import pet_characteristics_bp
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS globally
@@ -43,6 +44,7 @@ app.register_blueprint(search_bp)
 app.register_blueprint(events_bp)
 app.register_blueprint(reactions_bp)
 app.register_blueprint(posts_bp)
+app.register_blueprint(pet_characteristics_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)
