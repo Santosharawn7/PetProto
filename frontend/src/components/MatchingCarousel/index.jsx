@@ -1,3 +1,4 @@
+// Matching carousel
 import React, { useRef, useEffect, useState } from 'react';
 
 const MatchingCarousel = ({ matches, onMatchClick }) => {
@@ -32,7 +33,7 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
       {/* Left Button */}
       <button
         onClick={scrollPrev}
-        className="absolute z-10 left-0 top-1/2 -translate-y-1/2 bg-white text-red-700 border border-red-600 p-4 rounded-full aspect-square shadow-lg hover:bg-red-800 hover:text-white transition text-3xl"
+        className="absolute z-10 left-2 top-1/2 -translate-y-1/2 bg-white text-gray-700 w-15 h-15 flex items-center justify-center rounded-full shadow-lg hover:bg-blue-800 hover:text-white transition text-3xl"
         disabled={visibleIndex === 0}
       >
         ‹
@@ -51,15 +52,15 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
             style={{ scrollSnapAlign: 'center' }}
           >
             <div
-              className="relative w-[28rem] h-[36rem] bg-black cursor-pointer rounded-2xl overflow-hidden shadow-xl"
+              className="relative w-[28rem] h-[36rem] bg-black hover:scale-90 transition-transform cursor-pointer rounded-2xl overflow-hidden shadow-xl"
               onClick={() => onMatchClick(u)}
             >
               <img
                 src={u.petProfile.image}
                 alt={u.petProfile.name}
-                className="w-full h-full object-contain"
+                className="w-full h-full border-6 object-contain"
               />
-              <h3 className="absolute bottom-4 left-4 text-4xl font-semibold text-white drop-shadow-xl">
+              <h3 className="absolute bottom-4 left-4 text-5xl font-bold text-white drop-shadow-xl">
                 {u.petProfile.name}
               </h3>
             </div>
@@ -70,7 +71,7 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
       {/* Right Button */}
       <button
         onClick={scrollNext}
-        className="absolute z-10 right-0 top-1/2 -translate-y-1/2 bg-white text-red-700 border border-red-600 p-4 rounded-full aspect-square shadow-lg hover:bg-red-800 hover:text-white transition text-3xl"
+        className="absolute z-10 right-2 top-1/2 -translate-y-1/2 bg-white text-gray-700 w-15 h-15 flex items-center justify-center rounded-full shadow-lg hover:bg-blue-800 hover:text-white transition text-3xl"
         disabled={visibleIndex === matches.length - 1}
       >
         ›
@@ -80,3 +81,4 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
 };
 
 export default MatchingCarousel;
+
