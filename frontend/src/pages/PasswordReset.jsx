@@ -27,18 +27,18 @@ const PasswordReset = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-slate-50">
+    <div className="flex justify-center items-center min-h-screen">
       <div className="max-w-md w-full mx-auto p-6 mt-6 bg-white rounded shadow">
         <h2 className="text-xl font-bold mb-4 text-center">Reset Password</h2>
         <form onSubmit={handleReset}>
           <div className="mb-4">
-            <label className="block mb-2 text-sm text-gray-600">Email Address</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Email Address*</label>
             <input
               type="email"
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-3 focus:ring-black"
               required
             />
           </div>
@@ -52,7 +52,7 @@ const PasswordReset = () => {
           {error && <p className="mt-4 text-red-600 text-center">{error}</p>}
         </form>
         <div className="mt-4 text-center">
-          <a href="/login" className="text-blue-600 hover:text-blue-700">Back to Login</a>
+          <a href="/login" className="block w-full py-2 px-4 text-center font-bold bg-purple-700 text-orange-300 rounded hover:bg-purple-900 transition duration-200">Back to Login</a>
         </div>
       </div>
     </div>
@@ -60,3 +60,4 @@ const PasswordReset = () => {
 };
 
 export default PasswordReset;
+

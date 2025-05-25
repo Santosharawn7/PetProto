@@ -146,13 +146,14 @@ const Login = () => {
     >
       <div className="container px-4 mx-auto">
         <div className="max-w-sm mx-auto">
-          <div className="mb-6 text-center">
-            <a className="inline-block mb-6" href="#">
-<img
-    className="h-50 w-50"
-    src={LogoOmniverse}
-    alt="Logo"
-  />              </a>
+          <div className="mb-8 text-center">
+            <a className="inline-block" href="#">
+              <img
+                  className="h-50 w-50"
+                  src={LogoOmniverse}
+                  alt="Logo"
+                />              
+            </a>
             <p className="text-lg text-coolGray-500 font-medium">
               Sign in to your account
             </p>
@@ -166,7 +167,7 @@ const Login = () => {
                 placeholder="Enter email or username"
                 value={formData.identifier}
                 onChange={handleChange}
-                className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+                className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
                 required
               />
             </div>
@@ -178,19 +179,19 @@ const Login = () => {
                 placeholder="Enter password"
                 value={formData.password}
                 onChange={handleChange}
-                className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+                className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
                 required
               />
             </div>
             <div className="my-4 text-right">
-                <a href="/password-reset" className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                <a href="/password-reset" className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-sm">
                      Forgot Password?
                 </a>
            </div>
             
            <button
               type="submit"
-              className="inline-block py-3 px-7 mb-4 w-full text-base text-green-50 font-medium text-center leading-6 bg-blue-600 hover:bg-blue-800 focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 rounded-md shadow-sm"
+              className="inline-block py-3 px-7 mb-4 w-full text-base text-green-50 font-medium text-center leading-6 bg-blue-600 hover:bg-blue-800 focus:ring-3 focus:ring-green-500 focus:ring-opacity-50 rounded-md shadow-sm"
             >
               Login
            </button>
