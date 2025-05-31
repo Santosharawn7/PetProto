@@ -97,8 +97,8 @@ const MatchPetProfile = () => {
   };
 
   return (
-    <div className="flex items-center justify-center p-8">
-      <div className="w-full max-w-7xl bg-white border border-gray-300 rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden">
+    <div className="flex items-center justify-center">
+      <div className="w-full max-w-5xl bg-white border border-gray-300 rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden">
         
         {/* Left: Image */}
         <div className="md:w-3xl w-full flex items-center justify-center">
@@ -106,38 +106,38 @@ const MatchPetProfile = () => {
             <img
               src={p.image}
               alt={p.name}
-              className="object-cover w-full h-full"
+              className=" md:w-[90%] md:h-[90%] rounded-3xl"
             />
           )}
         </div>
 
         {/* Right: Info */}
-        <div className="md:w-1/2 w-full p-10 flex flex-col justify-between">
+        <div className="md:w-1/2 w-full px-15 py-12 flex flex-col justify-between">
           <div>
             {/* Pet Name */}
             <h2 className="text-5xl font-extrabold text-gray-800 mb-6 text-left">{p.name}</h2>
 
             {/* Key Info */}
             <div className="text-lg text-gray-700 mb-6 space-y-2 text-left">
-              <p><strong className="mr-2">Species:</strong> {p.species}</p>
-              <p><strong className="mr-2">Breed:</strong> {p.breed}</p>
-              <p><strong className="mr-2">Sex:</strong> {p.sex}</p>
-              <p><strong className="mr-2">Colour:</strong> {p.colour}</p>
-              <p><strong className="mr-2">Age:</strong> {petAge !== null ? `${petAge} year${petAge === 1 ? '' : 's'}` : 'N/A'}</p>
-              <p><strong className="mr-2">Location:</strong> {p.location}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Species:</strong> {p.species}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Breed:</strong> {p.breed}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Sex:</strong> {p.sex}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Colour:</strong> {p.colour}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Age:</strong> {petAge !== null ? `${petAge} year${petAge === 1 ? '' : 's'}` : 'N/A'}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Location:</strong> {p.location}</p>
             </div>
 
             {/* Divider */}
-            <hr className="border-t border-gray-300 my-6" />
+            <hr className="border-t-2 border-gray-800 border-solid my-8" />
 
             {/* Match Score Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div className="text-gray-800 font-bold space-y-2 text-lg text-left">
                 <p>Pet Match Score: <span className=" text-purple-600"> {petScore}</span></p>
-                <p>Personality Match Score:<span className=" text-orange-600"> {personalityScore.toFixed(1)}</span></p>
+                <p className="whitespace-nowrap">Personality Match Score:<span className="flex-nowrap text-orange-600"> {personalityScore.toFixed(1)}</span></p>
               </div>
-              <div className="mt-8 mr-5 sm:mt-0 sm:ml-8">
-                <div className="w-27 h-27 flex items-center justify-center rounded-full border-7 border-green-500 border-double bg-green-100 text-green-700 font-bold text-xl shadow-md text-center">
+              <div className="mt-8 sm:mt-0 sm:ml-8 self-center text-center">
+                <div className="w-38 h-38 sm:w-27 sm:h-27 flex items-center justify-center rounded-full border-10 sm:border-7 border-green-500 border-double bg-green-100 text-green-700 font-bold text-2xl sm:text-xl shadow-md text-center">
                   Total<br />{totalScore.toFixed(1)}
                 </div>
               </div>
@@ -145,23 +145,28 @@ const MatchPetProfile = () => {
           </div>
 
           {/* Capsules for showing the personality of the pets, should draw data from backend */}
-          <div className="flex flex-wrap justify-center gap-4 mt-4 mb-10">
-            {(p.characteristics && p.characteristics.length > 0) ? (
-              p.characteristics.map(char => (
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10 mb-8">
+              {(p.characteristics || []).map((char, idx) => (
                 <span
                   key={char}
-                  className="px-8 py-2 bg-blue-200 text-blue-900 rounded-full font-bold border-4 border-dotted text-lg shadow"
+                  className={
+                    "px-7 py-4 sm:px-6 sm:py-2 rounded-full font-bold border-4 border-dotted text-2xl sm:text-lg shadow " +
+                    (idx === 0
+                      ? "bg-blue-200 text-blue-900"
+                      : idx === 1
+                      ? "bg-green-200 text-green-900"
+                      : idx === 2
+                      ? "bg-purple-200 text-purple-900"
+                      : "bg-gray-200 text-gray-900")
+                  }
                 >
                   {char}
                 </span>
-              ))
-            ) : (
-              <span className="text-gray-400">No characteristics listed</span>
-            )}
+              ))}
           </div>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4 sm:mt-10">
             <button
               onClick={() => navigate('/home')}
               className="px-6 py-3 bg-gray-600 font-bold text-white rounded-full hover:bg-gray-900 transition duration-200"

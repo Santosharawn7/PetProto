@@ -145,11 +145,11 @@ export default function EditPetProfile() {
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-6">
-      <h2 className="text-2xl font-semibold mb-4">Edit Pet Profile</h2>
+      <h2 className="text-3xl font-semibold mb-4">Edit Pet Profile</h2>
       <form onSubmit={handleSave} className="space-y-6">
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium">Name</label>
+          <label className="block text-base font-medium">Name</label>
           <input
             name="name"
             value={petProfile.name}
@@ -160,7 +160,7 @@ export default function EditPetProfile() {
         </div>
         {/* Species */}
         <div>
-          <label className="block text-sm font-medium">Species</label>
+          <label className="block text-base font-medium">Species</label>
           <select
             name="species"
             value={petProfile.species}
@@ -176,7 +176,7 @@ export default function EditPetProfile() {
         </div>
         {/* Breed */}
         <div>
-          <label className="block text-sm font-medium">Breed</label>
+          <label className="block text-base font-medium">Breed</label>
           <select
             name="breed"
             value={petProfile.breed}
@@ -193,7 +193,7 @@ export default function EditPetProfile() {
         </div>
         {/* Sex */}
         <div>
-          <label className="block text-sm font-medium">Sex</label>
+          <label className="block text-base font-medium">Sex</label>
           <select
             name="sex"
             value={petProfile.sex}
@@ -209,7 +209,7 @@ export default function EditPetProfile() {
         </div>
         {/* Colour */}
         <div>
-          <label className="block text-sm font-medium">Colour</label>
+          <label className="block text-base font-medium">Colour</label>
           <input
             name="colour"
             value={petProfile.colour}
@@ -220,7 +220,7 @@ export default function EditPetProfile() {
         </div>
         {/* Date of Birth */}
         <div>
-          <label className="block text-sm font-medium">Date of Birth</label>
+          <label className="block text-base font-medium">Date of Birth</label>
           <input
             type="date"
             name="dob"
@@ -232,7 +232,7 @@ export default function EditPetProfile() {
         </div>
         {/* Location */}
         <div>
-          <label className="block text-sm font-medium">Location</label>
+          <label className="block text-base font-medium">Location</label>
           <input
             list="cities"
             name="location"
@@ -250,7 +250,7 @@ export default function EditPetProfile() {
         </div>
         {/* Image URL */}
         <div>
-          <label className="block text-sm font-medium">Image URL</label>
+          <label className="block text-base font-medium">Image URL</label>
           <input
             name="image"
             value={petProfile.image}
@@ -261,8 +261,8 @@ export default function EditPetProfile() {
         </div>
         {/* --- Top 3 Characteristics --- */}
         <div>
-          <label className="block text-sm font-medium">Top 3 Characteristics</label>
-          <div className="flex flex-wrap gap-3 mt-2">
+          <label className="block text-base font-medium">Top 3 Characteristics</label>
+          <div className="flex flex-wrap justify-center gap-3 mt-4">
             {characteristicsList.map((char) => (
               <label key={char} className="flex items-center space-x-2 cursor-pointer border px-3 py-2 rounded hover:bg-blue-50">
                 <input
@@ -284,11 +284,11 @@ export default function EditPetProfile() {
           </div>
         </div>
         {/* Buttons */}
-        <div className="flex space-x-4">
+        <div className="flex justify-center space-x-6 sm:space-x-8">
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 sm:px-8 sm:py-3 bg-blue-600 text-white rounded hover:bg-blue-800"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -296,14 +296,14 @@ export default function EditPetProfile() {
             type="button"
             onClick={handleNext}
             disabled={saving}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            className="px-4 py-2 sm:px-8 sm:py-3 bg-green-600 text-white rounded hover:bg-green-800"
           >
             {saving ? 'Saving…' : 'Next'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/pet-profile')}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            className="px-4 py-2 sm:px-8 sm:py-3 bg-red-600 text-white rounded hover:bg-red-900"
           >
             Cancel
           </button>
