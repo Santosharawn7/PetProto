@@ -71,7 +71,7 @@ export default function PetProfile() {
             <img
               src={petProfile.image}
               alt={petProfile.name}
-              className="w-88 h-88 object-cover rounded-2xl shadow-lg"
+              className="md:w-93 md:h-90 object-cover rounded-2xl shadow-lg"
             />
           ) : (
             <div className="w-72 h-72 bg-gray-300 flex items-center justify-center text-gray-600 rounded-2xl">
@@ -84,7 +84,7 @@ export default function PetProfile() {
           <div>
             <h2 className="text-6xl font-bold text-black mb-8">{petProfile.name}</h2>
             {/* Grid Info */}
-            <div className="grid grid-cols-2 gap-4 text-black text-lg mb-6">
+            <div className="grid md:grid-cols-2 gap-4 text-black text-lg mb-6">
               <p><strong>Species:</strong> {petProfile.species}</p>
               <p><strong>Breed:</strong> {petProfile.breed}</p>
               <p><strong>Sex:</strong> {petProfile.sex}</p>
@@ -94,7 +94,7 @@ export default function PetProfile() {
             </div>
 
             {/* Capsules for showing the personality of the pets, dynamic from backend */}
-            <div className="flex flex-wrap justify-center gap-4 mt-10 mb-8">
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10 mb-10">
               {(petProfile.characteristics || []).map((char, idx) => (
                 <span
                   key={char}
@@ -115,7 +115,7 @@ export default function PetProfile() {
             </div>
 
             {/* Buttons - Centered */}
-            <div className="flex justify-center gap-6">
+            <div className="flex flex-col sm:flex-row sm:justify-around gap-4 justify-between mt-4 sm:mt-10">
               <button
                 onClick={() => navigate('/edit-pet')}
                 className="px-6 py-3 font-bold rounded-full text-white transition duration-200 bg-blue-600 hover:bg-blue-900"
@@ -124,7 +124,7 @@ export default function PetProfile() {
               </button>
               <button
                 onClick={() => navigate('/home')}
-                className="px-10 py-3 bg-gray-600 font-bold text-white rounded-full hover:bg-gray-900 transition duration-200"
+                className="px-6 py-3 bg-gray-600 font-bold text-white rounded-full hover:bg-gray-900 transition duration-200"
               >
                 Home
               </button>

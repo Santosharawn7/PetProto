@@ -11,7 +11,7 @@ import Header from '../components/Header';
 import Filters from '../components/Filter';
 import MatchingCarousel from '../components/MatchingCarousel';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaw, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faPaw } from '@fortawesome/free-solid-svg-icons';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
@@ -21,7 +21,7 @@ const Home = () => {
   const [matches, setMatches] = useState([]);
   const [error, setError] = useState('');
   const [speciesList] = useState([
-    'Dog','Cat','Bird','Fish','Reptile','Rabbit','Rodent'
+    'Dog', 'Cat', 'Bird', 'Fish', 'Reptile', 'Rabbit', 'Rodent'
   ]);
   const [breedList, setBreedList] = useState([]);
   const [locationList, setLocationList] = useState([]);
@@ -33,7 +33,6 @@ const Home = () => {
   const [filterLocation, setFilterLocation] = useState('');
   const [petNameQuery, setPetNameQuery] = useState('');
 
-  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
@@ -47,7 +46,6 @@ const Home = () => {
       if (!token) return navigate('/login');
 
       try {
-        // Load current user and city list in parallel
         const [userRes, cities] = await Promise.all([
           getCurrentUser(token),
           getWorldCities()
@@ -70,9 +68,9 @@ const Home = () => {
           const petRes = await getPetMatches(token);
           matchData = petRes.data.matches;
         }
+
         setMatches(matchData);
 
-        // Load breed list for this species
         const breeds = await getBreedsBySpecies(userSpecies);
         setBreedList(breeds);
       } catch (err) {
@@ -86,17 +84,16 @@ const Home = () => {
     init();
   }, [navigate]);
 
-  // Apply filters and sort by finalMatchScore (fall back to petMatchScore if final missing)
   const sortedMatches = matches
     .filter(u => {
       const p = u.petProfile || {};
-        if (filterSpecies !== 'All' && p.species !== filterSpecies) return false;
-        if (filterBreed   !== 'All' && p.breed   !== filterBreed)   return false;
-        if (filterSex     !== 'All' && p.sex     !== filterSex)     return false;
-        if (filterColour  !== 'All' && p.colour  !== filterColour)  return false;
-        if (filterLocation && !p.location?.toLowerCase().includes(filterLocation.toLowerCase())) return false;
-        if (petNameQuery && !p.name?.toLowerCase().includes(petNameQuery.toLowerCase())) return false;
-        return true;
+      if (filterSpecies !== 'All' && p.species !== filterSpecies) return false;
+      if (filterBreed !== 'All' && p.breed !== filterBreed) return false;
+      if (filterSex !== 'All' && p.sex !== filterSex) return false;
+      if (filterColour !== 'All' && p.colour !== filterColour) return false;
+      if (filterLocation && !p.location?.toLowerCase().includes(filterLocation.toLowerCase())) return false;
+      if (petNameQuery && !p.name?.toLowerCase().includes(petNameQuery.toLowerCase())) return false;
+      return true;
     })
     .sort((a, b) => {
       const aScore = (a.finalMatchScore ?? a.petMatchScore) || 0;
@@ -123,23 +120,8 @@ const Home = () => {
       />
 
       {showSearchModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-start justify-center pt-20">
-          <div className="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 relative">
-            <button
-              onClick={() => setShowSearchModal(false)}
-              className="absolute top-1 right-2 font-bold text-gray-500 hover:text-gray-800 text-2xl"
-            >
-              ×
-            </button>
-
-            <input
-              type="text"
-              placeholder="Enter pet name..."
-              value={petNameQuery}
-              onChange={(e) => setPetNameQuery(e.target.value)}
-              className="w-full p-2 mb-4 border rounded bg-gray-50"
-            />
-
+        <div className="fixed inset-0 bg-gradient-to-r from-orange-100 to-purple-100 bg-opacity-30 z-50 flex items-start justify-center pt-20 px-2">
+          <div className="bg-[#fffffc] w-full max-w-3xl rounded-lg shadow-lg p-4 relative">
             <Filters
               speciesList={speciesList}
               breedList={breedList}
@@ -153,11 +135,14 @@ const Home = () => {
               setFilterSex={setFilterSex}
               setFilterColour={setFilterColour}
               setFilterLocation={setFilterLocation}
+              petName={petNameQuery}
+              setPetName={setPetNameQuery}
+              onClose={() => setShowSearchModal(false)}
             />
 
             <div className="text-right">
               <button
-                className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
                 onClick={() => setShowSearchModal(false)}
               >
                 Apply Filters

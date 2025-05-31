@@ -22,6 +22,12 @@ def _get_display_name(db, uid):
         return data.get('petProfile', {}).get('name') or data.get('displayName') or uid
     return uid
 
+def _get_pet_avatar(db, uid):
+    user_doc = db.collection('users').document(uid).get()
+    if user_doc.exists:
+        return user_doc.to_dict().get('petProfile', {}).get('image')
+    return None
+
 @chat_bp.route('/chats', methods=['GET', 'POST', 'OPTIONS'])
 @cross_origin()
 def chats():
@@ -52,6 +58,7 @@ def chats():
                 other_names.append(_get_display_name(db, ouid))
             c['otherUserName'] = ", ".join(other_names)
             c['otherUserUid'] = other_uids[0] if other_uids else None
+            c['otherUserAvatar'] = _get_pet_avatar(db, c['otherUserUid'])
             chats.append(c)
         return jsonify({'chats': chats}), 200
 

@@ -93,21 +93,15 @@ export default function SurveyPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Tell us about your pet</h2>
-        <button
-          onClick={() => navigate('/home')}
-          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
-          Home
-        </button>
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow mt-6">
+      <div className="mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold whitespace-nowrap">~Tell Us About Your Pet~</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {questions.map((q, idx) => (
           <div key={idx}>
-            <label className="block text-sm font-medium mb-1">{q}</label>
+            <label className="block text-base font-medium mb-1">{q}</label>
             <textarea
               value={responses[q]}
               onChange={e => handleChange(q, e.target.value)}
@@ -117,18 +111,24 @@ export default function SurveyPage() {
           </div>
         ))}
 
-        <div className="flex space-x-4">
+        <div className="flex flex-col sm:flex-row sm:space-x-4 justify-center">
+          <button
+            onClick={() => navigate('/home')}
+            className="mt-4 bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-900"
+          >
+            Home
+          </button>
           <button
             type="submit"
             disabled={loading}
-            className="mt-4 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+            className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-800"
           >
             {loading ? 'Saving…' : 'See Matches'}
           </button>
           <button
             type="button"
             onClick={handleProceed}
-            className="mt-4 bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
+            className="mt-4 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-900"
           >
             Proceed Without Answering
           </button>

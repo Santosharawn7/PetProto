@@ -65,8 +65,8 @@ export default function FriendList() {
   };
 
   return (
-    <div className="w-full max-w-xs bg-white rounded-xl shadow p-0 border" style={{ minWidth: 260 }}>
-      <h2 className="text-center font-bold text-lg px-4 py-3 border-b">Chats</h2>
+    <div className="w-full max-w-xs bg-white rounded-xl shadow p-0" style={{ minWidth: 260 }}>
+      <h2 className="text-center font-bold text-xl px-4 py-3 border-b-3">Chats</h2>
       {loading ? (
         <div className="text-center text-gray-400 py-6">Loading…</div>
       ) : friends.length === 0 ? (
@@ -77,9 +77,9 @@ export default function FriendList() {
             <li
               key={friend.uid}
               className="
-                flex items-center px-3 py-3 gap-3 cursor-pointer
-                hover:bg-gray-50 active:bg-gray-100 transition
-                rounded-md
+                flex items-center px-3 py-2 gap-3 cursor-pointer
+                hover:bg-gray-200 active:bg-gray-400 transition
+                border-b
               "
               tabIndex={0}
               onClick={() => openChat(friend.uid)}
@@ -87,7 +87,7 @@ export default function FriendList() {
               <img
                 src={friend.avatarUrl || PLACEHOLDER_AVATAR}
                 alt={friend.displayName}
-                className="w-11 h-11 rounded-full object-cover border"
+                className="w-11 h-11 rounded-full object-cover border-green-500 border-3"
               />
               <div className="flex flex-col flex-1 overflow-hidden">
                 <span className="font-semibold text-base text-gray-900 truncate">
