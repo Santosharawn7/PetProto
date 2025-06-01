@@ -1,5 +1,7 @@
 Flask
 firebase-admin
 requests
-flask_cors
+flask-cors
 textblob
+gunicorn
+python-dotenv

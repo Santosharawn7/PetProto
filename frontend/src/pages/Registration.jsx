@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, fetchSignInMethodsForEmail } from 'firebase/auth';
 import LogoOmniverse from '../assets/LogoOmniverse.png';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 const RegistrationForm = () => {
 
@@ -48,50 +49,58 @@ const RegistrationForm = () => {
   };
 
   // Handle form submission by posting registration data to the backend
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // prevents the browser from reloading the page when the form is submitted — which is default behavior for HTML forms. 
 
-    if (!agreed) {
-      setMessage("You must agree to the Terms & Conditions before signing up.");
+const getVerificationUrl = () => {
+  const { origin } = window.location;
+  if (origin.startsWith('http://localhost')) {
+    return `${origin}/login`;
+  }
+  return 'https://pet-proto.vercel.app/login';
+};
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!agreed) {
+    setMessage("You must agree to the Terms & Conditions before signing up.");
+    return;
+  }
+
+  if (formData.password !== confirmPassword) {
+    setMessage("Passwords do not match");
+    return;
+  }
+
+  try {
+    // Check if this email is already registered via Google
+    const methods = await fetchSignInMethodsForEmail(auth, formData.email);
+    if (methods.includes('google.com')) {
+      setMessage("This email is already registered via Google Sign-In. Please use the Google login option.");
       return;
     }
 
-    // Check that password and confirmation match
-    if (formData.password !== confirmPassword) {
-      setMessage("Passwords do not match");
-      return;
-    }
+    // Register user with Firebase Authentication
+    const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+    const user = userCredential.user;
 
-    try {
+    // Send email verification with dynamic URL
+    const verificationUrl = getVerificationUrl();
+    await sendEmailVerification(user, {
+      url: verificationUrl,
+    });
 
-      // Check if this email is already registered via Google
-      const methods = await fetchSignInMethodsForEmail(auth, formData.email);
-      if (methods.includes('google.com')) {
-        setMessage("This email is already registered via Google Sign-In. Please use the Google login option.");
-        return;
-      }
+    // Save user info in Firestore via backend
+    const backendData = { ...formData, uid: user.uid };
+    await axios.post(`${API_URL}/register`, backendData);
 
-      // Register user with Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password); // userCredential contains info about the newly created user  
-      const user = userCredential.user; // actual Firebase user object
+    setMessage("Registration successful! Please check your email to verify.");
+    setTimeout(() => navigate('/login'), 3000);
 
-      // Send email verification
-      await sendEmailVerification(user, { // The email uses the default Firebase template.
-        url: 'http://localhost:5173/login',  
-      });
+  } catch (error) {
+    setMessage(error.message || 'Registration failed');
+  }
+};
 
-      // Save user info in Firestore via backend
-      const backendData = { ...formData, uid: user.uid };
-      await axios.post('http://127.0.0.1:5000/register', backendData);
-
-      setMessage("Registration successful! Please check your email to verify.");
-      setTimeout(() => navigate('/login'), 3000); // After 3 seconds, it redirects the user to the login page
-      
-    } catch (error) {
-      setMessage(error.message || 'Registration failed');
-    }
-
-  };
 
   return (
     <div className="max-w-4xl max-sm:max-w-lg mx-auto p-6 mt-6">

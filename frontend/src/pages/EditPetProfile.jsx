@@ -38,9 +38,11 @@ export default function EditPetProfile() {
   }, []);
 
   // Fetch existing pet profile
+  const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
   useEffect(() => {
     const token = localStorage.getItem('userToken');
-    axios.get('http://127.0.0.1:5000/current_user', {
+    axios.get(`${API_URL}/current_user`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => {
@@ -64,6 +66,7 @@ export default function EditPetProfile() {
       setLoading(false);
     });
   }, []);
+  
 
   // Update breed list based on species
   useEffect(() => {

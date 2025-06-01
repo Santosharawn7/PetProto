@@ -49,11 +49,14 @@ const GoogleSignIn = () => {
       localStorage.setItem('userToken', idToken);
 
       // Now fetch the current user's registration info from the backend
-      const userRes = await axios.get('http://127.0.0.1:5000/current_user', {
-          headers: { Authorization: `Bearer ${idToken}` }
+      const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
+      const userRes = await axios.get(`${API_URL}/current_user`, {
+        headers: { Authorization: `Bearer ${idToken}` }
       });
       console.log("Current user data:", userRes.data);
       const userData = userRes.data;
+      
       
       // Required registration fields
       if (

@@ -26,32 +26,35 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage('');  // clear any old message
-    try {
-      const response = await axios.post('http://127.0.0.1:5000/login', formData);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
-      if (response.data.idToken) { // Checks if the backend response includes an idToken
-        localStorage.setItem('userToken', response.data.idToken); //  Stores the idToken in the browser’s local storage under the key "userToken", so you can use it later to authenticate protected routes or API requests.
-        navigate('/home');
-      } else {
-        setMessage("Login error: No valid token returned");
-      }
-    } catch (error) {
-      if (error.response) {
-        // If your backend returns 404 for missing user:
-        if (error.response.status === 404) {
-          setMessage('User not found');
-        } else {
-          setMessage(error.response.data.error || 'Login failed');
-        }
-      } else {
-        // Network / other errors
-        setMessage('Login failed – please check your connection');
-      }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setMessage('');  // clear any old message
+  try {
+    const response = await axios.post(`${API_URL}/login`, formData);
+
+    if (response.data.idToken) { // Checks if the backend response includes an idToken
+      localStorage.setItem('userToken', response.data.idToken); //  Stores the idToken in the browser’s local storage under the key "userToken", so you can use it later to authenticate protected routes or API requests.
+      navigate('/home');
+    } else {
+      setMessage("Login error: No valid token returned");
     }
-  };
+  } catch (error) {
+    if (error.response) {
+      // If your backend returns 404 for missing user:
+      if (error.response.status === 404) {
+        setMessage('User not found');
+      } else {
+        setMessage(error.response.data.error || 'Login failed');
+      }
+    } else {
+      // Network / other errors
+      setMessage('Login failed – please check your connection');
+    }
+  }
+};
+
 
   return (
     // <div className="flex justify-center items-center min-h-screen bg-[#EDE8D0]">
