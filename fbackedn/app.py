@@ -1,10 +1,9 @@
-# app.py
 from flask import Flask
 from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, firestore
 from register import register_bp
-from login import login_bp  # import the login blueprint
+from login import login_bp
 from google_signin import google_signin_bp
 from matches import matches_bp
 from update_pet_profile import update_pet_profile_bp
@@ -18,15 +17,37 @@ from social_events import events_bp
 from social_events import posts_bp
 from social_reactions import reactions_bp
 from pet_characteristics import pet_characteristics_bp
+from dotenv import load_dotenv
+import os
+import json
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS globally
+CORS(app)
 
-# Initialize Firebase Admin with your service account key
-cred = credentials.Certificate("serviceAccountKey.json")
+load_dotenv()
+
+# --- Firebase credentials loading ---
+cred = None
+cred_json = os.environ.get("GOOGLE_CREDENTIALS")
+
+if cred_json:
+    try:
+        cred = credentials.Certificate(json.loads(cred_json))
+        print("Loaded Firebase credentials from environment variable.")
+    except Exception as e:
+        print("Error loading credentials from GOOGLE_CREDENTIALS:", e)
+        raise
+elif os.path.exists("serviceAccountKey.json"):
+    try:
+        cred = credentials.Certificate("serviceAccountKey.json")
+        print("Loaded Firebase credentials from serviceAccountKey.json file.")
+    except Exception as e:
+        print("Error loading credentials from file:", e)
+        raise
+else:
+    raise RuntimeError("No Firebase credentials found! Set GOOGLE_CREDENTIALS env variable or provide serviceAccountKey.json.")
+
 firebase_admin.initialize_app(cred)
-
-# (Optional) Create Firestore client instance if needed elsewhere
 db = firestore.client()
 
 # Register Blueprints for registration and login
