@@ -5,7 +5,7 @@ from firebase_admin import auth, firestore
 pet_characteristics_bp = Blueprint('pet_characteristics_bp', __name__)
 
 @pet_characteristics_bp.route('/pet-characteristics', methods=['POST', 'OPTIONS'])
-
+@cross_origin()
 def set_pet_characteristics():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -40,7 +40,7 @@ def set_pet_characteristics():
     return jsonify({'message': 'Characteristics updated', 'characteristics': characteristics}), 200
 
 @pet_characteristics_bp.route('/pet-characteristics', methods=['GET'])
-
+@cross_origin()
 def get_pet_characteristics():
     token_header = request.headers.get('Authorization')
     if not token_header:

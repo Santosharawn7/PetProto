@@ -6,7 +6,7 @@
 # register_bp = Blueprint('register_bp', __name__)
 
 # @register_bp.route('/register', methods=['POST', 'OPTIONS'])
-# 
+# @cross_origin()
 # def register():
 #     if request.method == 'OPTIONS':
 #         # Handle the preflight OPTIONS request
@@ -66,7 +66,7 @@ from firebase_admin import firestore
 register_bp = Blueprint('register_bp', __name__)
 
 @register_bp.route('/register', methods=['POST', 'OPTIONS'])
-
+@cross_origin()
 def register():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
