@@ -7,7 +7,7 @@ from firebase_admin import auth, firestore
 google_signin_bp = Blueprint('google_signin_bp', __name__)
 
 @google_signin_bp.route('/google_signin', methods=['POST', 'OPTIONS'])
-@cross_origin()
+
 def google_signin():
     if request.method == 'OPTIONS':
         # Manually handle preflight requests if needed.

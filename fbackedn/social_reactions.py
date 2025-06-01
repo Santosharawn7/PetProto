@@ -16,7 +16,7 @@ def _get_uid(req):
         return None
 
 @reactions_bp.route('/reactions', methods=['GET','POST','OPTIONS'])
-@cross_origin()
+
 def reactions():
     if request.method == 'OPTIONS':
         return jsonify({}), 200

@@ -33,7 +33,7 @@ def calculate_sentiment_match_score(curr_responses, other_responses):
     return (total_similarity / count * 10) if count else 0.0
 
 @sentiment_bp.route('/sentiment-matches', methods=['GET', 'OPTIONS'])
-@cross_origin()
+
 def get_sentiment_matches():
     # Handle CORS preflight
     if request.method == 'OPTIONS':

@@ -10,7 +10,7 @@ login_bp = Blueprint('login_bp', __name__)
 FIREBASE_API_KEY = 'AIzaSyCOOEKSMcSF_dQkFScyJWtBePqHJwsCHF8'
 
 @login_bp.route('/login', methods=['POST', 'OPTIONS'])
-@cross_origin()  # This helps set some CORS headers automatically
+  # This helps set some CORS headers automatically
 def login():
     if request.method == 'OPTIONS':
         # Manually handle the preflight OPTIONS request

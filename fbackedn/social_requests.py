@@ -32,7 +32,7 @@ def send_push(to_uid, title, body, data=None):
             print("FCM send error:", e)
 
 @requests_bp.route('/send-request', methods=['POST', 'OPTIONS'])
-@cross_origin()
+
 def send_request():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -85,7 +85,7 @@ def send_request():
     return jsonify({'message': 'Request sent', 'requestId': req_ref.id}), 201
 
 @requests_bp.route('/requests', methods=['GET', 'OPTIONS'])
-@cross_origin()
+
 def list_requests():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -132,7 +132,7 @@ def list_requests():
     }), 200
 
 @requests_bp.route('/requests/<request_id>/respond', methods=['POST', 'OPTIONS'])
-@cross_origin()
+
 def respond_request(request_id):
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -200,7 +200,7 @@ def respond_request(request_id):
     return jsonify({'message': f'Request {action}ed'}), 200
 
 @requests_bp.route('/blocked', methods=['GET', 'OPTIONS'])
-@cross_origin()
+
 def list_blocked():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -215,7 +215,7 @@ def list_blocked():
     return jsonify({'blocked': user.get('blockedUsers', [])}), 200
 
 @requests_bp.route('/approved-friends', methods=['GET', 'OPTIONS'])
-@cross_origin()
+
 def approved_friends():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
