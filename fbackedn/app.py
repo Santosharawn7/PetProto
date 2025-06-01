@@ -22,7 +22,11 @@ import os
 import json
 
 app = Flask(__name__)
-CORS(app, origins=["https://pet-proto.vercel.app/"])
+
+CORS(app, origins=[
+    "https://pet-proto.vercel.app",            # Vercel frontend
+    r"http://localhost:\d+$",                  # Any localhost port (regex)
+])
 
 load_dotenv()
 
