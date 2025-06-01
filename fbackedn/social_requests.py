@@ -104,14 +104,27 @@ def list_requests():
     user = user_snap.to_dict() or {}
     inc = user.get('incomingRequests', [])
     out = user.get('outgoingRequests', [])
-
+    
     def fetch(ids):
         out = []
         for i in ids:
             doc = db.collection('requests').document(i).get()
-            if doc.exists:
-                out.append({**doc.to_dict(), 'id': i})
+            if not doc.exists:
+                continue
+            data = doc.to_dict()
+            from_uid = data['from']
+            from_user_doc = db.collection('users').document(from_uid).get()
+            from_user = from_user_doc.to_dict() if from_user_doc.exists else {}
+            pet_name = from_user.get('petProfile', {}).get('name') or from_user.get('displayName') or from_uid
+            avatar = from_user.get('petProfile', {}).get('image')
+            out.append({
+                **data,
+                'id': i,
+                'fromPetName': pet_name,
+                'fromAvatar': avatar
+            })
         return out
+
 
     return jsonify({
         'incoming': fetch(inc),
@@ -245,9 +258,11 @@ def approved_friends():
             user_data = user_doc.to_dict()
             pet_name = user_data.get('petProfile', {}).get('name')
             display_name = pet_name or user_data.get('displayName') or fid
+            avatarUrl = user_data.get('petProfile', {}).get('image')
             friends.append({
                 'uid': fid,
-                'displayName': display_name
+                'displayName': display_name,
+                'avatarUrl': avatarUrl
             })
 
     return jsonify({'friends': friends}), 200

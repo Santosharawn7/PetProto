@@ -28,7 +28,6 @@ const MatchPetProfile = () => {
   const [sent, setSent] = useState(false);
   const [chatId, setChatId] = useState(null);
 
-  // Poll for existing chat every 5s
   useEffect(() => {
     if (!match) return;
     let interval;
@@ -98,41 +97,79 @@ const MatchPetProfile = () => {
   };
 
   return (
-    <div className="p-6 flex justify-center">
-      <div className="max-w-md w-full bg-black text-white rounded-2xl shadow overflow-hidden">
-        {p.image && (
-          <img
-            src={p.image}
-            alt={p.name}
-            className="w-full h-64 object-cover"
-          />
-        )}
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-4">{p.name}</h2>
-          <p className="mb-2"><strong>Species:</strong> {p.species}</p>
-          <p className="mb-2"><strong>Breed:</strong> {p.breed}</p>
-          <p className="mb-2"><strong>Sex:</strong> {p.sex}</p>
-          {/* Age */}
-          <p className="mb-2"><strong>Age:</strong> {petAge !== null ? `${petAge} year${petAge === 1 ? '' : 's'}` : 'N/A'}</p>
-          <p className="mb-2"><strong>Colour:</strong> {p.colour}</p>
-          <p className="mb-2"><strong>Location:</strong> {p.location}</p>
+    <div className="flex items-center justify-center">
+      <div className="w-full max-w-5xl bg-white border border-gray-300 rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden">
+        
+        {/* Left: Image */}
+        <div className="md:w-3xl w-full flex items-center justify-center">
+          {p.image && (
+            <img
+              src={p.image}
+              alt={p.name}
+              className=" md:w-[90%] md:h-[90%] rounded-3xl"
+            />
+          )}
+        </div>
 
-          <div className="mt-4 space-y-2">
-            <p className="text-lg">
-              <strong>Pet Match Score:</strong> {petScore}
-            </p>
-            <p className="text-lg">
-              <strong>Personality Match Score:</strong> {personalityScore.toFixed(1)}
-            </p>
-            <p className="text-2xl font-semibold">
-              <strong>Total Score:</strong> {totalScore.toFixed(1)}
-            </p>
+        {/* Right: Info */}
+        <div className="md:w-1/2 w-full px-15 py-12 flex flex-col justify-between">
+          <div>
+            {/* Pet Name */}
+            <h2 className="text-5xl font-extrabold text-gray-800 mb-6 text-left">{p.name}</h2>
+
+            {/* Key Info */}
+            <div className="text-lg text-gray-700 mb-6 space-y-2 text-left">
+              <p className="whitespace-nowrap"><strong className="mr-2">Species:</strong> {p.species}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Breed:</strong> {p.breed}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Sex:</strong> {p.sex}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Colour:</strong> {p.colour}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Age:</strong> {petAge !== null ? `${petAge} year${petAge === 1 ? '' : 's'}` : 'N/A'}</p>
+              <p className="whitespace-nowrap"><strong className="mr-2">Location:</strong> {p.location}</p>
+            </div>
+
+            {/* Divider */}
+            <hr className="border-t-2 border-gray-800 border-solid my-8" />
+
+            {/* Match Score Section */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div className="text-gray-800 font-bold space-y-2 text-lg text-left">
+                <p>Pet Match Score: <span className=" text-purple-600"> {petScore}</span></p>
+                <p className="whitespace-nowrap">Personality Match Score:<span className="flex-nowrap text-orange-600"> {personalityScore.toFixed(1)}</span></p>
+              </div>
+              <div className="mt-8 sm:mt-0 sm:ml-8 self-center text-center">
+                <div className="w-38 h-38 sm:w-27 sm:h-27 flex items-center justify-center rounded-full border-10 sm:border-7 border-green-500 border-double bg-green-100 text-green-700 font-bold text-2xl sm:text-xl shadow-md text-center">
+                  Total<br />{totalScore.toFixed(1)}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-6 flex justify-between">
+          {/* Capsules for showing the personality of the pets, should draw data from backend */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10 mb-8">
+              {(p.characteristics || []).map((char, idx) => (
+                <span
+                  key={char}
+                  className={
+                    "px-7 py-4 sm:px-6 sm:py-2 rounded-full font-bold border-4 border-dotted text-2xl sm:text-lg shadow " +
+                    (idx === 0
+                      ? "bg-blue-200 text-blue-900"
+                      : idx === 1
+                      ? "bg-green-200 text-green-900"
+                      : idx === 2
+                      ? "bg-purple-200 text-purple-900"
+                      : "bg-gray-200 text-gray-900")
+                  }
+                >
+                  {char}
+                </span>
+              ))}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4 sm:mt-10">
             <button
               onClick={() => navigate('/home')}
-              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              className="px-6 py-3 bg-gray-600 font-bold text-white rounded-full hover:bg-gray-900 transition duration-200"
             >
               Back to Home
             </button>
@@ -140,7 +177,7 @@ const MatchPetProfile = () => {
             {chatId ? (
               <button
                 onClick={handleMessage}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                className="px-6 py-3 font-bold bg-green-600 text-white rounded-full hover:bg-green-900 transition duration-200"
               >
                 Message
               </button>
@@ -148,10 +185,10 @@ const MatchPetProfile = () => {
               <button
                 onClick={handleSendRequest}
                 disabled={sending || sent}
-                className={`px-4 py-2 rounded text-white ${
+                className={`px-6 py-3 font-bold rounded-full text-white transition duration-200 ${
                   sent
                     ? 'bg-gray-500 cursor-default'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-blue-600 hover:bg-blue-900'
                 } ${sending ? 'opacity-50 cursor-wait' : ''}`}
               >
                 {sent ? 'Request Sent' : sending ? 'Sending...' : 'Send Request'}

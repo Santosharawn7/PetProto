@@ -20,6 +20,7 @@ function formatDate(date) {
 export default function ChatPage() {
   const { chatId: paramChatId } = useParams();
   const navigate = useNavigate();
+  const [otherUserAvatar, setOtherUserAvatar] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loadingMsgs, setLoadingMsgs] = useState(true);
@@ -44,6 +45,23 @@ export default function ChatPage() {
     }
   };
 
+  const fetchChatMetadata = async () => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await axios.get(`${API_URL}/chats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const currentChat = res.data.chats.find(chat => chat.id === paramChatId);
+      if (currentChat) {
+        setOtherUserAvatar(currentChat.otherUserAvatar);
+      }
+    } catch {
+      setOtherUserAvatar(null);
+    }
+  };
+  
+  fetchChatMetadata();
+  
   useEffect(() => {
     if (paramChatId) {
       fetchMessages(paramChatId);
@@ -77,17 +95,24 @@ export default function ChatPage() {
     messages.find(m => m.from !== currentUid)?.authorName || "Chat";
 
   return (
-    <div className="flex flex-col h-screen bg-white">
-      <Header />
+    <div className="flex flex-col h-screen ">
+      <Header/>
       {/* Header Bar */}
-      <header className="flex items-center p-4 border-b gap-3">
+      <header className="flex items-center -mt-4 p-5 border-b gap-3 bg-white">
         <button
           onClick={() => navigate('/home')}
           className="mr-2 text-2xl font-bold"
         >
           &larr;
         </button>
-        <h1 className="text-lg font-semibold">{otherDisplayName}</h1>
+        {otherUserAvatar && (
+          <img
+            src={otherUserAvatar}
+            alt="Pet Avatar"
+            className="w-13 h-13 rounded-full object-cover border-green-500 border-3"
+          />
+        )}
+        <h1 className="text-xl font-semibold">{otherDisplayName}</h1>
       </header>
 
       {/* Messages */}

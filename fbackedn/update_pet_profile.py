@@ -1,4 +1,3 @@
-# update_pet_profile.py
 from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
 from firebase_admin import auth, firestore
@@ -9,9 +8,7 @@ update_pet_profile_bp = Blueprint('update_pet_profile_bp', __name__)
 @cross_origin()
 def update_pet_profile():
     if request.method == 'OPTIONS':
-        response = jsonify({})
-        response.status_code = 200
-        return response
+        return jsonify({}), 200
 
     token_header = request.headers.get('Authorization')
     if not token_header:
@@ -31,20 +28,27 @@ def update_pet_profile():
     if missing:
         return jsonify({'error': 'Missing fields: ' + ', '.join(missing)}), 400
 
+    # characteristics is optional but if provided, must be a list of up to 3
+    characteristics = data.get('characteristics', [])
+    if characteristics:
+        if not isinstance(characteristics, list) or len(characteristics) > 3:
+            return jsonify({'error': 'characteristics must be a list with up to 3 items.'}), 400
+
     db = firestore.client()
     try:
-        # Update the user's document by setting a subdocument called "petProfile"
+        pet_profile = {
+            'species': data.get('species'),
+            'breed': data.get('breed'),
+            'sex': data.get('sex'),
+            'colour': data.get('colour'),
+            'image': data.get('image'),
+            'location': data.get('location'),
+            'name': data.get('name'),
+            'dob': data.get('dob'),
+            'characteristics': characteristics  # <- Add/overwrite field
+        }
         db.collection('users').document(uid).update({
-            'petProfile': {
-                'species': data.get('species'),
-                'breed': data.get('breed'),
-                'sex': data.get('sex'),
-                'colour': data.get('colour'),
-                'image': data.get('image'),
-                'location': data.get('location'),
-                'name': data.get('name'),
-                'dob': data.get('dob')  # <-- Added DOB field
-            }
+            'petProfile': pet_profile
         })
         return jsonify({'message': 'Pet profile updated successfully'}), 200
     except Exception as e:

@@ -25,6 +25,7 @@ const RegistrationForm = () => {
 
   // Separate state for password confirmation
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [message, setMessage] = useState('');
 
   // If the user is already logged in (session exists), redirect to home
@@ -49,6 +50,11 @@ const RegistrationForm = () => {
   // Handle form submission by posting registration data to the backend
   const handleSubmit = async (e) => {
     e.preventDefault(); // prevents the browser from reloading the page when the form is submitted — which is default behavior for HTML forms. 
+
+    if (!agreed) {
+      setMessage("You must agree to the Terms & Conditions before signing up.");
+      return;
+    }
 
     // Check that password and confirmation match
     if (formData.password !== confirmPassword) {
@@ -89,23 +95,19 @@ const RegistrationForm = () => {
 
   return (
     <div className="max-w-4xl max-sm:max-w-lg mx-auto p-6 mt-6">
-      {/* <div className="text-center mb-12 sm:mb-16">
-        <a href="javascript:void(0)">
-          <img src="https://readymadeui.com/readymadeui.svg" alt="logo" className="w-44 inline-block" />
+      <div className="mb-10 text-center">
+        <a className="inline-block" href="#">
+          <img
+            className="h-50 w-50"
+            src={LogoOmniverse}
+            alt="Logo"
+          />     
         </a>
-        <h4 className="text-slate-600 text-base mt-6">Sign up into your account</h4>
-      </div> */}
-      <div className="mb-6 text-center">
-        <a className="inline-block mb-6" href="#">
-        <img
-    className="h-50 w-50"
-    src={LogoOmniverse}
-    alt="Logo"
-  />        </a>
         <p className="text-lg text-coolGray-500 font-medium">
           Sign up into your account
         </p>
       </div>
+
 
       <form onSubmit={handleSubmit}>
         <div className="grid sm:grid-cols-2 gap-8">
@@ -118,7 +120,7 @@ const RegistrationForm = () => {
               placeholder="Enter first name"
               value={formData.firstName}
               onChange={handleChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             />
           </div>
@@ -131,7 +133,7 @@ const RegistrationForm = () => {
               placeholder="Enter last name"
               value={formData.lastName}
               onChange={handleChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             />
           </div>
@@ -144,7 +146,7 @@ const RegistrationForm = () => {
               placeholder="Enter email"
               value={formData.email}
               onChange={handleChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             />
           </div>
@@ -157,7 +159,7 @@ const RegistrationForm = () => {
               placeholder="Enter mobile number"
               value={formData.phone}
               onChange={handleChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             />
           </div>
@@ -170,7 +172,7 @@ const RegistrationForm = () => {
               placeholder="Enter password"
               value={formData.password}
               onChange={handleChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             />
           </div>
@@ -183,7 +185,7 @@ const RegistrationForm = () => {
               placeholder="Enter confirm password"
               value={confirmPassword}
               onChange={handleConfirmChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             />
           </div>
@@ -199,7 +201,7 @@ const RegistrationForm = () => {
               placeholder="Enter your preferred username"
               value={formData.preferredUsername}
               onChange={handleChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             />
           </div>
@@ -210,7 +212,7 @@ const RegistrationForm = () => {
               name="sex"
               value={formData.sex}
               onChange={handleChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             >
               <option value="">Select Sex</option>
@@ -228,13 +230,35 @@ const RegistrationForm = () => {
               placeholder="Enter your address"
               value={formData.address}
               onChange={handleChange}
-              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-2 focus:bg-white"
+              className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
               required
             />
           </div>
+          {/* Checkbox */}
+          <div className="mb-3 flex items-start">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-1 mr-2 w-5 h-5"
+              required
+            />
+            <label htmlFor="terms" className="text-base text-coolGray-800">
+              By signing up, I agree to the{' '}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 font-bold hover:text-blue-800 underline"
+              >
+                Terms & Conditions
+              </a>
+            </label>
+          </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-6">
           <button
             type="submit"
             className="inline-block py-3 px-7 mb-4 w-full text-base text-green-50 font-medium text-center leading-6 bg-blue-600 hover:bg-blue-800 focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 rounded-md shadow-sm"
@@ -263,3 +287,4 @@ const RegistrationForm = () => {
 };
 
 export default RegistrationForm;
+
