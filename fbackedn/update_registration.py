@@ -6,7 +6,7 @@ from firebase_admin import auth, firestore
 update_registration_bp = Blueprint('update_registration_bp', __name__)
 
 @update_registration_bp.route('/update_registration', methods=['POST', 'OPTIONS'])
-
+@cross_origin()
 def update_registration():
     if request.method == 'OPTIONS':
         response = jsonify({})

@@ -22,7 +22,7 @@ SHORT_RETRY = Retry(initial=1.0, maximum=10.0, multiplier=2.0, deadline=30.0)
 ### POSTS (Social feed) ###
 
 @posts_bp.route('/posts', methods=['GET','POST','OPTIONS'])
-
+@cross_origin()
 def posts():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -78,7 +78,7 @@ def posts():
 
 
 @posts_bp.route('/posts/<post_id>/comments', methods=['GET','POST','OPTIONS'])
-
+@cross_origin()
 def post_comments(post_id):
     if request.method == 'OPTIONS':
         return jsonify({}),200
@@ -138,7 +138,7 @@ def post_comments(post_id):
 ### EVENTS (Dedicated RSVP-capable events) ###
 
 @events_bp.route('/events', methods=['GET','POST','OPTIONS'])
-
+@cross_origin()
 def events():
     if request.method == 'OPTIONS':
         return jsonify({}),200
@@ -210,7 +210,7 @@ def events():
 
 
 @events_bp.route('/events/<event_id>/comments', methods=['GET','POST','OPTIONS'])
-
+@cross_origin()
 def comments(event_id):
     if request.method=='OPTIONS':
         return jsonify({}),200
@@ -264,7 +264,7 @@ def comments(event_id):
 
 
 @events_bp.route('/events/<event_id>/rsvp', methods=['POST','OPTIONS'])
-
+@cross_origin()
 def rsvp(event_id):
     if request.method=='OPTIONS':
         return jsonify({}),200
@@ -293,7 +293,7 @@ def rsvp(event_id):
 # ------ NEW: GET RSVP endpoint for event ---------
 
 @events_bp.route('/events/<event_id>/rsvps', methods=['GET','OPTIONS'])
-
+@cross_origin()
 def get_rsvps(event_id):
     if request.method == 'OPTIONS':
         return jsonify({}), 200

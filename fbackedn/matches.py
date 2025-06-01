@@ -33,7 +33,7 @@ def calculate_pet_match_score(current_pet, other_pet):
     return score
 
 @matches_bp.route('/matches', methods=['GET', 'OPTIONS'])
-
+@cross_origin()
 def get_pet_matches():
     if request.method == 'OPTIONS':
         response = jsonify({})

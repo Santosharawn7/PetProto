@@ -29,7 +29,7 @@ def _get_pet_avatar(db, uid):
     return None
 
 @chat_bp.route('/chats', methods=['GET', 'POST', 'OPTIONS'])
-
+@cross_origin()
 def chats():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -78,7 +78,7 @@ def chats():
     return jsonify({'chatId': chat_ref.id}), 201
 
 @chat_bp.route('/chats/<chat_id>/messages', methods=['GET', 'POST', 'OPTIONS'])
-
+@cross_origin()
 def messages(chat_id):
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -136,7 +136,7 @@ def messages(chat_id):
 
 # -- NEW: Find or create a chat with another user (1-1 only) --
 @chat_bp.route('/chat-with-user/<friend_uid>', methods=['POST', 'OPTIONS'])
-
+@cross_origin()
 def chat_with_user(friend_uid):
     if request.method == 'OPTIONS':
         return jsonify({}), 200
