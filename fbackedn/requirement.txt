@@ -1,5 +1,5 @@
 Flask
 firebase-admin
 requests
-flask_cors
+flask-cors
 textblob
