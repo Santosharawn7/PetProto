@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
 // Helper to compute age from dob string ("YYYY-MM-DD")
 function getPetAge(dob) {
   if (!dob) return null;
@@ -21,25 +23,27 @@ export default function PetProfile() {
   const [loading, setLoading] = useState(true);
   const [petProfile, setPetProfile] = useState(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem('userToken');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    axios.get('http://127.0.0.1:5000/current_user', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => {
-      setPetProfile(res.data.petProfile || null);
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error(err);
-      setPetProfile(null);
-      setLoading(false);
-    });
-  }, [navigate]);
+
+useEffect(() => {
+  const token = localStorage.getItem('userToken');
+  if (!token) {
+    navigate('/login');
+    return;
+  }
+  axios.get(`${API_URL}/current_user`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  .then(res => {
+    setPetProfile(res.data.petProfile || null);
+    setLoading(false);
+  })
+  .catch(err => {
+    console.error(err);
+    setPetProfile(null);
+    setLoading(false);
+  });
+}, [navigate]);
+
 
   if (loading) {
     return <p className="p-6 text-center">Loading pet profile…</p>;

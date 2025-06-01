@@ -26,14 +26,16 @@ const UpdateRegistration = () => {
     }
   };
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('userToken');
     if (!token) return setMessage("Not authenticated.");
-
+  
     try {
       const response = await axios.post(
-        'http://127.0.0.1:5000/update_registration',
+        `${API_URL}/update_registration`,
         regInfo,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -43,6 +45,7 @@ const UpdateRegistration = () => {
       setMessage(error.response?.data?.error || 'Registration update failed');
     }
   };
+  
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-slate-50">
