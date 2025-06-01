@@ -5,7 +5,7 @@ from firebase_admin import auth, firestore
 update_pet_profile_bp = Blueprint('update_pet_profile_bp', __name__)
 
 @update_pet_profile_bp.route('/update_pet_profile', methods=['POST', 'OPTIONS'])
-@cross_origin()
+
 def update_pet_profile():
     if request.method == 'OPTIONS':
         return jsonify({}), 200

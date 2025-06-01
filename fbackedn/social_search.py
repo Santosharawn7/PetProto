@@ -6,7 +6,7 @@ from firebase_admin import auth, firestore
 search_bp = Blueprint('search_bp', __name__)
 
 @search_bp.route('/search-users', methods=['GET','OPTIONS'])
-@cross_origin()
+
 def search_users():
     if request.method=='OPTIONS':
         return jsonify({}),200
