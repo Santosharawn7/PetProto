@@ -25,7 +25,7 @@ app = Flask(__name__)
 
 # ---- CORS CONFIG ----
 CORS(app, origins=[
-    "https://pet-proto.vercel.app",      # Production (Vercel)
+    "https://pet-proto.vercel.app/",      # Production (Vercel)
     "http://localhost:5173",             # Local React Vite default
     "http://localhost:3000",             # Local React alternative
     "http://127.0.0.1:5173",             # Localhost with IP
