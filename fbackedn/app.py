@@ -23,8 +23,13 @@ import json
 
 app = Flask(__name__)
 
+# ---- CORS CONFIG ----
 CORS(app, origins=[
-    "https://pet-proto.vercel.app",            
+    "https://pet-proto.vercel.app",      # Production (Vercel)
+    "http://localhost:5173",             # Local React Vite default
+    "http://localhost:3000",             # Local React alternative
+    "http://127.0.0.1:5173",             # Localhost with IP
+    "http://127.0.0.1:3000"
 ])
 
 load_dotenv()
@@ -53,7 +58,7 @@ else:
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# Register Blueprints for registration and login
+# ---- Blueprints Registration ----
 app.register_blueprint(register_bp)
 app.register_blueprint(login_bp)
 app.register_blueprint(google_signin_bp)
