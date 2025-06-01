@@ -22,7 +22,7 @@ import os
 import json
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://pet-proto.vercel.app/"])
 
 load_dotenv()
 
