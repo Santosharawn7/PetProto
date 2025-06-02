@@ -42,7 +42,7 @@ const GoogleSignIn = () => {
       console.log("Google sign-in token:", idToken);
       
       // Send token to your backend's Google sign-in endpoint
-      const googleRes = await axios.post('http://127.0.0.1:5000/google_signin', { idToken });
+      const googleRes = await axios.post(`${API_URL}/google_signin`, { idToken });
       console.log("Backend google_signin response:", googleRes.data);
       
       // Store the valid Firebase ID token in localStorage
