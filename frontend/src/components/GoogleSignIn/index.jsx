@@ -10,6 +10,8 @@ import { auth, googleProvider } from '../../firebase';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
 const GoogleSignIn = () => {
   const navigate = useNavigate();
 
@@ -42,14 +44,13 @@ const GoogleSignIn = () => {
       console.log("Google sign-in token:", idToken);
       
       // Send token to your backend's Google sign-in endpoint
-      const googleRes = await axios.post('http://127.0.0.1:5000/google_signin', { idToken });
+      const googleRes = await axios.post(`${API_URL}/google_signin`, { idToken });
       console.log("Backend google_signin response:", googleRes.data);
       
       // Store the valid Firebase ID token in localStorage
       localStorage.setItem('userToken', idToken);
 
       // Now fetch the current user's registration info from the backend
-      const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
       const userRes = await axios.get(`${API_URL}/current_user`, {
         headers: { Authorization: `Bearer ${idToken}` }
