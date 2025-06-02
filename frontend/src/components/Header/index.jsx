@@ -11,7 +11,7 @@ import { AiFillHome } from 'react-icons/ai';
 import { MdGroups } from 'react-icons/md';
 import { FiMessageCircle } from 'react-icons/fi';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 const Header = ({ onSearchClick }) => {
   const navigate = useNavigate();
