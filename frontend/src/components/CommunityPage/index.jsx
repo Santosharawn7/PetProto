@@ -251,7 +251,6 @@ export default function CommunityPage() {
 
   return (
     <>
-      <Header />
       <div className=" max-w-5xl md:max-w-3xl mx-auto p-6">
         {/* Tabs */}
         <div className="flex space-x-4 mb-6 border-b">
