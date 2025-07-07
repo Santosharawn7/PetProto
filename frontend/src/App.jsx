@@ -1,5 +1,5 @@
 // src/App.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import RegistrationForm from './pages/Registration';
 import Landing from './components/Landing';
@@ -16,13 +16,18 @@ import ChatPage from './components/ChatPage';
 import CommunityPage from './components/CommunityPage';
 import FriendList from './components/FriendList';
 import PreHome from './components/Prehome';
+import Header from './components/Header';
 
 function App() {
+  // GLOBAL search modal state
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
   return (
     <BrowserRouter>
+      {/* Header always visible, passes open modal function */}
+      <Header onSearchClick={() => setShowSearchModal(true)} />
       <Routes>
-      <Route path="/prehome" element={<PreHome />} />
-
+        <Route path="/prehome" element={<PreHome />} />
         <Route path="/" element={<Landing />} />
         <Route path="/register" element={<RegistrationForm />} />
         <Route path="/login" element={<Login />} />
@@ -32,7 +37,11 @@ function App() {
           path="/home"
           element={
             <PrivateRoute>
-              <Home />
+              {/* Pass both modal state and set function as props */}
+              <Home
+                showSearchModal={showSearchModal}
+                setShowSearchModal={setShowSearchModal}
+              />
             </PrivateRoute>
           }
         />
@@ -68,7 +77,7 @@ function App() {
             </PrivateRoute>
           }
         />
-         <Route
+        <Route
           path="/chat/:chatId"
           element={
             <PrivateRoute>
@@ -76,8 +85,8 @@ function App() {
             </PrivateRoute>
           }
         />
-         <Route
-          path="community"
+        <Route
+          path="/community"
           element={
             <PrivateRoute>
               <CommunityPage/>
@@ -92,8 +101,6 @@ function App() {
             </PrivateRoute>
           }
         />
-
-        
       </Routes>
     </BrowserRouter>
   );
