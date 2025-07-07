@@ -3,7 +3,7 @@ import axios from "axios";
 import { auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || "http://127.0.0.1:5000";
 // You can use a default avatar or pet paw icon if avatar is missing.
 const PLACEHOLDER_AVATAR = "https://ui-avatars.com/api/?name=Pet&background=random";
 

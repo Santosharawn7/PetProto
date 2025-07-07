@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -7,15 +6,15 @@ import { getWorldCities } from '../services/countryService';
 import { getBreedsBySpecies } from '../services/breedService';
 import { getCurrentUser } from '../services/userService';
 import { getMatches as getPetMatches } from '../services/matchService';
-import Header from '../components/Header';
+// import Header from '../components/Header'; // REMOVE this line!
 import Filters from '../components/Filter';
 import MatchingCarousel from '../components/MatchingCarousel';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaw } from '@fortawesome/free-solid-svg-icons';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
-const Home = () => {
+const Home = ({ showSearchModal, setShowSearchModal }) => {
   const navigate = useNavigate();
 
   const [matches, setMatches] = useState([]);
@@ -34,7 +33,6 @@ const Home = () => {
   const [petNameQuery, setPetNameQuery] = useState('');
 
   const [loading, setLoading] = useState(true);
-  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const handleMatchClick = (match) => {
     navigate('/match', { state: { match } });
@@ -55,7 +53,6 @@ const Home = () => {
         setFilterSpecies(userSpecies);
         setLocationList(cities);
 
-        // Attempt combined pet+sentiment matches first
         let matchData;
         try {
           const sentimentRes = await axios.get(
@@ -64,7 +61,6 @@ const Home = () => {
           );
           matchData = sentimentRes.data.matches;
         } catch {
-          // Fallback to pet-only matches
           const petRes = await getPetMatches(token);
           matchData = petRes.data.matches;
         }
@@ -111,7 +107,7 @@ const Home = () => {
 
   return (
     <div className="p-6">
-      <Header onSearchClick={() => setShowSearchModal(true)} />
+      {/* No Header here! */}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <MatchingCarousel
@@ -119,6 +115,7 @@ const Home = () => {
         onMatchClick={handleMatchClick}
       />
 
+      {/* SEARCH MODAL */}
       {showSearchModal && (
         <div className="fixed inset-0 bg-gradient-to-r from-orange-100 to-purple-100 bg-opacity-30 z-50 flex items-start justify-center pt-20 px-2">
           <div className="bg-[#fffffc] w-full max-w-3xl rounded-lg shadow-lg p-4 relative">

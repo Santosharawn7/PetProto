@@ -5,7 +5,7 @@ import { auth } from '../../firebase';
 import { toast } from 'react-toastify';
 import Header from '../Header';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 // Helper to format date as "Friday, May 17, 2024"
 function formatDate(date) {
