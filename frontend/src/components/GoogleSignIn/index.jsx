@@ -1,4 +1,3 @@
-// src/GoogleSignIn.jsx
 import React from 'react';
 import { 
   signInWithPopup, 
@@ -24,15 +23,12 @@ const GoogleSignIn = () => {
 
       // Check what sign-in methods exist for this email
       const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-      console.log("Existing sign-in methods for this email:", signInMethods);
-
       const credential = GoogleAuthProvider.credentialFromResult(result);
 
       // If email/password method exists but NOT Google, link them
       if (signInMethods.includes('password') && !signInMethods.includes('google.com')) {
         try {
           await linkWithCredential(user, credential);
-          console.log('Google account linked to existing Email/Password user.');
         } catch (linkError) {
           console.error('Error linking accounts:', linkError);
           return; // Stop here if linking fails
@@ -41,24 +37,32 @@ const GoogleSignIn = () => {
 
       // Get the Firebase ID token from the user
       const idToken = await user.getIdToken();
-      console.log("Google sign-in token:", idToken);
       
       // Send token to your backend's Google sign-in endpoint
       const googleRes = await axios.post(`${API_URL}/google_signin`, { idToken });
-      console.log("Backend google_signin response:", googleRes.data);
       
       // Store the valid Firebase ID token in localStorage
       localStorage.setItem('userToken', idToken);
 
       // Now fetch the current user's registration info from the backend
-
       const userRes = await axios.get(`${API_URL}/current_user`, {
         headers: { Authorization: `Bearer ${idToken}` }
       });
-      console.log("Current user data:", userRes.data);
       const userData = userRes.data;
-      
-      
+
+      // Always save UID and other info to localStorage!
+      localStorage.setItem('userInfo', JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        userType: userData.userType || '',
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
+        preferredUsername: userData.preferredUsername || '',
+        phone: userData.phone || '',
+        sex: userData.sex || '',
+        address: userData.address || ''
+      }));
+
       // Required registration fields
       if (
         !userData.firstName ||

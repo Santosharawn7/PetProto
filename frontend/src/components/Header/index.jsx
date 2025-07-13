@@ -25,7 +25,7 @@ const API_URL =
   process.env.VITE_API_URL ||
   "http://127.0.0.1:5000";
 
-const Header = ({ onSearchClick }) => {
+const Header = ({ onSearchClick, setIsLoggedIn }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -80,9 +80,10 @@ const Header = ({ onSearchClick }) => {
   const openDrawer = (type) => setDrawer(type);
   const closeDrawer = () => setDrawer("");
 
-  // Logout
+  // Logout - now also updates auth state for App.jsx
   const handleLogout = () => {
     localStorage.removeItem("userToken");
+    if (setIsLoggedIn) setIsLoggedIn(false); // update app state
     closeDrawer();
     navigate("/login");
   };

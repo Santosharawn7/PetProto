@@ -1,4 +1,3 @@
-# login.py
 from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
 import requests
@@ -31,12 +30,22 @@ def login():
     identifier = data.get('identifier')
     password = data.get('password')
 
+    # Initialize Firestore client
+    db = firestore.client()
+    user_data = None
+    email = None
+
     # Check if the identifier is an email or username
     if "@" in identifier:
         email = identifier
+        # Fetch user data by email for role information
+        users_ref = db.collection('users')
+        query = users_ref.where('email', '==', email).limit(1).stream()
+        user_doc = next(query, None)
+        if user_doc:
+            user_data = user_doc.to_dict()
     else:
         # Look up the email using the preferredUsername from Firestore
-        db = firestore.client() # initializes a Firestore client (talk to the Firestore database)
         users_ref = db.collection('users')
         query = users_ref.where('preferredUsername', '==', identifier).limit(1).stream()
         user_doc = next(query, None) # next() is used to grab the first result from the generator query.
@@ -73,11 +82,11 @@ def login():
         return jsonify({'error': friendly_messages.get(message, message)}), 401
 
     # Login succeeded
-    data = firebase_response.json()
+    firebase_data = firebase_response.json()
 
     # Check if email is verified
     lookup_url = f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}"
-    id_token = data['idToken']
+    id_token = firebase_data['idToken']
     verify_response = requests.post(lookup_url, json={"idToken": id_token})
 
     if verify_response.status_code != 200:
@@ -87,5 +96,25 @@ def login():
     if not user_info.get('emailVerified', False):
         return jsonify({'error': 'Email not verified. Please check your inbox.'}), 403
 
+    # If we don't have user_data yet, fetch it using the UID
+    if not user_data:
+        uid = firebase_data['localId']
+        user_doc = db.collection('users').document(uid).get()
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+
+    # Get user role (default to 'pet_parent' if not specified)
+    user_role = user_data.get('userType', 'pet_parent') if user_data else 'pet_parent'
+
+    # Prepare response with user role information
+    response_data = {
+        'idToken': firebase_data['idToken'],
+        'refreshToken': firebase_data['refreshToken'],
+        'localId': firebase_data['localId'],
+        'email': firebase_data['email'],
+        'userType': user_role,
+        'expiresIn': firebase_data['expiresIn']
+    }
+
     # Everything OK
-    return jsonify(data), 200
+    return jsonify(response_data), 200
