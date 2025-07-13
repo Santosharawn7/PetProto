@@ -1,47 +1,61 @@
 # update_registration.py
 from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
-from firebase_admin import auth, firestore
+from firebase_admin import firestore
 
 update_registration_bp = Blueprint('update_registration_bp', __name__)
 
-@update_registration_bp.route('/update_registration', methods=['POST', 'OPTIONS'])
+# Allowed user types
+ALLOWED_USER_TYPES = {
+    "Admin",
+    "Pet Parent",
+    "Pet Shop Owner",
+    "Veterinarian",
+    "Pet Sitter"
+}
+
+@update_registration_bp.route('/update-registration', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def update_registration():
     if request.method == 'OPTIONS':
-        response = jsonify({})
-        response.status_code = 200
-        return response
-
-    token_header = request.headers.get('Authorization')
-    if not token_header:
-        return jsonify({'error': 'Missing token'}), 401
-
-    try:
-        token = token_header.split(" ")[1]  # expecting "Bearer <token>"
-        decoded = auth.verify_id_token(token)
-        uid = decoded['uid']
-    except Exception as e:
-        return jsonify({'error': 'Invalid token: ' + str(e)}), 401
+        return jsonify({}), 200
 
     data = request.json
-    # Required registration fields for new Google users:
-    required_fields = ['firstName', 'lastName', 'preferredUsername', 'phone', 'sex', 'address']
-    missing = [field for field in required_fields if field not in data or not data[field]]
-    if missing:
-        return jsonify({'error': 'Missing registration fields: ' + ', '.join(missing)}), 400
+    if not data or 'uid' not in data:
+        return jsonify({'error': 'Missing user UID'}), 400
 
+    uid = data['uid']
+
+    # Fetch user doc
     db = firestore.client()
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    if not user_doc.exists:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Prepare updates
+    update_fields = {}
+    updatable_fields = [
+        'firstName', 'lastName', 'preferredUsername',
+        'phone', 'email', 'sex', 'address'
+    ]
+
+    for field in updatable_fields:
+        if field in data:
+            update_fields[field] = data[field]
+
+    # Handle userType (if provided)
+    if 'userType' in data:
+        user_type = data['userType']
+        if user_type not in ALLOWED_USER_TYPES:
+            return jsonify({'error': f'Invalid userType: {user_type}. Allowed types: {", ".join(ALLOWED_USER_TYPES)}'}), 400
+        update_fields['userType'] = user_type
+
+    if not update_fields:
+        return jsonify({'error': 'No fields to update'}), 400
+
     try:
-        # Update only the registration fields in the user's document
-        db.collection('users').document(uid).update({
-            'firstName': data.get('firstName'),
-            'lastName': data.get('lastName'),
-            'preferredUsername': data.get('preferredUsername'),
-            'phone': data.get('phone'),
-            'sex': data.get('sex'),
-            'address': data.get('address')
-        })
-        return jsonify({'message': 'Registration information updated successfully.'}), 200
+        user_ref.update(update_fields)
+        return jsonify({'message': 'User profile updated successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
