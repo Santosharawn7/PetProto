@@ -5,6 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import GoogleSignIn from '../components/GoogleSignIn';
 import LogoOmniverse from '../assets/LogoOmniverse.png';
 
+// Helper to read ?redirect= param
+function getQueryParam(param) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(param);
+}
+
 const Login = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -14,77 +20,69 @@ const Login = ({ setIsLoggedIn }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Redirect to Home if already logged in
+  // Redirect to /shop if already logged in
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (token) {
-      // Check if user data exists and redirect accordingly
+      // If userData exists, redirect based on logic
       const userData = localStorage.getItem('userData');
       if (userData) {
         const { userType } = JSON.parse(userData);
         redirectBasedOnUserType(userType);
       } else {
-        navigate('/home');
+        navigate('/shop');
       }
     }
+    // eslint-disable-next-line
   }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    process.env.VITE_API_URL ||
+    'http://127.0.0.1:5000';
 
-  // Function to redirect users based on their user type
+  // Redirect logic: Use ?redirect= param if present, else always go to /shop
   const redirectBasedOnUserType = (userType) => {
-    switch (userType) {
-      case 'admin':
-        navigate('/admin-dashboard');
-        break;
-      case 'pet_parent':
-        navigate('/pet-parent-dashboard');
-        break;
-      case 'pet_shop_owner':
-        navigate('/pet-shop-dashboard');
-        break;
-      case 'veterinarian':
-        navigate('/veterinarian-dashboard');
-        break;
-      case 'pet_sitter':
-        navigate('/pet-sitter-dashboard');
-        break;
-      default:
-        navigate('/home'); // Fallback to general home
+    const redirectUrl = getQueryParam('redirect');
+    if (redirectUrl) {
+      window.location.replace(redirectUrl);
+      return;
     }
+    // All user types currently go to /shop
+    navigate('/shop');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
     setLoading(true);
-    
+
     try {
       const response = await axios.post(`${API_URL}/login`, formData);
 
       if (response.data.idToken) {
         // Store authentication token
         localStorage.setItem('userToken', response.data.idToken);
-        
+
         // Store user data including userType
         const userData = {
           email: response.data.email,
-          userType: response.data.userType,
+          userType: response.data.userType, // e.g., "pet-shop-owner", "pet_parent", etc.
           localId: response.data.localId,
           expiresIn: response.data.expiresIn
         };
         localStorage.setItem('userData', JSON.stringify(userData));
-        
+
         // Update auth state
         setIsLoggedIn(true);
-        
-        // Redirect based on user type
+
+        // Redirect to shop (using ?redirect param if provided)
         redirectBasedOnUserType(response.data.userType);
-        
+
       } else {
         setMessage("Login error: No valid token returned");
       }
@@ -118,10 +116,10 @@ const Login = ({ setIsLoggedIn }) => {
           <div className="mb-8 text-center">
             <a className="inline-block" href="#">
               <img
-                  className="h-50 w-50"
-                  src={LogoOmniverse}
-                  alt="Logo"
-                />              
+                className="h-50 w-50"
+                src={LogoOmniverse}
+                alt="Logo"
+              />
             </a>
             <p className="text-lg text-coolGray-500 font-medium">
               Sign in to your account
@@ -155,20 +153,20 @@ const Login = ({ setIsLoggedIn }) => {
               />
             </div>
             <div className="my-4 text-right">
-                <a href="/password-reset" className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-sm">
-                     Forgot Password?
-                </a>
-           </div>
-            
-           <button
+              <a href="/password-reset" className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-sm">
+                Forgot Password?
+              </a>
+            </div>
+
+            <button
               type="submit"
               disabled={loading}
               className="inline-block py-3 px-7 mb-4 w-full text-base text-green-50 font-medium text-center leading-6 bg-blue-600 hover:bg-blue-800 focus:ring-3 focus:ring-green-500 focus:ring-opacity-50 rounded-md shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Login'}
-           </button>
-           <div className="mb-6">
-                <GoogleSignIn />
+            </button>
+            <div className="mb-6">
+              <GoogleSignIn />
             </div>
             <p className="text-center">
               <span className="text-sm font-medium">Don't have an account?</span>{' '}
@@ -181,15 +179,14 @@ const Login = ({ setIsLoggedIn }) => {
             </p>
 
             {message && (
-            <div className="mt-4">
-              <p className={`text-center font-bold ${message.includes('verify') ? 'text-yellow-600' : 'text-red-500'}`}>
-                {message}
-              </p>
-            </div>
-          )}
+              <div className="mt-4">
+                <p className={`text-center font-bold ${message.includes('verify') ? 'text-yellow-600' : 'text-red-500'}`}>
+                  {message}
+                </p>
+              </div>
+            )}
 
           </form>
-
         </div>
       </div>
     </section>
