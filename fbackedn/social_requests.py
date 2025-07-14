@@ -115,8 +115,10 @@ def list_requests():
             from_uid = data['from']
             from_user_doc = db.collection('users').document(from_uid).get()
             from_user = from_user_doc.to_dict() if from_user_doc.exists else {}
+            print("Full from_user document:", from_user)
+
             pet_name = from_user.get('petProfile', {}).get('name') or from_user.get('displayName') or from_uid
-            avatar = from_user.get('petProfile', {}).get('image')
+            avatar = from_user.get('petProfile.image')
             out.append({
                 **data,
                 'id': i,

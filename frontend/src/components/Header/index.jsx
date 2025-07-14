@@ -9,6 +9,7 @@ import { FaPaw, FaBell, FaSearch } from "react-icons/fa";
 import { FiLogOut, FiMenu } from "react-icons/fi";
 import { MdGroups } from "react-icons/md";
 import { FiMessageCircle } from "react-icons/fi";
+import { IoHomeSharp } from "react-icons/io5";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -44,6 +45,8 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         const res = await axios.get(`${API_URL}/requests`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("Fetched Requests:", res.data); // <--- Add this!
+
         const incoming = res.data.incoming || [];
         setRequests(incoming.filter((r) => r.status === "pending"));
       } catch (err) {
@@ -274,12 +277,9 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         className={({ isActive }) =>
           `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
         }
-        style={{ flex: 1, minWidth: 48, minHeight: 48 }}
+        style={{ flex: 1, minWidth: 88, minHeight: 88 }}
       >
-        {/* Home icon only, no logo here */}
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19 21v-6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6M22 11l-10-9-10 9"/>
-        </svg>
+          <IoHomeSharp className="text-5xl"/>
       </NavLink>
       {/* Community */}
       <NavLink
@@ -289,15 +289,20 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         }
         style={{ flex: 1, minWidth: 48, minHeight: 48 }}
       >
-        <MdGroups className="w-12 h-12" />
+        <MdGroups className="w-15 h-15" />
       </NavLink>
-      {/* Pet Profile */}
+      {/* Notifications */}
       <button
-        onClick={handleProfileClick}
-        className="flex items-center justify-center text-gray-400"
+        onClick={() => openDrawer("notifications")}
+        className="flex items-center justify-center text-gray-400 relative"
         style={{ flex: 1, minWidth: 44, minHeight: 44 }}
       >
-        <FaPaw className="w-10 h-10" />
+        <FaBell className="w-11 h-11" />
+        {requests.length > 0 && (
+          <span className="absolute top-2 right-5 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {requests.length}
+          </span>
+        )}
       </button>
       {/* More */}
       <button
@@ -305,7 +310,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         className="flex items-center justify-center text-gray-400"
         style={{ flex: 1, minWidth: 44, minHeight: 44 }}
       >
-        <FiMenu className="w-10 h-10" />
+        <FiMenu className="w-12 h-12" />
       </button>
     </nav>
   );
@@ -338,22 +343,12 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
             </div>
             {drawer === "more" && (
               <>
+                {/* Pet Profile */}
                 <button
                   className="flex items-center gap-3 p-4 border-b w-full"
-                  onClick={() => openDrawer("messages")}
+                  onClick={handleProfileClick}
                 >
-                  <FiMessageCircle className="text-xl" /> Messages
-                </button>
-                <button
-                  className="flex items-center gap-3 p-4 border-b w-full"
-                  onClick={() => openDrawer("notifications")}
-                >
-                  <FaBell className="text-xl" /> Notifications
-                  {requests.length > 0 && (
-                    <span className="ml-2 text-red-600">
-                      ({requests.length})
-                    </span>
-                  )}
+                  <FaPaw className="text-xl" /> My Pet Profile
                 </button>
                 <button
                   className="flex items-center gap-3 p-4 w-full text-red-600"

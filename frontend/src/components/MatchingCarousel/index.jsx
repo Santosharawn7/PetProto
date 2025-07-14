@@ -1,5 +1,5 @@
 // Matching carousel
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from "react";
 
 const MatchingCarousel = ({ matches, onMatchClick }) => {
   const sliderRef = useRef(null);
@@ -8,7 +8,10 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
   const scrollToIndex = (index) => {
     const el = sliderRef.current;
     if (el && el.children[index]) {
-      el.children[index].scrollIntoView({ behavior: 'smooth', inline: 'center' });
+      el.children[index].scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+      });
     }
   };
 
@@ -43,13 +46,16 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
       <div
         ref={sliderRef}
         className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full touch-pan-x scrollbar-hide"
-        style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+        style={{
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         {matches.map((u, i) => (
           <div
             key={i}
             className="snap-center flex-shrink-0 w-full flex justify-center px-4"
-            style={{ scrollSnapAlign: 'center' }}
+            style={{ scrollSnapAlign: "center" }}
           >
             <div
               className="relative w-[28rem] h-[36rem] bg-black hover:scale-90 transition-transform cursor-pointer rounded-2xl overflow-hidden shadow-xl"
@@ -81,4 +87,3 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
 };
 
 export default MatchingCarousel;
-
