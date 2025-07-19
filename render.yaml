@@ -11,10 +11,6 @@ services:
       - key: VITE_API_URL
         value: https://<your-backend-service-name>.onrender.com
     autoDeploy: true
-    routes:
-      - type: http
-        source: /
-        targetPort: 80
 
   - type: web
     name: backend
@@ -28,7 +24,3 @@ services:
       - key: FLASK_ENV
         value: production
     autoDeploy: true
-    routes:
-      - type: http
-        source: /
-        targetPort: 5000
