@@ -11,6 +11,10 @@ function getQueryParam(param) {
   return urlParams.get(param);
 }
 
+// Your Pet Shop URLs (update as needed)
+const PET_SHOP_URL_LOCAL = "http://localhost:5002/shop";
+const PET_SHOP_URL_LAN = "http://192.168.2.17:5002/shop"; // Update to your network IP as needed
+
 const Login = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -20,15 +24,13 @@ const Login = ({ setIsLoggedIn }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Redirect to /shop if already logged in
+  // Redirect to /shop or redirect param if already logged in
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (token) {
-      // If userData exists, redirect based on logic
       const userData = localStorage.getItem('userData');
       if (userData) {
-        const { userType } = JSON.parse(userData);
-        redirectBasedOnUserType(userType);
+        redirectToShop(JSON.parse(userData).userType);
       } else {
         navigate('/shop');
       }
@@ -45,14 +47,28 @@ const Login = ({ setIsLoggedIn }) => {
     process.env.VITE_API_URL ||
     'http://127.0.0.1:5000';
 
-  // Redirect logic: Use ?redirect= param if present, else always go to /shop
-  const redirectBasedOnUserType = (userType) => {
+  // Main redirect logic:
+  // - If user is "pet-shop-owner" (code, not display name), send to Pet Shop app.
+  // - For all others, use redirect param or go to local /shop.
+  const redirectToShop = (userType) => {
     const redirectUrl = getQueryParam('redirect');
+
+    // Always use ?redirect param if present
     if (redirectUrl) {
       window.location.replace(redirectUrl);
       return;
     }
-    // All user types currently go to /shop
+
+    // If Pet Shop Owner, send to pet shop app (choose LAN or localhost as needed)
+    if (userType === "pet-shop-owner") {
+      // Prefer localhost, fallback to LAN (or swap as you wish)
+      window.location.replace(PET_SHOP_URL_LOCAL);
+      // Or, if accessing from another device, use the LAN IP instead:
+      // window.location.replace(PET_SHOP_URL_LAN);
+      return;
+    }
+
+    // All other users go to Omniverse's /shop
     navigate('/shop');
   };
 
@@ -73,15 +89,15 @@ const Login = ({ setIsLoggedIn }) => {
           email: response.data.email,
           userType: response.data.userType, // e.g., "pet-shop-owner", "pet_parent", etc.
           localId: response.data.localId,
-          expiresIn: response.data.expiresIn
+          expiresIn: response.data.expiresIn,
         };
         localStorage.setItem('userData', JSON.stringify(userData));
 
         // Update auth state
         setIsLoggedIn(true);
 
-        // Redirect to shop (using ?redirect param if provided)
-        redirectBasedOnUserType(response.data.userType);
+        // Redirect after login (userType-aware)
+        redirectToShop(response.data.userType);
 
       } else {
         setMessage("Login error: No valid token returned");
