@@ -9,7 +9,7 @@ services:
     startCommand: ""
     envVars:
       - key: VITE_API_URL
-        value: https://<your-backend-service-name>.onrender.com
+        value: https://backend-ugok.onrender.com
     autoDeploy: true
 
   - type: web
