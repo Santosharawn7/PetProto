@@ -385,7 +385,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
                     requests.map((r) => (
                       <div
                         key={r.id}
-                        className="flex justify-between items-center px-4 py-2 border-b last:border-none"
+                        className="flex justify-between items-center px-2 py-2 border-b last:border-none"
                       >
                         <div className="flex items-center space-x-3">
                           {r.fromAvatar && (
@@ -399,16 +399,16 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
                             {r.fromPetName || r.from}
                           </span>
                         </div>
-                        <div className="flex flex-col space-y-1">
+                        <div className="flex flex-row space-x-3">
                           <button
                             onClick={() => handleRespond(r.id, "accept")}
-                            className="bg-green-600 text-white text-sm px-6 py-2 rounded hover:bg-green-800"
+                            className="bg-green-600 text-white text-base font-bold px-7 py-3 rounded hover:bg-green-800"
                           >
                             Accept
                           </button>
                           <button
                             onClick={() => handleRespond(r.id, "reject")}
-                            className="bg-red-600 text-white text-sm px-6 py-2 rounded hover:bg-red-800"
+                            className="bg-red-600 text-white text-base font-bold px-7 py-2 rounded hover:bg-red-800"
                           >
                             Reject
                           </button>
