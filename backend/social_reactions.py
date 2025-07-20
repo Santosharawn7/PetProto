@@ -1,13 +1,15 @@
 # social_reactions.py
+
 from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
 from firebase_admin import auth, firestore
 from datetime import datetime
 
+# Define the Blueprint at the top!
 reactions_bp = Blueprint('reactions_bp', __name__)
 
 def _get_uid(req):
-    hdr = req.headers.get('Authorization','').split()
+    hdr = req.headers.get('Authorization', '').split()
     if len(hdr) != 2 or hdr[0] != 'Bearer':
         return None
     try:
@@ -15,28 +17,24 @@ def _get_uid(req):
     except:
         return None
 
-@reactions_bp.route('/reactions', methods=['GET','POST','OPTIONS'])
+@reactions_bp.route('/reactions', methods=['GET', 'POST', 'OPTIONS'])
 @cross_origin()
 def reactions():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
 
-    uid = _get_uid(request)
-    if not uid:
-        return jsonify({'error':'Unauthorized'}), 401
-
     db = firestore.client()
-    # path for this entity's reactions
     entityType = request.method == 'GET' and request.args.get('entityType') or (request.json or {}).get('entityType')
     entityId   = request.method == 'GET' and request.args.get('entityId')   or (request.json or {}).get('entityId')
     if not entityType or not entityId:
         if request.method == 'GET':
             return jsonify({'reactions': []}), 200
-        return jsonify({'error':'entityType and entityId required'}), 400
+        return jsonify({'error': 'entityType and entityId required'}), 400
 
     coll_path = f'reactions/{entityType}_{entityId}/items'
     coll = db.collection(coll_path)
 
+    # --- GET is public: Anyone can read reactions ---
     if request.method == 'GET':
         snaps = coll.stream()
         out = []
@@ -46,14 +44,18 @@ def reactions():
             out.append(d)
         return jsonify({'reactions': out}), 200
 
-    # POST → add or update reaction
+    # --- POST requires authentication! ---
+    uid = _get_uid(request)
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
+
     data = request.json or {}
     rtype = data.get('type')
     if not rtype:
-        return jsonify({'error':'type required'}), 400
+        return jsonify({'error': 'type required'}), 400
 
-    # check for an existing reaction by this user
-    existing = coll.where('user','==',uid).limit(1).get()
+    # Check for an existing reaction by this user
+    existing = coll.where('user', '==', uid).limit(1).get()
     now = datetime.utcnow()
     if existing:
         # update the existing reaction
@@ -62,7 +64,7 @@ def reactions():
             'type': rtype,
             'updatedAt': now
         })
-        return jsonify({'message':'Reaction updated'}), 200
+        return jsonify({'message': 'Reaction updated'}), 200
     else:
         # create a new reaction
         new_ref = coll.document()

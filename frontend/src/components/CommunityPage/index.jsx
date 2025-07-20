@@ -64,16 +64,17 @@ export default function CommunityPage() {
     }
   };
 
+  // --- KEY FIX: Only fetch data if authenticated ---
   useEffect(() => {
-    if (!loading) {
+    if (!loading && user) {
       setDataLoading(true);
       Promise.all([fetchPosts(), fetchEvents()]).finally(() => setDataLoading(false));
     }
     // eslint-disable-next-line
   }, [loading, user]);
+  // --------------------------------------------------
 
   // --- Helper Components ---
-
   const AuthGuard = ({ children, fallback = null }) => {
     if (!user) {
       return fallback || (
