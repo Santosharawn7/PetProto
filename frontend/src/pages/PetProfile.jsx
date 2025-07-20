@@ -67,7 +67,7 @@ useEffect(() => {
   const age = getPetAge(petProfile.dob);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
+    <div className="flex justify-center px-4 py-12">
       <div className="bg-white shadow-2xl rounded-3xl overflow-hidden flex flex-col md:flex-row w-full max-w-5xl">
         {/* Left: Image */}
         <div className="md:w-1/2 bg-blue-50 flex items-center justify-center p-8">
