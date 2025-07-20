@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: frontend
+    env: docker
+    plan: free
+    dockerContext: ./frontend
+    dockerfilePath: ./frontend/Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: VITE_API_URL
+        value: https://backend-ugok.onrender.com
+    autoDeploy: true
+
+  - type: web
+    name: backend
+    env: docker
+    plan: free
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: FLASK_ENV
+        value: production
+    autoDeploy: true

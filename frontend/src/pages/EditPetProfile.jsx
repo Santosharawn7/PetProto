@@ -1,94 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronUp, Heart, Sparkles } from 'lucide-react';
 import axios from 'axios';
-import characteristicsList from '../data/characteristics.json'; // <-- Import JSON
+import { useNavigate } from 'react-router-dom';
+
+// Mock characteristics data
+const characteristicsList = [
+  'Playful', 'Calm', 'Energetic', 'Friendly', 'Quiet', 'Intelligent',
+  'Loyal', 'Independent', 'Affectionate', 'Protective', 'Social', 'Gentle',
+  'Curious', 'Brave', 'Shy', 'Active', 'Relaxed', 'Alert'
+];
+
+const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 export default function EditPetProfile() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [showCharacteristics, setShowCharacteristics] = useState(false);
+
+  // You may want to fetch this from backend for a real edit page!
   const [petProfile, setPetProfile] = useState({
-    name: '',
-    species: '',
-    breed: '',
-    sex: '',
-    colour: '',
-    location: '',
-    image: '',
-    dob: '',
-    characteristics: []
+    name: 'Yan',
+    species: 'Cat',
+    breed: 'Birman',
+    sex: 'Female',
+    colour: 'White',
+    location: 'Toronto, Canada',
+    image: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=400&h=400&fit=crop&crop=face',
+    dob: '2020-03-15',
+    characteristics: ['Calm', 'Intelligent', 'Quiet']
   });
-  const [speciesList, setSpeciesList] = useState([]);
-  const [breedList, setBreedList] = useState([]);
-  const [locationList, setLocationList] = useState([]);
-
-  // Load species and location options
-  useEffect(() => {
-    setSpeciesList(['Dog','Cat','Bird','Fish','Reptile','Rabbit','Rodent']);
-    axios.get('https://countriesnow.space/api/v0.1/countries')
-      .then(res => {
-        const cities = [];
-        res.data.data.forEach(country =>
-          country.cities.forEach(city => cities.push(`${city}, ${country.country}`))
-        );
-        setLocationList(cities);
-      })
-      .catch(console.error);
-  }, []);
-
-  // Fetch existing pet profile
-  const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
-
-  useEffect(() => {
-    const token = localStorage.getItem('userToken');
-    axios.get(`${API_URL}/current_user`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => {
-      const pp = res.data.petProfile || {};
-      setPetProfile({
-        name:     pp.name     || '',
-        species:  pp.species  || '',
-        breed:    pp.breed    || '',
-        sex:      pp.sex      || '',
-        colour:   pp.colour   || '',
-        location: pp.location || '',
-        image:    pp.image    || '',
-        dob:      pp.dob      || '',
-        characteristics: pp.characteristics || []
-      });
-    })
-    .catch(err => {
-      console.error(err);
-    })
-    .finally(() => {
-      setLoading(false);
-    });
-  }, []);
   
+  const [speciesList] = useState(['Dog','Cat','Bird','Fish','Reptile','Rabbit','Rodent']);
+  const [breedList, setBreedList] = useState(['Birman', 'Siamese', 'Persian', 'Maine Coon']);
+  const [locationList] = useState(['Toronto, Canada', 'Vancouver, Canada', 'Montreal, Canada']);
 
-  // Update breed list based on species
-  useEffect(() => {
-    if (petProfile.species === 'Dog') {
-      axios.get('https://api.thedogapi.com/v1/breeds')
-        .then(r => setBreedList(r.data.map(b => b.name)))
-        .catch(console.error);
-    } else if (petProfile.species === 'Cat') {
-      axios.get('https://api.thecatapi.com/v1/breeds')
-        .then(r => setBreedList(r.data.map(b => b.name)))
-        .catch(console.error);
-    } else {
-      setBreedList([]);
-    }
-  }, [petProfile.species]);
-
+  // Handle input changes
   const handleChange = e => {
     const { name, value } = e.target;
     setPetProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle characteristics selection
+  // Characteristic toggle logic
   const handleCharacteristicToggle = (char) => {
     setPetProfile(prev => {
       let current = prev.characteristics || [];
@@ -97,20 +51,22 @@ export default function EditPetProfile() {
       } else if (current.length < 3) {
         return { ...prev, characteristics: [...current, char] };
       }
-      return prev; // do nothing if already 3
+      return prev;
     });
   };
 
+  // Core: Save to backend function
   const saveProfile = async () => {
     const token = localStorage.getItem('userToken');
     const res = await axios.post(
-      'http://127.0.0.1:5000/update_pet_profile',
+      `${API_URL}/update_pet_profile`,
       petProfile,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    return res.data.message;
+    return res.data.message || "Profile saved!";
   };
 
+  // Save button handler
   const handleSave = async e => {
     e.preventDefault();
     setSaving(true);
@@ -118,203 +74,335 @@ export default function EditPetProfile() {
     try {
       const msg = await saveProfile();
       setMessage(msg);
-      navigate('/home');
+      // Do not navigate here; user stays on page.
     } catch (err) {
-      console.error(err);
       setMessage('Save failed');
+      console.error(err);
     } finally {
       setSaving(false);
     }
   };
 
+  // Save & Next button handler (navigates to survey)
   const handleNext = async () => {
     setSaving(true);
     setMessage('');
     try {
-      const msg = await saveProfile();
-      setMessage(msg);
+      await saveProfile();
+      setMessage('');
       navigate('/survey');
     } catch (err) {
-      console.error(err);
-      setMessage('Save failed');
-    } finally {
       setSaving(false);
+      setMessage('Save failed');
+      console.error(err);
     }
   };
 
   if (loading) {
-    return <p className="p-6 text-center">Loading…</p>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-6">
-      <h2 className="text-3xl font-semibold mb-4">Edit Pet Profile</h2>
-      <form onSubmit={handleSave} className="space-y-6">
-        {/* Name */}
-        <div>
-          <label className="block text-base font-medium">Name</label>
-          <input
-            name="name"
-            value={petProfile.name}
-            onChange={handleChange}
-            required
-            className="mt-1 w-full p-3 border rounded"
-          />
-        </div>
-        {/* Species */}
-        <div>
-          <label className="block text-base font-medium">Species</label>
-          <select
-            name="species"
-            value={petProfile.species}
-            onChange={handleChange}
-            required
-            className="mt-1 w-full p-3 border rounded bg-white"
-          >
-            <option value="">Select species</option>
-            {speciesList.map(sp => (
-              <option key={sp} value={sp}>{sp}</option>
-            ))}
-          </select>
-        </div>
-        {/* Breed */}
-        <div>
-          <label className="block text-base font-medium">Breed</label>
-          <select
-            name="breed"
-            value={petProfile.breed}
-            onChange={handleChange}
-            disabled={!breedList.length}
-            required
-            className="mt-1 w-full p-3 border rounded bg-white"
-          >
-            <option value="">Select breed</option>
-            {breedList.map(b => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
-        </div>
-        {/* Sex */}
-        <div>
-          <label className="block text-base font-medium">Sex</label>
-          <select
-            name="sex"
-            value={petProfile.sex}
-            onChange={handleChange}
-            required
-            className="mt-1 w-full p-3 border rounded bg-white"
-          >
-            <option value="">Select sex</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        {/* Colour */}
-        <div>
-          <label className="block text-base font-medium">Colour</label>
-          <input
-            name="colour"
-            value={petProfile.colour}
-            onChange={handleChange}
-            required
-            className="mt-1 w-full p-3 border rounded"
-          />
-        </div>
-        {/* Date of Birth */}
-        <div>
-          <label className="block text-base font-medium">Date of Birth</label>
-          <input
-            type="date"
-            name="dob"
-            value={petProfile.dob}
-            onChange={handleChange}
-            required
-            className="mt-1 w-full p-3 border rounded"
-          />
-        </div>
-        {/* Location */}
-        <div>
-          <label className="block text-base font-medium">Location</label>
-          <input
-            list="cities"
-            name="location"
-            value={petProfile.location}
-            onChange={handleChange}
-            placeholder="e.g. Toronto, Canada"
-            required
-            className="mt-1 w-full p-3 border rounded"
-          />
-          <datalist id="cities">
-            {locationList.map(loc => (
-              <option key={loc} value={loc} />
-            ))}
-          </datalist>
-        </div>
-        {/* Image URL */}
-        <div>
-          <label className="block text-base font-medium">Image URL</label>
-          <input
-            name="image"
-            value={petProfile.image}
-            onChange={handleChange}
-            required
-            className="mt-1 w-full p-3 border rounded"
-          />
-        </div>
-        {/* --- Top 3 Characteristics --- */}
-        <div>
-          <label className="block text-base font-medium">Top 3 Characteristics</label>
-          <div className="flex flex-wrap justify-center gap-3 mt-4">
-            {characteristicsList.map((char) => (
-              <label key={char} className="flex items-center space-x-2 cursor-pointer border px-3 py-2 rounded hover:bg-blue-50">
-                <input
-                  type="checkbox"
-                  checked={petProfile.characteristics.includes(char)}
-                  onChange={() => handleCharacteristicToggle(char)}
-                  disabled={
-                    !petProfile.characteristics.includes(char) &&
-                    petProfile.characteristics.length >= 3
-                  }
-                  className="accent-blue-600"
-                />
-                <span>{char}</span>
-              </label>
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
+            <Heart className="w-8 h-8 text-white" />
           </div>
-          <div className="text-xs text-gray-500 mt-1">
-            (Select up to 3 characteristics)
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+            Edit Pet Profile
+          </h1>
+          <p className="text-gray-600">Make your furry friend shine ✨</p>
+        </div>
+
+        <div className="space-y-6">
+          {/* Main Profile Card */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20">
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Left Column */}
+              <div className="space-y-6">
+                {/* Name */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Pet Name
+                  </label>
+                  <input
+                    name="name"
+                    value={petProfile.name}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                    placeholder="Enter your pet's name"
+                  />
+                </div>
+                {/* Species */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Species
+                  </label>
+                  <select
+                    name="species"
+                    value={petProfile.species}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="">Select species</option>
+                    {speciesList.map(sp => (
+                      <option key={sp} value={sp}>{sp}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Breed */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Breed
+                  </label>
+                  <select
+                    name="breed"
+                    value={petProfile.breed}
+                    onChange={handleChange}
+                    disabled={!breedList.length}
+                    required
+                    className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+                  >
+                    <option value="">Select breed</option>
+                    {breedList.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Sex */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Sex
+                  </label>
+                  <select
+                    name="sex"
+                    value={petProfile.sex}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="">Select sex</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* Profile Image Preview */}
+                <div className="text-center">
+                  <div className="relative inline-block">
+                    <img
+                      src={petProfile.image}
+                      alt="Pet preview"
+                      className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg"
+                    />
+                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                </div>
+                {/* Colour */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Colour
+                  </label>
+                  <input
+                    name="colour"
+                    value={petProfile.colour}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+                    placeholder="e.g. Golden Brown"
+                  />
+                </div>
+                {/* Date of Birth */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    name="dob"
+                    value={petProfile.dob}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+                {/* Location */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <input
+                    list="cities"
+                    name="location"
+                    value={petProfile.location}
+                    onChange={handleChange}
+                    placeholder="e.g. Toronto, Canada"
+                    required
+                    className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+                  />
+                  <datalist id="cities">
+                    {locationList.map(loc => (
+                      <option key={loc} value={loc} />
+                    ))}
+                  </datalist>
+                </div>
+                {/* Image URL */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Image URL
+                  </label>
+                  <input
+                    name="image"
+                    value={petProfile.image}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+            </div>
           </div>
+          {/* Characteristics Section - Collapsible */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowCharacteristics(!showCharacteristics)}
+              className="w-full p-6 flex items-center justify-between hover:bg-white/40 transition-colors duration-200"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-lg font-bold text-gray-800">Top 3 Characteristics</h3>
+                  <p className="text-sm text-gray-600">
+                    {petProfile.characteristics.length}/3 selected
+                  </p>
+                </div>
+              </div>
+              {showCharacteristics ? (
+                <ChevronUp className="w-6 h-6 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-6 h-6 text-gray-400" />
+              )}
+            </button>
+            <div className={`transition-all duration-300 ease-in-out ${showCharacteristics ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+              <div className="p-6 pt-0">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {characteristicsList.map((char) => {
+                    const isSelected = petProfile.characteristics.includes(char);
+                    const isDisabled = !isSelected && petProfile.characteristics.length >= 3;
+                    return (
+                      <label
+                        key={char}
+                        className={`flex items-center space-x-2 cursor-pointer p-3 rounded-2xl border-2 transition-all duration-200 ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-purple-100 to-pink-100 border-purple-300 text-purple-800'
+                            : isDisabled
+                            ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-white/60 border-gray-200 hover:bg-purple-50 hover:border-purple-200'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleCharacteristicToggle(char)}
+                          disabled={isDisabled}
+                          className="w-4 h-4 text-purple-600 bg-white border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                        />
+                        <span className="text-sm font-medium">{char}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {/* Selected characteristics preview */}
+                {petProfile.characteristics.length > 0 && (
+                  <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Selected:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {petProfile.characteristics.map((char, idx) => (
+                        <span
+                          key={char}
+                          className={`px-4 py-2 rounded-full text-sm font-bold border-2 border-dotted ${
+                            idx === 0
+                              ? "bg-blue-100 text-blue-800 border-blue-300"
+                              : idx === 1
+                              ? "bg-green-100 text-green-800 border-green-300"
+                              : "bg-purple-100 text-purple-800 border-purple-300"
+                          }`}
+                        >
+                          {char}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded-2xl hover:from-purple-700 hover:to-purple-800 transform hover:scale-105 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {saving ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Saving...</span>
+                </div>
+              ) : (
+                'Save Profile'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={saving}
+              className="px-8 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded-2xl hover:from-green-700 hover:to-green-800 transform hover:scale-105 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {saving ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Saving...</span>
+                </div>
+              ) : (
+                'Save & Next'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/pet-profile')}
+              className="px-8 py-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold rounded-2xl hover:from-gray-600 hover:to-gray-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
+            >
+              Cancel
+            </button>
+          </div>
+          {/* Message */}
+          {message && (
+            <div className="text-center">
+              <div className="inline-block px-6 py-3 bg-green-100 border border-green-300 text-green-800 rounded-2xl font-medium">
+                {message}
+              </div>
+            </div>
+          )}
         </div>
-        {/* Buttons */}
-        <div className="flex justify-center space-x-6 sm:space-x-8">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-4 py-2 sm:px-8 sm:py-3 bg-blue-600 text-white rounded hover:bg-blue-800"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={saving}
-            className="px-4 py-2 sm:px-8 sm:py-3 bg-green-600 text-white rounded hover:bg-green-800"
-          >
-            {saving ? 'Saving…' : 'Next'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/pet-profile')}
-            className="px-4 py-2 sm:px-8 sm:py-3 bg-red-600 text-white rounded hover:bg-red-900"
-          >
-            Cancel
-          </button>
-        </div>
-        {message && (
-          <p className="mt-4 text-center text-red-800">{message}</p>
-        )}
-      </form>
+      </div>
     </div>
   );
 }

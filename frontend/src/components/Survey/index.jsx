@@ -1,4 +1,3 @@
-// src/components/Survey/SurveyPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../firebase';
@@ -9,6 +8,7 @@ import {
   getDoc,
   serverTimestamp
 } from 'firebase/firestore';
+import { Heart, Sparkles, ChevronDown, ChevronUp, Home, Eye, ArrowRight, AlertCircle } from 'lucide-react';
 
 const questions = [
   "What is your pet's favorite game or toy?",
@@ -27,34 +27,84 @@ export default function SurveyPage() {
   const [responses, setResponses] = useState(
     questions.reduce((acc, q) => ({ ...acc, [q]: '' }), {})
   );
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [expandedQuestions, setExpandedQuestions] = useState(new Set([0])); // First question expanded by default
+  const [completedQuestions, setCompletedQuestions] = useState(new Set());
+  
   const navigate = useNavigate();
 
-  // Pre-fill any existing answers
+  // Pre-fill any existing answers from Firebase
   useEffect(() => {
-    if (!auth.currentUser) return;
-    const uid = auth.currentUser.uid;
-    getDoc(
-      doc(db, 'users', uid, 'surveyResponses', 'sentimentSurvey')
-    ).then(snap => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.responses) {
-          setResponses(data.responses);
-        }
+    const loadExistingResponses = async () => {
+      if (!auth.currentUser) {
+        setLoading(false);
+        return;
       }
-    }).catch(err => {
-      console.error('Failed to load existing survey:', err);
-    });
+      
+      try {
+        const uid = auth.currentUser.uid;
+        const snap = await getDoc(
+          doc(db, 'users', uid, 'surveyResponses', 'sentimentSurvey')
+        );
+        
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.responses) {
+            setResponses(data.responses);
+            
+            // Update completed questions based on loaded responses
+            const completed = new Set();
+            Object.entries(data.responses).forEach(([question, answer]) => {
+              if (answer && answer.trim()) {
+                completed.add(question);
+              }
+            });
+            setCompletedQuestions(completed);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load existing survey:', err);
+        setMessage('Failed to load your previous answers. Starting fresh.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExistingResponses();
   }, []);
 
   const handleChange = (q, value) => {
     setResponses(prev => ({ ...prev, [q]: value }));
+    
+    // Track completed questions
+    if (value.trim()) {
+      setCompletedQuestions(prev => new Set([...prev, q]));
+    } else {
+      setCompletedQuestions(prev => {
+        const newSet = new Set([...prev]);
+        newSet.delete(q);
+        return newSet;
+      });
+    }
   };
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    setLoading(true);
+  const toggleQuestion = (index) => {
+    setExpandedQuestions(prev => {
+      const newSet = new Set([...prev]);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    setMessage('');
 
     try {
       const user = auth.currentUser;
@@ -76,13 +126,15 @@ export default function SurveyPage() {
         { merge: true }
       );
 
+      setMessage('Survey submitted successfully! Finding your perfect matches...');
+      
       // Navigate home so matching picks up new data
-      navigate('/home');
+      setTimeout(() => navigate('/home'), 2000);
     } catch (err) {
       console.error('Survey save failed:', err);
-      alert(err.message || 'Failed to submit survey. Please try again.');
+      setMessage(err.message || 'Failed to submit survey. Please try again.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -92,48 +144,226 @@ export default function SurveyPage() {
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow mt-6">
-      <div className="mb-6">
-        <h2 className="text-2xl sm:text-3xl font-bold whitespace-nowrap">~Tell Us About Your Pet~</h2>
-      </div>
+  const completionPercentage = Math.round((completedQuestions.size / questions.length) * 100);
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {questions.map((q, idx) => (
-          <div key={idx}>
-            <label className="block text-base font-medium mb-1">{q}</label>
-            <textarea
-              value={responses[q]}
-              onChange={e => handleChange(q, e.target.value)}
-              className="w-full p-2 border rounded h-24"
-              required
-            />
-          </div>
-        ))}
-
-        <div className="flex flex-col sm:flex-row sm:space-x-4 justify-center">
-          <button
-            onClick={() => navigate('/home')}
-            className="mt-4 bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-900"
-          >
-            Home
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-800"
-          >
-            {loading ? 'Saving…' : 'See Matches'}
-          </button>
-          <button
-            type="button"
-            onClick={handleProceed}
-            className="mt-4 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-900"
-          >
-            Proceed Without Answering
-          </button>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-purple-600 font-medium">Loading your survey...</p>
         </div>
-      </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
+            <Heart className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+            Tell Us About Your Pet
+          </h1>
+          <p className="text-gray-600 mb-4">Help us find the perfect matches for your furry friend ✨</p>
+          
+          {/* Progress Bar */}
+          <div className="max-w-md mx-auto">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-600">Progress</span>
+              <span className="text-sm font-bold text-purple-600">{completionPercentage}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${completionPercentage}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* Questions */}
+          {questions.map((question, idx) => {
+            const isExpanded = expandedQuestions.has(idx);
+            const isCompleted = completedQuestions.has(question);
+            const response = responses[question];
+
+            return (
+              <div key={idx} className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+                {/* Question Header */}
+                <button
+                  type="button"
+                  onClick={() => toggleQuestion(idx)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-white/40 transition-colors duration-200"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white transition-all duration-200 ${
+                      isCompleted
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+                        : 'bg-gradient-to-r from-purple-500 to-pink-500'
+                    }`}>
+                      {isCompleted ? (
+                        <Sparkles className="w-5 h-5" />
+                      ) : (
+                        <span className="text-sm">{idx + 1}</span>
+                      )}
+                    </div>
+                    <div className="text-left flex-1">
+                      <h3 className="text-lg font-bold text-gray-800 leading-tight">
+                        {question}
+                      </h3>
+                      {isCompleted && response && (
+                        <p className="text-sm text-gray-600 mt-1 truncate max-w-md">
+                          {response.length > 60 ? `${response.substring(0, 60)}...` : response}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {isCompleted && (
+                      <div className="px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+                        Complete
+                      </div>
+                    )}
+                    {isExpanded ? (
+                      <ChevronUp className="w-6 h-6 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-6 h-6 text-gray-400" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Answer Section */}
+                <div className={`transition-all duration-300 ease-in-out ${
+                  isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                } overflow-hidden`}>
+                  <div className="p-6 pt-0">
+                    <div className="relative">
+                      <textarea
+                        value={response}
+                        onChange={(e) => handleChange(question, e.target.value)}
+                        className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 placeholder-gray-400 resize-none"
+                        placeholder="Share your pet's story here..."
+                        rows="4"
+                        required
+                      />
+                      <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                        {response.length}/500
+                      </div>
+                    </div>
+                    
+                    {/* Quick action buttons */}
+                    <div className="flex justify-between items-center mt-3">
+                      <div className="text-xs text-gray-500">
+                        💡 Be specific - this helps us find better matches!
+                      </div>
+                      {response.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (idx < questions.length - 1) {
+                              toggleQuestion(idx);
+                              toggleQuestion(idx + 1);
+                            }
+                          }}
+                          className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center space-x-2"
+                        >
+                          <span>Next</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+            <button
+              type="button"
+              onClick={() => navigate('/home')}
+              className="px-8 py-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold rounded-2xl hover:from-gray-600 hover:to-gray-700 transform hover:scale-105 transition-all duration-200 shadow-lg flex items-center justify-center space-x-2"
+            >
+              <Home className="w-5 h-5" />
+              <span>Home</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={saving || completedQuestions.size === 0}
+              className="px-8 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded-2xl hover:from-green-700 hover:to-green-800 transform hover:scale-105 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Saving & Finding Matches...</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-5 h-5" />
+                  <span>See Matches</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleProceed}
+              className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-2xl hover:from-red-600 hover:to-red-700 transform hover:scale-105 transition-all duration-200 shadow-lg flex items-center justify-center space-x-2"
+            >
+              <AlertCircle className="w-5 h-5" />
+              <span>Skip Survey</span>
+            </button>
+          </div>
+
+          {/* Completion Stats */}
+          {completedQuestions.size > 0 && (
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 border border-white/20 mt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800">Survey Progress</h3>
+                    <p className="text-sm text-gray-600">
+                      {completedQuestions.size} of {questions.length} questions answered
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    {completionPercentage}%
+                  </div>
+                  <div className="text-sm text-gray-600">Complete</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Message */}
+          {message && (
+            <div className="text-center mt-6">
+              <div className={`inline-block px-6 py-3 rounded-2xl font-medium ${
+                message.includes('success') || message.includes('Finding')
+                  ? 'bg-green-100 border border-green-300 text-green-800'
+                  : message.includes('Failed')
+                  ? 'bg-red-100 border border-red-300 text-red-800'
+                  : 'bg-blue-100 border border-blue-300 text-blue-800'
+              }`}>
+                {message}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

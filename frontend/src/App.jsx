@@ -17,13 +17,11 @@ import FriendList from './components/FriendList';
 import PreHome from './components/Prehome';
 import Header from './components/Header';
 
-// Helper function to check if token is valid (you can enhance this)
+// Helper function to check if token is valid
 const isValidToken = (token) => {
   if (!token) return false;
   
   try {
-    // Add your token validation logic here
-    // For example, check if token is expired
     const payload = JSON.parse(atob(token.split('.')[1]));
     const currentTime = Date.now() / 1000;
     return payload.exp > currentTime;
@@ -39,7 +37,7 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
 
-  // Check authentication status
+  // Check authentication status on mount and location change
   useEffect(() => {
     const checkAuthStatus = () => {
       const token = localStorage.getItem("userToken");
@@ -49,7 +47,7 @@ function AppContent() {
     };
 
     checkAuthStatus();
-  }, []);
+  }, [location.pathname]); // Add location.pathname as dependency
 
   // Listen for storage changes (cross-tab logout/login)
   useEffect(() => {
@@ -65,18 +63,16 @@ function AppContent() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Handle logout - this will immediately update the state
+  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('userToken');
-    setIsLoggedIn(false); // This immediately hides the header
-    // Optionally redirect to login page
-    // window.location.href = '/login';
+    setIsLoggedIn(false);
   };
 
-  // Update login status when user logs in - this will immediately update the state
+  // Handle login - this is the key fix
   const handleLogin = (token) => {
     localStorage.setItem('userToken', token);
-    setIsLoggedIn(true); // This immediately shows the header
+    setIsLoggedIn(true); // This should immediately show the header
   };
 
   // Show loading while checking authentication
@@ -112,8 +108,7 @@ function AppContent() {
           path="/login" 
           element={
             <Login 
-              setIsLoggedIn={setIsLoggedIn} 
-              onLogin={handleLogin}
+              onLogin={handleLogin} // Make sure this is being called in Login component
             />
           } 
         />
