@@ -110,10 +110,15 @@ const Home = ({ showSearchModal, setShowSearchModal }) => {
       {/* No Header here! */}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      <MatchingCarousel
-        matches={sortedMatches}
-        onMatchClick={handleMatchClick}
-      />
+      {/* Matching Carousel */}
+      <div className="flex justify-center w-full">
+        <div className="w-full sm:w-[24rem] md:w-[40rem] mt-21 md:mt-0 -px-1">
+          <MatchingCarousel
+            matches={sortedMatches}
+            onMatchClick={handleMatchClick}
+          />
+        </div>
+      </div>
 
       {/* SEARCH MODAL */}
       {showSearchModal && (
