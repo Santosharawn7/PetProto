@@ -1,5 +1,5 @@
 // main.jsx
-import './axiosConfig'; // <-- This line must be FIRST!
+import '../axiosConfig'; // <-- This line must be FIRST!
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
