@@ -95,7 +95,7 @@ export default function ChatPage() {
     messages.find(m => m.from !== currentUid)?.authorName || "Chat";
 
   return (
-    <div className="flex flex-col h-screen ">
+    <div className="flex flex-col h-screen mt-6">
       <Header/>
       {/* Header Bar */}
       <header className="flex items-center -mt-4 p-5 border-b gap-3 bg-white">
