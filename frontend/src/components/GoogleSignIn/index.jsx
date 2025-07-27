@@ -16,54 +16,48 @@ const GoogleSignIn = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      // Initiate Google sign-in popup
+      // 1. Google sign-in
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const email = user.email;
 
-      // Check what sign-in methods exist for this email
+      // 2. Check what sign-in methods exist for this email
       const signInMethods = await fetchSignInMethodsForEmail(auth, email);
       const credential = GoogleAuthProvider.credentialFromResult(result);
 
-      // If email/password method exists but NOT Google, link them
+      // 3. Link Google account if necessary
       if (signInMethods.includes('password') && !signInMethods.includes('google.com')) {
         try {
           await linkWithCredential(user, credential);
         } catch (linkError) {
           console.error('Error linking accounts:', linkError);
-          return; // Stop here if linking fails
+          return;
         }
       }
 
-      // Get the Firebase ID token from the user
+      // 4. Get the Firebase ID token
       const idToken = await user.getIdToken();
       
-      // Send token to your backend's Google sign-in endpoint
-      const googleRes = await axios.post(`${API_URL}/google_signin`, { idToken });
-      
-      // Store the valid Firebase ID token in localStorage
+      // 5. Backend: sign in (registers new Google users if needed)
+      await axios.post(`${API_URL}/google_signin`, { idToken });
+
+      // 6. Save token to localStorage for use in app
       localStorage.setItem('userToken', idToken);
 
-      // Now fetch the current user's registration info from the backend
+      // 7. Fetch full user info from backend to check userType
       const userRes = await axios.get(`${API_URL}/current_user`, {
         headers: { Authorization: `Bearer ${idToken}` }
       });
       const userData = userRes.data;
 
-      // Always save UID and other info to localStorage!
-      localStorage.setItem('userInfo', JSON.stringify({
+      // 8. Store as userData (always flatten)
+      localStorage.setItem('userData', JSON.stringify({
+        ...userData,
         uid: user.uid,
-        email: user.email,
-        userType: userData.userType || '',
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        preferredUsername: userData.preferredUsername || '',
-        phone: userData.phone || '',
-        sex: userData.sex || '',
-        address: userData.address || ''
+        email: user.email
       }));
 
-      // Required registration fields
+      // 9. Routing by userType
       if (
         !userData.firstName ||
         !userData.lastName ||
@@ -72,14 +66,21 @@ const GoogleSignIn = () => {
         !userData.sex ||
         !userData.address
       ) {
-        // Registration info incomplete: redirect to update registration page
+        // Incomplete registration: force user to complete registration
         navigate('/update_registration');
-      } else {
-        // Registration info is complete: proceed to Home page
+      } else if (userData.userType === 'pet_shop_owner') {
+        // Pet Shop Owner
+        navigate('/shop');
+      } else if (userData.userType === 'pet_parent') {
+        // Pet Parent
         navigate('/home');
+      } else {
+        // Default/fallback
+        navigate('/shop');
       }
     } catch (error) {
       console.error("Google sign-in error:", error);
+      alert("Google sign-in failed. Please try again.");
     }
   };
 

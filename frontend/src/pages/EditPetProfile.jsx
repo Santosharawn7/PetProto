@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Heart, Sparkles } from "lucide-react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, ChevronUp, Heart, Sparkles } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { getBreedsBySpecies } from '../services/breedService';
+import { getWorldCities } from '../services/countryService';
+import { getFullAddressSuggestions } from '../services/locationService';
 
 // Mock characteristics data
 const characteristicsList = [
@@ -30,52 +33,126 @@ const API_URL =
   process.env.VITE_API_URL ||
   "http://127.0.0.1:5000";
 
+// Default empty pet profile
+const EMPTY_PROFILE = {
+  name: '',
+  species: '',
+  breed: '',
+  sex: '',
+  colour: '',
+  location: '',
+  image: '',
+  dob: '',
+  characteristics: []
+};
+
 export default function EditPetProfile() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [loadingBreeds, setLoadingBreeds] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [message, setMessage] = useState('');
   const [showCharacteristics, setShowCharacteristics] = useState(false);
 
-  // You may want to fetch this from backend for a real edit page!
-  const [petProfile, setPetProfile] = useState({
-    name: "Yan",
-    species: "Cat",
-    breed: "Birman",
-    sex: "Female",
-    colour: "White",
-    location: "Toronto, Canada",
-    image:
-      "https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=400&h=400&fit=crop&crop=face",
-    dob: "2020-03-15",
-    characteristics: ["Calm", "Intelligent", "Quiet"],
-  });
+  // Form state for editing
+  const [petProfile, setPetProfile] = useState(EMPTY_PROFILE);
 
-  const [speciesList] = useState([
-    "Dog",
-    "Cat",
-    "Bird",
-    "Fish",
-    "Reptile",
-    "Rabbit",
-    "Rodent",
-  ]);
-  const [breedList, setBreedList] = useState([
-    "Birman",
-    "Siamese",
-    "Persian",
-    "Maine Coon",
-  ]);
-  const [locationList] = useState([
-    "Toronto, Canada",
-    "Vancouver, Canada",
-    "Montreal, Canada",
-  ]);
+  const [speciesList] = useState(['Dog','Cat','Bird','Fish','Reptile','Rabbit','Rodent']);
+  const [breedList, setBreedList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+
+  // Fetch the signed-in user's pet profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('userToken');
+        const res = await axios.get(`${API_URL}/current_user`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const profile = res.data.petProfile;
+        const profileData = profile && Object.keys(profile).length ? profile : EMPTY_PROFILE;
+        setPetProfile(profileData);
+      } catch (err) {
+        setPetProfile(EMPTY_PROFILE);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    const loadCities = async () => {
+      try {
+        const cities = await getWorldCities();
+        setCitiesList(cities);
+      } catch (error) {
+        console.error('Error loading cities:', error);
+      }
+    };
+    
+    fetchProfile();
+    loadCities();
+  }, []);
+
+  // Load breeds when species changes
+  useEffect(() => {
+    const loadBreeds = async () => {
+      if (petProfile.species && (petProfile.species === 'Dog' || petProfile.species === 'Cat')) {
+        setLoadingBreeds(true);
+        try {
+          const breeds = await getBreedsBySpecies(petProfile.species);
+          setBreedList(breeds);
+        } catch (error) {
+          console.error('Error loading breeds:', error);
+          setBreedList([]);
+        } finally {
+          setLoadingBreeds(false);
+        }
+      } else {
+        setBreedList([]);
+      }
+    };
+    
+    loadBreeds();
+  }, [petProfile.species]);
+
+  // Load cities when country changes
+  useEffect(() => {
+    const loadLocationSuggestions = async () => {
+      if (petProfile.location && petProfile.location.length > 2) {
+        setLoadingCities(true);
+        try {
+          const suggestions = await getFullAddressSuggestions(petProfile.location);
+          setLocationSuggestions(suggestions);
+        } catch (error) {
+          console.error('Error loading location suggestions:', error);
+          setLocationSuggestions([]);
+        } finally {
+          setLoadingCities(false);
+        }
+      } else {
+        setLocationSuggestions([]);
+      }
+    };
+    
+    const timeoutId = setTimeout(loadLocationSuggestions, 500); // Debounce
+    return () => clearTimeout(timeoutId);
+  }, [petProfile.location]);
 
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setPetProfile((prev) => ({ ...prev, [name]: value }));
+    setPetProfile(prev => {
+      const updated = { ...prev, [name]: value };
+      
+      // Reset breed when species changes
+      if (name === 'species' && value !== prev.species) {
+        updated.breed = '';
+      }
+      
+      return updated;
+    });
   };
 
   // Characteristic toggle logic
@@ -108,10 +185,8 @@ export default function EditPetProfile() {
     try {
       const msg = await saveProfile();
       setMessage(msg);
-      // Do not navigate here; user stays on page.
     } catch (err) {
-      setMessage("Save failed");
-      console.error(err);
+      setMessage('Save failed');
     } finally {
       setSaving(false);
     }
@@ -126,9 +201,9 @@ export default function EditPetProfile() {
       setMessage("");
       navigate("/survey");
     } catch (err) {
+      setMessage('Save failed');
+    } finally {
       setSaving(false);
-      setMessage("Save failed");
-      console.error(err);
     }
   };
 
@@ -172,6 +247,7 @@ export default function EditPetProfile() {
                     placeholder="Enter your pet's name"
                   />
                 </div>
+                
                 {/* Species */}
                 <div className="group">
                   <label className="block text-lg font-bold text-gray-800 mb-2">
@@ -192,6 +268,7 @@ export default function EditPetProfile() {
                     ))}
                   </select>
                 </div>
+                
                 {/* Breed */}
                 <div className="group">
                   <label className="block text-lg font-bold text-gray-800 mb-2">
@@ -201,18 +278,32 @@ export default function EditPetProfile() {
                     name="breed"
                     value={petProfile.breed}
                     onChange={handleChange}
-                    disabled={!breedList.length}
+                    disabled={!petProfile.species || loadingBreeds || (!breedList.length && (petProfile.species === 'Dog' || petProfile.species === 'Cat'))}
                     required
                     className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 disabled:opacity-50"
                   >
-                    <option value="">Select breed</option>
-                    {breedList.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
+                    <option value="">
+                      {loadingBreeds ? 'Loading breeds...' : 
+                       !petProfile.species ? 'Select species first' :
+                       petProfile.species !== 'Dog' && petProfile.species !== 'Cat' ? 'Enter breed manually' :
+                       'Select breed'}
+                    </option>
+                    {breedList.map(b => (
+                      <option key={b} value={b}>{b}</option>
                     ))}
                   </select>
+                  {/* Manual breed input for non-dog/cat species */}
+                  {petProfile.species && petProfile.species !== 'Dog' && petProfile.species !== 'Cat' && (
+                    <input
+                      name="breed"
+                      value={petProfile.breed}
+                      onChange={handleChange}
+                      placeholder="Enter breed manually"
+                      className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 mt-2"
+                    />
+                  )}
                 </div>
+                
                 {/* Sex */}
                 <div className="group">
                   <label className="block text-lg font-bold text-gray-800 mb-2">
@@ -231,22 +322,7 @@ export default function EditPetProfile() {
                     <option value="Other">Other</option>
                   </select>
                 </div>
-              </div>
-              {/* Right Column */}
-              <div className="space-y-6">
-                {/* Profile Image Preview */}
-                <div className="text-center">
-                  <div className="relative inline-block">
-                    <img
-                      src={petProfile.image}
-                      alt="Pet preview"
-                      className="w-52 h-52 rounded-full object-cover border-4 border-white shadow-lg"
-                    />
-                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                </div>
+                
                 {/* Colour */}
                 <div className="group">
                   <label className="block text-lg font-bold text-gray-800 mb-2">
@@ -261,6 +337,27 @@ export default function EditPetProfile() {
                     placeholder="e.g. Golden Brown"
                   />
                 </div>
+              </div>
+              
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* Profile Image Preview */}
+                <div className="text-center">
+                  <div className="relative inline-block">
+                    <img
+                      src={petProfile.image || 'https://via.placeholder.com/200x200?text=Pet+Photo'}
+                      alt="Pet preview"
+                      className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/200x200?text=Pet+Photo';
+                      }}
+                    />
+                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                </div>
+                
                 {/* Date of Birth */}
                 <div className="group">
                   <label className="block text-lg font-bold text-gray-800 mb-2">
@@ -275,26 +372,53 @@ export default function EditPetProfile() {
                     className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
                   />
                 </div>
-                {/* Location */}
-                <div className="group">
-                  <label className="block text-lg font-bold text-gray-800 mb-2">
+                
+                {/* Location with Autocomplete */}
+                <div className="group relative">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Location
                   </label>
                   <input
-                    list="cities"
                     name="location"
                     value={petProfile.location}
                     onChange={handleChange}
-                    placeholder="e.g. Toronto, Canada"
+                    placeholder="Start typing your location..."
                     required
                     className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+                    list="location-suggestions"
                   />
-                  <datalist id="cities">
-                    {locationList.map((loc) => (
-                      <option key={loc} value={loc} />
+                  
+                  {/* Location Suggestions Dropdown */}
+                  {locationSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-purple-200 rounded-2xl shadow-lg max-h-48 overflow-y-auto">
+                      {locationSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setPetProfile(prev => ({ ...prev, location: suggestion }));
+                            setLocationSuggestions([]);
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-purple-50 border-b border-gray-100 last:border-b-0 text-sm"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Fallback datalist for cities */}
+                  <datalist id="location-suggestions">
+                    {citiesList.slice(0, 100).map((city, index) => (
+                      <option key={index} value={city} />
                     ))}
                   </datalist>
+                  
+                  {loadingCities && (
+                    <div className="absolute right-3 top-12 animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                  )}
                 </div>
+                
                 {/* Image URL */}
                 <div className="group">
                   <label className="block text-lg font-bold text-gray-800 mb-2">
@@ -312,6 +436,7 @@ export default function EditPetProfile() {
               </div>
             </div>
           </div>
+          
           {/* Characteristics Section - Collapsible */}
           <div className="bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
             <button
@@ -328,7 +453,7 @@ export default function EditPetProfile() {
                     Top 3 Characteristics
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {petProfile.characteristics.length}/3 selected
+                    {(petProfile.characteristics || []).length}/3 selected
                   </p>
                 </div>
               </div>
@@ -348,10 +473,8 @@ export default function EditPetProfile() {
               <div className="p-6 pt-0">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {characteristicsList.map((char) => {
-                    const isSelected =
-                      petProfile.characteristics.includes(char);
-                    const isDisabled =
-                      !isSelected && petProfile.characteristics.length >= 3;
+                    const isSelected = (petProfile.characteristics || []).includes(char);
+                    const isDisabled = !isSelected && (petProfile.characteristics || []).length >= 3;
                     return (
                       <label
                         key={char}
@@ -376,13 +499,11 @@ export default function EditPetProfile() {
                   })}
                 </div>
                 {/* Selected characteristics preview */}
-                {petProfile.characteristics.length > 0 && (
+                {(petProfile.characteristics || []).length > 0 && (
                   <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      Selected:
-                    </p>
-                    <div className="flex flex-wrap gap-2 justify-center item-center">
-                      {petProfile.characteristics.map((char, idx) => (
+                    <p className="text-sm font-medium text-gray-700 mb-2">Selected:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(petProfile.characteristics || []).map((char, idx) => (
                         <span
                           key={char}
                           className={`px-4 py-2 rounded-full text-sm font-bold border-2 border-dotted ${
@@ -402,6 +523,7 @@ export default function EditPetProfile() {
               </div>
             </div>
           </div>
+          
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
             <button
@@ -441,6 +563,7 @@ export default function EditPetProfile() {
               Cancel
             </button>
           </div>
+          
           {/* Message */}
           {message && (
             <div className="text-center">

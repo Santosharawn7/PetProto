@@ -58,7 +58,7 @@ const RegistrationForm = () => {
       console.error('Error details:', error.response?.data || error.message);
       setMessage('Failed to load user types. Please refresh the page.');
       
-      // Fallback to hardcoded user types if API fails
+      // Fallback to hardcoded user types if API fails (using consistent backend format)
       const fallbackUserTypes = [
         { value: 'pet_parent', display: 'Pet Parent' },
         { value: 'pet_shop_owner', display: 'Pet Shop Owner' },
@@ -108,7 +108,15 @@ const RegistrationForm = () => {
       return;
     }
 
+    // Basic password validation
+    if (formData.password.length < 6) {
+      setMessage("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Check if email is already registered
       const methods = await fetchSignInMethodsForEmail(auth, formData.email);
       if (methods.includes('google.com')) {
         setMessage("This email is already registered via Google Sign-In. Please use the Google login option.");
@@ -116,20 +124,62 @@ const RegistrationForm = () => {
         return;
       }
 
+      // Create Firebase user
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
+      // Send email verification
       const verificationUrl = getVerificationUrl();
       await sendEmailVerification(user, { url: verificationUrl });
 
-      const backendData = { ...formData, uid: user.uid };
-      await axios.post(`${API_URL}/register`, backendData);
+      // Prepare data for backend (ensure userType is in correct format)
+      const backendData = { 
+        ...formData, 
+        uid: user.uid,
+        emailVerified: false // Will be updated when user verifies email
+      };
 
-      setMessage("Registration successful! Please check your email to verify.");
-      setTimeout(() => navigate('/login'), 3000);
+      // Register user in backend
+      const response = await axios.post(`${API_URL}/register`, backendData);
+      
+      if (response.data.success) {
+        setMessage("Registration successful! Please check your email to verify your account before logging in.");
+        setTimeout(() => navigate('/login'), 4000);
+      } else {
+        throw new Error(response.data.message || 'Registration failed');
+      }
+
     } catch (error) {
       console.error('Registration error:', error);
-      setMessage(error.response?.data?.error || error.message || 'Registration failed');
+      
+      let errorMessage = 'Registration failed';
+      
+      if (error.code) {
+        // Firebase errors
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Password is too weak. Please use a stronger password.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Please enter a valid email address.';
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+            break;
+          default:
+            errorMessage = error.message;
+        }
+      } else if (error.response) {
+        // Backend errors
+        errorMessage = error.response.data?.error || error.response.data?.message || 'Server error occurred';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -142,14 +192,14 @@ const RegistrationForm = () => {
           <img className="h-50 w-50" src={LogoOmniverse} alt="Logo" />
         </a>
         <p className="text-lg text-coolGray-500 font-medium">
-          Sign up into your account
+          Sign up for your account
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid sm:grid-cols-2 gap-8">
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">First Name</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">First Name *</label>
             <input 
               name="firstName" 
               type="text" 
@@ -158,10 +208,13 @@ const RegistrationForm = () => {
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required 
+              disabled={loading}
+              minLength={1}
+              maxLength={50}
             />
           </div>
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">Last Name</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Last Name *</label>
             <input 
               name="lastName" 
               type="text" 
@@ -170,22 +223,26 @@ const RegistrationForm = () => {
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required 
+              disabled={loading}
+              minLength={1}
+              maxLength={50}
             />
           </div>
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">Email Id</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Email Address *</label>
             <input 
               name="email" 
               type="email" 
-              placeholder="Enter email" 
+              placeholder="Enter email address" 
               value={formData.email} 
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required 
+              disabled={loading}
             />
           </div>
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">Mobile No.</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Mobile Number *</label>
             <input 
               name="phone" 
               type="tel" 
@@ -194,37 +251,42 @@ const RegistrationForm = () => {
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required 
+              disabled={loading}
             />
           </div>
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">Password</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Password *</label>
             <input 
               name="password" 
               type="password" 
-              placeholder="Enter password" 
+              placeholder="Enter password (min 6 characters)" 
               value={formData.password} 
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required 
+              disabled={loading}
+              minLength={6}
             />
           </div>
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">Confirm Password</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Confirm Password *</label>
             <input 
               name="cpassword" 
               type="password" 
-              placeholder="Enter confirm password" 
+              placeholder="Confirm your password" 
               value={confirmPassword} 
               onChange={handleConfirmChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required 
+              disabled={loading}
+              minLength={6}
             />
           </div>
         </div>
 
         <div className="mt-8 grid sm:grid-cols-2 gap-8">
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">Preferred Username</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Preferred Username *</label>
             <input 
               name="preferredUsername" 
               type="text" 
@@ -233,32 +295,37 @@ const RegistrationForm = () => {
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required 
+              disabled={loading}
+              minLength={3}
+              maxLength={30}
             />
           </div>
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">Sex</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Gender *</label>
             <select 
               name="sex" 
               value={formData.sex} 
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required
+              disabled={loading}
             >
-              <option value="">Select Sex</option>
+              <option value="">Select Gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
               <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
             </select>
           </div>
           <div>
-            <label className="block mb-2 text-coolGray-800 font-medium">User Type</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">User Type *</label>
             <select 
               name="userType" 
               value={formData.userType} 
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required
-              disabled={userTypesLoading}
+              disabled={userTypesLoading || loading}
             >
               <option value="">
                 {userTypesLoading ? 'Loading user types...' : 'Select User Type'}
@@ -274,18 +341,19 @@ const RegistrationForm = () => {
             )}
           </div>
           <div className="sm:col-span-2">
-            <label className="block mb-2 text-coolGray-800 font-medium">Address</label>
+            <label className="block mb-2 text-coolGray-800 font-medium">Address *</label>
             <input 
               name="address" 
               type="text" 
-              placeholder="Enter your address" 
+              placeholder="Enter your full address" 
               value={formData.address} 
               onChange={handleChange} 
               className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white" 
               required 
+              disabled={loading}
             />
           </div>
-          <div className="mb-3 flex items-start">
+          <div className="sm:col-span-2 mb-3 flex items-start">
             <input 
               type="checkbox" 
               id="terms" 
@@ -293,11 +361,16 @@ const RegistrationForm = () => {
               onChange={(e) => setAgreed(e.target.checked)} 
               className="mt-1 mr-2 w-5 h-5" 
               required 
+              disabled={loading}
             />
             <label htmlFor="terms" className="text-base text-coolGray-800">
               By signing up, I agree to the{' '}
               <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-bold hover:text-blue-800 underline">
                 Terms & Conditions
+              </a>
+              {' '}and{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-bold hover:text-blue-800 underline">
+                Privacy Policy
               </a>
             </label>
           </div>
@@ -306,16 +379,27 @@ const RegistrationForm = () => {
         <div className="mt-6">
           <button 
             type="submit" 
-            disabled={loading}
-            className="inline-block py-3 px-7 mb-4 w-full text-base text-green-50 font-medium text-center leading-6 bg-blue-600 hover:bg-blue-800 focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 rounded-md shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || userTypesLoading}
+            className="inline-block py-3 px-7 mb-4 w-full text-base text-green-50 font-medium text-center leading-6 bg-blue-600 hover:bg-blue-800 focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 rounded-md shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
-            {loading ? 'Creating Account...' : 'Sign up'}
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Creating Account...
+              </span>
+            ) : (
+              'Sign Up'
+            )}
           </button>
         </div>
 
         {message && (
           <div className="mt-4">
-            <p className={`text-center font-bold ${message.includes('successful') ? 'text-green-600' : 'text-red-500'}`}>
+            <p className={`text-center font-bold ${
+              message.includes('successful') || message.includes('check your email') 
+                ? 'text-green-600' 
+                : 'text-red-500'
+            }`}>
               {message}
             </p>
           </div>
@@ -325,7 +409,7 @@ const RegistrationForm = () => {
           <p className="text-sm font-medium">
             Already have an account?{' '}
             <a href="/login" className="inline-block text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">
-              Sign in
+              Sign In
             </a>
           </p>
         </div>

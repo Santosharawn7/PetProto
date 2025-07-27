@@ -10,6 +10,8 @@ import { FiLogOut, FiMenu } from "react-icons/fi";
 import { MdGroups } from "react-icons/md";
 import { FiMessageCircle } from "react-icons/fi";
 import { IoHomeSharp } from "react-icons/io5";
+import { FiShoppingBag } from "react-icons/fi";
+import { logoutAndClear } from "../../utils/auth"; // <-- add this import
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -45,8 +47,6 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         const res = await axios.get(`${API_URL}/requests`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("Fetched Requests:", res.data); // <--- Add this!
-
         const incoming = res.data.incoming || [];
         setRequests(incoming.filter((r) => r.status === "pending"));
       } catch (err) {
@@ -73,20 +73,36 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     return () => window.removeEventListener("click", onClick);
   }, [isMobile]);
 
-  // Desktop Dropdown Handler
-  const handleDesktopDropdown = (type) => (e) => {
-    e.stopPropagation();
-    setDesktopDropdown((d) => (d === type ? "" : type));
+  // FIXED handleRespond
+  const handleRespond = async (requestId, action) => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return toast.error("Not logged in!");
+
+    try {
+      const res = await axios.post(
+        `${API_URL}/requests/${requestId}/respond`,
+        { action },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.message) {
+        toast.success(res.data.message || `Request ${action}ed!`);
+        setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      } else {
+        toast.error(res.data.error || "Failed to respond.");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to respond.");
+    }
   };
 
   // Drawer controls
   const openDrawer = (type) => setDrawer(type);
   const closeDrawer = () => setDrawer("");
 
-  // Logout - now also updates auth state for App.jsx
+  // LOGOUT - Use enhanced method
   const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    if (setIsLoggedIn) setIsLoggedIn(false); // update app state
+    logoutAndClear(); // <--- clear both userToken and userData
+    if (setIsLoggedIn) setIsLoggedIn(false);
     closeDrawer();
     navigate("/login");
   };
@@ -129,6 +145,15 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FaSearch className="text-xl" />
         Search
       </button>
+      <NavLink
+        to="/shop"
+        className={({ isActive }) =>
+          `flex items-center gap-2 ${isActive ? "text-green-500 underline" : "hover:text-blue-700"}`
+        }
+      >
+        <FiShoppingBag className="text-xl" />
+        Shop
+      </NavLink>
       <button
         onClick={handleProfileClick}
         className="flex items-center gap-2 hover:text-blue-700"
@@ -139,7 +164,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
       {/* Messages */}
       <div className="relative" ref={messagesRef}>
         <button
-          onClick={handleDesktopDropdown("messages")}
+          onClick={() => setDesktopDropdown("messages")}
           className="flex items-center gap-2 hover:text-blue-700"
           title="Messages"
         >
@@ -167,7 +192,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
       {/* Notifications */}
       <div className="relative" ref={dropdownRef}>
         <button
-          onClick={handleDesktopDropdown("notifications")}
+          onClick={() => setDesktopDropdown("notifications")}
           className="flex items-center gap-2 hover:text-blue-700"
           title="Requests"
         >
@@ -279,7 +304,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         }
         style={{ flex: 1, minWidth: 88, minHeight: 88 }}
       >
-          <IoHomeSharp className="text-5xl"/>
+        <IoHomeSharp className="text-5xl" />
       </NavLink>
       {/* Community */}
       <NavLink
@@ -290,6 +315,16 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         style={{ flex: 1, minWidth: 48, minHeight: 48 }}
       >
         <MdGroups className="w-15 h-15" />
+      </NavLink>
+      {/* Shop */}
+      <NavLink
+        to="/shop"
+        className={({ isActive }) =>
+          `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
+        }
+        style={{ flex: 1, minWidth: 48, minHeight: 48 }}
+      >
+        <FiShoppingBag className="w-11 h-11" />
       </NavLink>
       {/* Notifications */}
       <button

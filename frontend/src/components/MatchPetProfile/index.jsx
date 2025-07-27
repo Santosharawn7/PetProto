@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -22,14 +22,50 @@ function getPetAge(dob) {
 const MatchPetProfile = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const match = state?.match;
+  const { userId } = useParams();
 
+  // State for dynamic profile loading
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [chatId, setChatId] = useState(null);
 
+  // If state.match provided (navigation from matches list), use it as fallback
   useEffect(() => {
-    if (!match) return;
+    let isMounted = true;
+    async function fetchProfile() {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('userToken');
+        let profileData = null;
+
+        if (userId) {
+          // Fetch from backend by userId
+          const res = await axios.get(`${API_URL}/user/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          profileData = res.data.match || res.data.petProfile || res.data; // backend may return different keys
+        } else if (state?.match) {
+          // Fallback to state.match (legacy)
+          profileData = state.match;
+        }
+
+        if (isMounted) setProfile(profileData);
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+        if (isMounted) setProfile(null);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    fetchProfile();
+    return () => { isMounted = false; };
+  }, [userId, state]);
+
+  // Chat polling (if profile present)
+  useEffect(() => {
+    if (!profile || !profile.uid) return;
     let interval;
     const loadChat = async () => {
       try {
@@ -39,24 +75,33 @@ const MatchPetProfile = () => {
         });
         const chats = res.data.chats || [];
         const existing = chats.find(c =>
-          Array.isArray(c.participants) && c.participants.includes(match.uid)
+          Array.isArray(c.participants) && c.participants.includes(profile.uid)
         );
         if (existing && existing.id !== chatId) {
           setChatId(existing.id);
         }
       } catch (err) {
-        console.error('Error loading chats', err);
+        // Ignore errors for polling
       }
     };
     loadChat();
     interval = setInterval(loadChat, 5000);
     return () => clearInterval(interval);
-  }, [match, chatId]);
+    // eslint-disable-next-line
+  }, [profile, chatId]);
 
-  if (!match) {
+  if (loading) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-500">No match data provided.</p>
+        <p>Loading profile…</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-red-500">Profile not found.</p>
         <button
           onClick={() => navigate('/home')}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -67,10 +112,11 @@ const MatchPetProfile = () => {
     );
   }
 
-  const p = match.petProfile || {};
-  const petScore = match.petMatchScore ?? 0;
-  const personalityScore = match.sentimentMatchScore ?? 0;
-  const totalScore = match.finalMatchScore ?? petScore + personalityScore;
+  // Use petProfile property if present, else profile directly
+  const p = profile.petProfile || profile;
+  const petScore = profile.petMatchScore ?? 0;
+  const personalityScore = profile.sentimentMatchScore ?? 0;
+  const totalScore = profile.finalMatchScore ?? petScore + personalityScore;
   const petAge = getPetAge(p.dob);
 
   const handleSendRequest = async () => {
@@ -79,7 +125,7 @@ const MatchPetProfile = () => {
       const token = localStorage.getItem('userToken');
       await axios.post(
         `${API_URL}/send-request`,
-        { to: match.uid, type: 'friend' },
+        { to: profile.uid, type: 'friend' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Request sent!');
