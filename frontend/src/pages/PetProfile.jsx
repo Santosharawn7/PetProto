@@ -23,27 +23,25 @@ export default function PetProfile() {
   const [loading, setLoading] = useState(true);
   const [petProfile, setPetProfile] = useState(null);
 
-
-useEffect(() => {
-  const token = localStorage.getItem('userToken');
-  if (!token) {
-    navigate('/login');
-    return;
-  }
-  axios.get(`${API_URL}/current_user`, {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-  .then(res => {
-    setPetProfile(res.data.petProfile || null);
-    setLoading(false);
-  })
-  .catch(err => {
-    console.error(err);
-    setPetProfile(null);
-    setLoading(false);
-  });
-}, [navigate]);
-
+  useEffect(() => {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    axios.get(`${API_URL}/current_user`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      setPetProfile(res.data.petProfile || null);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error(err);
+      setPetProfile(null);
+      setLoading(false);
+    });
+  }, [navigate]);
 
   if (loading) {
     return <p className="p-6 text-center">Loading pet profile…</p>;
@@ -96,7 +94,6 @@ useEffect(() => {
               <p><strong>Colour:</strong> {petProfile.colour}</p>
               <p><strong>Location:</strong> {petProfile.location}</p>
             </div>
-
             {/* Capsules for showing the personality of the pets, dynamic from backend */}
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10 mb-10">
               {(petProfile.characteristics || []).map((char, idx) => (
@@ -117,7 +114,6 @@ useEffect(() => {
                 </span>
               ))}
             </div>
-
             {/* Buttons - Centered */}
             <div className="flex flex-col sm:flex-row sm:justify-around gap-4 justify-between mt-4 sm:mt-10">
               <button

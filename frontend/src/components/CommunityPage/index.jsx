@@ -28,10 +28,8 @@ export default function CommunityPage() {
   const [location, setLocation] = useState('');
   const [photos, setPhotos] = useState(['']);
 
-  // Toggle state for comments for each post/event
   const [openComments, setOpenComments] = useState({});
 
-  // Auth header for API
   const authHeaders = async () => {
     if (!user) return {};
     try {
@@ -42,7 +40,6 @@ export default function CommunityPage() {
     }
   };
 
-  // Fetch posts
   const fetchPosts = async () => {
     try {
       const headers = user ? await authHeaders() : {};
@@ -53,7 +50,6 @@ export default function CommunityPage() {
     }
   };
 
-  // Fetch events
   const fetchEvents = async () => {
     try {
       const headers = user ? await authHeaders() : {};
@@ -64,7 +60,6 @@ export default function CommunityPage() {
     }
   };
 
-  // --- KEY FIX: Only fetch data if authenticated ---
   useEffect(() => {
     if (!loading && user) {
       setDataLoading(true);
@@ -72,9 +67,7 @@ export default function CommunityPage() {
     }
     // eslint-disable-next-line
   }, [loading, user]);
-  // --------------------------------------------------
 
-  // --- Helper Components ---
   const AuthGuard = ({ children, fallback = null }) => {
     if (!user) {
       return fallback || (
@@ -211,12 +204,12 @@ export default function CommunityPage() {
             className={`py-3 ${depth > 0 ? 'pl-4 md:pl-6 border-l-2 border-gray-300 ml-2 md:ml-4' : 'pl-0'}`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-              <span className="font-medium text-gray-900">{c.authorName || c.author}</span>
+              <span className="font-medium text-blue-900 dark:text-blue-200">{c.authorName || c.author}</span>
               <span className="text-xs text-gray-500">
                 {formatDistanceToNow(new Date(c.createdAt))} ago
               </span>
             </div>
-            <div className="text-gray-700 mb-2 break-words text-left">{c.text}</div>
+            <div className="text-indigo-800 dark:text-indigo-200 mb-2 break-words text-left">{c.text}</div>
             <div className="flex flex-wrap gap-4 text-xs">
               <AuthGuard fallback={null}>
                 <button 
@@ -234,7 +227,7 @@ export default function CommunityPage() {
 
     return (
       <div className="mt-4 pt-4 text-left">
-        <h4 className="font-medium text-gray-900 mb-3">Comments</h4>
+        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3">Comments</h4>
         {renderThread(null)}
         <AuthGuard>
           <form onSubmit={submit} className="mt-4 space-y-3">
@@ -361,7 +354,6 @@ export default function CommunityPage() {
     );
   };
 
-  // Combine for "All" tab
   const combined = [
     ...posts.map(p => ({ ...p, __type: 'post' })),
     ...events.map(e => ({ ...e, __type: 'event' }))
@@ -378,7 +370,6 @@ export default function CommunityPage() {
     );
   }
 
-  // ICON for Comments (you can swap out for other icon libs if you want)
   const CommentIcon = (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8-1.593 0-3.086-.308-4.405-.86L3 21l1.02-3.186C3.364 16.026 3 14.547 3 13c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -388,11 +379,10 @@ export default function CommunityPage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        {/* Welcome message for non-authenticated users */}
         {!user && (
-          <div className="mb-6 p-4 rounded-lg text-left" style={{background: 'transparent'}}>
-            <h2 className="font-semibold text-blue-900 mb-2">Welcome to our Community!</h2>
-            <p className="text-blue-700 text-sm">
+          <div className="mb-6 p-4 rounded-lg text-left bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
+            <h2 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">Welcome to our Community!</h2>
+            <p className="text-blue-700 dark:text-blue-300 text-sm">
               You're viewing the community feed. Sign in to create posts, events, comment, and interact.
             </p>
           </div>
@@ -428,33 +418,33 @@ export default function CommunityPage() {
                 return (
                   <div 
                     key={key}
-                    className="rounded-2xl border border-gray-300 dark:border-gray-700 shadow-md p-4 sm:p-6 mb-8"
-                    style={{ background: 'transparent' }}
+                    className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-4 sm:p-6 mb-8
+                               bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 transition"
                   >
                     {item.__type === 'post' ? (
                       <>
                         <div className="flex items-center mb-4 text-left">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full mr-3 flex items-center justify-center">
+                          <div className="w-10 h-10 bg-gradient-to-r from-indigo-400 to-blue-600 rounded-full mr-3 flex items-center justify-center">
                             <span className="text-white font-medium text-sm">
                               {(item.authorName || 'User').charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">{item.authorName || 'You'}</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">{item.authorName || 'You'}</p>
                             <p className="text-xs text-gray-500">
                               {formatDistanceToNow(new Date(item.createdAt))} ago
                             </p>
                           </div>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold mb-3 text-gray-900 text-left">{item.title}</h3>
+                        <h3 className="text-lg sm:text-xl font-extrabold mb-3 text-blue-900 dark:text-blue-100 text-left tracking-tight">{item.title}</h3>
                         {item.description && (
-                          <p className="text-gray-700 mb-4 leading-relaxed text-left">{item.description}</p>
+                          <p className="text-indigo-800 dark:text-indigo-200 mb-4 leading-relaxed text-left">{item.description}</p>
                         )}
                         {item.image && (
                           <img
                             src={item.image}
                             alt={item.title}
-                            className="w-full max-h-96 object-cover mb-4 mx-auto block rounded-xl"
+                            className="w-full max-h-96 object-cover mb-4 mx-auto block rounded-xl shadow-md"
                           />
                         )}
                         <ReactionButtons entityType="post" entityId={item.id} />
@@ -478,13 +468,13 @@ export default function CommunityPage() {
                     ) : (
                       <>
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 text-left">
-                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-0">{item.title}</h3>
-                          <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                          <h3 className="text-lg sm:text-xl font-extrabold text-blue-900 dark:text-blue-100 mb-2 sm:mb-0 tracking-tight">{item.title}</h3>
+                          <span className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
                             {formatDistanceToNow(new Date(item.createdAt))} ago
                           </span>
                         </div>
                         {item.description && (
-                          <p className="text-gray-700 mb-4 leading-relaxed text-left">{item.description}</p>
+                          <p className="text-indigo-800 dark:text-indigo-200 mb-4 leading-relaxed text-left">{item.description}</p>
                         )}
                         <div className="space-y-2 mb-4">
                           {item.dateFilter && (
@@ -505,12 +495,11 @@ export default function CommunityPage() {
                             key={i} 
                             src={url} 
                             alt={`Event photo ${i + 1}`}
-                            className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl"
+                            className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-md"
                           />
                         ))}
                         <RSVPButtons eventId={item.id} />
                         <ReactionButtons entityType="event" entityId={item.id} />
-                        {/* Comments toggle button */}
                         <button
                           className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mt-2 text-sm"
                           onClick={() =>
@@ -550,10 +539,10 @@ export default function CommunityPage() {
                   await handleCreatePost(e);
                   setShowPostForm(false);
                 }} 
-                className="rounded-2xl border border-gray-300 dark:border-gray-700 shadow-md p-6 mb-8 text-left"
-                style={{ background: 'transparent' }}
+                className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-6 mb-8 text-left
+                           bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900"
               >
-                <h3 className="font-semibold text-lg text-gray-900">Create New Post</h3>
+                <h3 className="font-semibold text-lg text-blue-900 dark:text-blue-100">Create New Post</h3>
                 <input
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Post title"
@@ -601,30 +590,31 @@ export default function CommunityPage() {
               posts.map(p => {
                 const key = 'post-' + p.id;
                 return (
-                  <div key={key} className="rounded-2xl border border-gray-300 dark:border-gray-700 shadow-md p-4 sm:p-6 mb-8 text-left" style={{ background: 'transparent' }}>
+                  <div key={key} className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-4 sm:p-6 mb-8 text-left
+                                            bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
                     <div className="flex items-center mb-4 text-left">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full mr-3 flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gradient-to-r from-indigo-400 to-blue-600 rounded-full mr-3 flex items-center justify-center">
                         <span className="text-white font-medium text-sm">
                           {(p.authorName || 'User').charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{p.authorName || 'You'}</p>
+                        <p className="font-semibold text-blue-900 dark:text-blue-200">{p.authorName || 'You'}</p>
                         <p className="text-xs text-gray-500">
                           {formatDistanceToNow(new Date(p.createdAt))} ago
                         </p>
                       </div>
                     </div>
-                    <h3 className="text-lg sm:text-xl font-bold mb-3 text-gray-900 text-left">{p.title}</h3>
+                    <h3 className="text-lg sm:text-xl font-extrabold mb-3 text-blue-900 dark:text-blue-100 text-left tracking-tight">{p.title}</h3>
                     {p.image && (
                       <img 
                         src={p.image} 
                         alt={p.title}
-                        className="w-full max-h-96 object-cover mb-4 mx-auto block rounded-xl"
+                        className="w-full max-h-96 object-cover mb-4 mx-auto block rounded-xl shadow-md"
                       />
                     )}
                     {p.description && (
-                      <p className="text-gray-700 mb-4 leading-relaxed text-left">{p.description}</p>
+                      <p className="text-indigo-800 dark:text-indigo-200 mb-4 leading-relaxed text-left">{p.description}</p>
                     )}
                     <ReactionButtons entityType="post" entityId={p.id} />
                     <button
@@ -664,10 +654,10 @@ export default function CommunityPage() {
                   await handleCreateEvent(e);
                   setShowEventForm(false);
                 }} 
-                className="rounded-2xl border border-gray-300 dark:border-gray-700 shadow-md p-6 mb-8 text-left"
-                style={{ background: 'transparent' }}
+                className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-6 mb-8 text-left
+                           bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900"
               >
-                <h3 className="font-semibold text-lg text-gray-900">Create New Event</h3>
+                <h3 className="font-semibold text-lg text-blue-900 dark:text-blue-100">Create New Event</h3>
                 <input
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Event title"
@@ -695,7 +685,7 @@ export default function CommunityPage() {
                   onChange={e => setLocation(e.target.value)}
                 />
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Event Photos</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Event Photos</label>
                   {photos.map((url, i) => (
                     <input
                       key={i}
@@ -744,15 +734,16 @@ export default function CommunityPage() {
               events.map(ev => {
                 const key = 'event-' + ev.id;
                 return (
-                  <div key={key} className="rounded-2xl border border-gray-300 dark:border-gray-700 shadow-md p-4 sm:p-6 mb-8 text-left" style={{ background: 'transparent' }}>
+                  <div key={key} className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-4 sm:p-6 mb-8 text-left
+                                            bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 text-left">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-0">{ev.title}</h3>
-                      <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-blue-900 dark:text-blue-100 mb-2 sm:mb-0 tracking-tight">{ev.title}</h3>
+                      <span className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
                         {formatDistanceToNow(new Date(ev.createdAt))} ago
                       </span>
                     </div>
                     {ev.description && (
-                      <p className="text-gray-700 mb-4 leading-relaxed text-left">{ev.description}</p>
+                      <p className="text-indigo-800 dark:text-indigo-200 mb-4 leading-relaxed text-left">{ev.description}</p>
                     )}
                     <div className="space-y-2 mb-4">
                       {ev.dateFilter && (
@@ -773,7 +764,7 @@ export default function CommunityPage() {
                         key={i} 
                         src={url} 
                         alt={`Event photo ${i + 1}`}
-                        className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl"
+                        className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-md"
                       />
                     ))}
                     <RSVPButtons eventId={ev.id} />
@@ -802,13 +793,10 @@ export default function CommunityPage() {
     </div>
   );
 
-  // --- HANDLER FUNCTIONS FOR CREATE POST/EVENT ---
-
   async function handleCreatePost(e) {
     e.preventDefault();
     if (!newTitle.trim()) return toast.warn('Title required');
     if (!user) return toast.error('Please sign in to create posts');
-    
     try {
       await axios.post(
         `${API_URL}/posts`,
@@ -829,7 +817,6 @@ export default function CommunityPage() {
     e.preventDefault();
     if (!title.trim()) return toast.warn('Title required');
     if (!user) return toast.error('Please sign in to create events');
-    
     try {
       await axios.post(
         `${API_URL}/events`,

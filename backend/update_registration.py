@@ -1,61 +1,77 @@
 # update_registration.py
+
 from flask import Blueprint, request, jsonify
+from firebase_admin import auth, firestore
 from flask_cors import cross_origin
-from firebase_admin import firestore
+from user_types import ALLOWED_USER_TYPES
 
 update_registration_bp = Blueprint('update_registration_bp', __name__)
-
-# Allowed user types
-ALLOWED_USER_TYPES = {
-    "Admin",
-    "Pet Parent",
-    "Pet Shop Owner",
-    "Veterinarian",
-    "Pet Sitter"
-}
 
 @update_registration_bp.route('/update-registration', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def update_registration():
     if request.method == 'OPTIONS':
-        return jsonify({}), 200
+        return '', 204
 
-    data = request.json
-    if not data or 'uid' not in data:
-        return jsonify({'error': 'Missing user UID'}), 400
-
-    uid = data['uid']
-
-    # Fetch user doc
-    db = firestore.client()
-    user_ref = db.collection('users').document(uid)
-    user_doc = user_ref.get()
-    if not user_doc.exists:
-        return jsonify({'error': 'User not found'}), 404
-
-    # Prepare updates
-    update_fields = {}
-    updatable_fields = [
-        'firstName', 'lastName', 'preferredUsername',
-        'phone', 'email', 'sex', 'address'
-    ]
-
-    for field in updatable_fields:
-        if field in data:
-            update_fields[field] = data[field]
-
-    # Handle userType (if provided)
-    if 'userType' in data:
-        user_type = data['userType']
-        if user_type not in ALLOWED_USER_TYPES:
-            return jsonify({'error': f'Invalid userType: {user_type}. Allowed types: {", ".join(ALLOWED_USER_TYPES)}'}), 400
-        update_fields['userType'] = user_type
-
-    if not update_fields:
-        return jsonify({'error': 'No fields to update'}), 400
+    token_header = request.headers.get('Authorization')
+    if not token_header or not token_header.startswith("Bearer "):
+        return jsonify({'error': 'Missing or invalid token'}), 401
 
     try:
-        user_ref.update(update_fields)
-        return jsonify({'message': 'User profile updated successfully'}), 200
+        token = token_header.split(" ")[1]
+        decoded = auth.verify_id_token(token)
+        uid = decoded['uid']
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid token: ' + str(e)}), 401
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    required_fields = [
+        'firstName', 'lastName', 'preferredUsername', 'phone',
+        'sex', 'address', 'userType'
+    ]
+    missing = [f for f in required_fields if not data.get(f)]
+    if missing:
+        return jsonify({'error': f'Missing required fields: {", ".join(missing)}'}), 400
+
+    # Validate userType
+    if data['userType'] not in ALLOWED_USER_TYPES:
+        return jsonify({'error': f'Invalid userType. Must be one of: {", ".join(ALLOWED_USER_TYPES)}'}), 400
+
+    db = firestore.client()
+    users_ref = db.collection('users')
+
+    # Check for duplicate username or phone
+    existing_user_query = users_ref.where('preferredUsername', '==', data['preferredUsername']).get()
+    for doc in existing_user_query:
+        if doc.id != uid:
+            return jsonify({'error': 'Username already taken. Please choose a different one.'}), 409
+
+    existing_phone_query = users_ref.where('phone', '==', data['phone']).get()
+    for doc in existing_phone_query:
+        if doc.id != uid:
+            return jsonify({'error': 'Phone number already registered. Please use a different number.'}), 409
+
+    # Prepare user data to update
+    update_data = {
+        'firstName': data['firstName'].strip(),
+        'lastName': data['lastName'].strip(),
+        'preferredUsername': data['preferredUsername'].strip(),
+        'phone': data['phone'].strip(),
+        'sex': data['sex'].strip(),
+        'address': data['address'].strip(),
+        'userType': data['userType'],
+        'profileCompleted': True,
+    }
+
+    # You can also add: 'lastUpdated': firestore.SERVER_TIMESTAMP,
+
+    user_ref = users_ref.document(uid)
+    user_ref.set(update_data, merge=True)
+
+    updated_user = user_ref.get().to_dict()
+    updated_user['uid'] = uid  # Always include UID
+
+    return jsonify({'success': True, 'user': updated_user}), 200

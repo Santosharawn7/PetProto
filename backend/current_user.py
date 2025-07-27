@@ -1,4 +1,3 @@
-# current_user.py
 from flask import Blueprint, request, jsonify
 from firebase_admin import auth, firestore
 from flask_cors import cross_origin
@@ -27,6 +26,11 @@ def get_current_user():
     db = firestore.client()
     doc = db.collection('users').document(uid).get()
     if doc.exists:
-        return jsonify(doc.to_dict()), 200
+        data = doc.to_dict()
+        # Attach petProfile at top level if you want
+        pet_profile = data.get('petProfile', None)
+        if pet_profile:
+            data['petProfile'] = pet_profile
+        return jsonify(data), 200
     else:
         return jsonify({'error': 'User not found'}), 404
