@@ -9,6 +9,9 @@ import { FaPaw, FaBell, FaSearch } from "react-icons/fa";
 import { FiLogOut, FiMenu } from "react-icons/fi";
 import { MdGroups } from "react-icons/md";
 import { FiMessageCircle } from "react-icons/fi";
+import { IoHomeSharp } from "react-icons/io5";
+import { FiShoppingBag } from "react-icons/fi";
+import { logoutAndClear } from "../../utils/auth"; // <-- add this import
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -70,20 +73,36 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     return () => window.removeEventListener("click", onClick);
   }, [isMobile]);
 
-  // Desktop Dropdown Handler
-  const handleDesktopDropdown = (type) => (e) => {
-    e.stopPropagation();
-    setDesktopDropdown((d) => (d === type ? "" : type));
+  // FIXED handleRespond
+  const handleRespond = async (requestId, action) => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return toast.error("Not logged in!");
+
+    try {
+      const res = await axios.post(
+        `${API_URL}/requests/${requestId}/respond`,
+        { action },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.message) {
+        toast.success(res.data.message || `Request ${action}ed!`);
+        setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      } else {
+        toast.error(res.data.error || "Failed to respond.");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to respond.");
+    }
   };
 
   // Drawer controls
   const openDrawer = (type) => setDrawer(type);
   const closeDrawer = () => setDrawer("");
 
-  // Logout - now also updates auth state for App.jsx
+  // LOGOUT - Use enhanced method
   const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    if (setIsLoggedIn) setIsLoggedIn(false); // update app state
+    logoutAndClear(); // <--- clear both userToken and userData
+    if (setIsLoggedIn) setIsLoggedIn(false);
     closeDrawer();
     navigate("/login");
   };
@@ -126,6 +145,15 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FaSearch className="text-xl" />
         Search
       </button>
+      <NavLink
+        to="/shop"
+        className={({ isActive }) =>
+          `flex items-center gap-2 ${isActive ? "text-green-500 underline" : "hover:text-blue-700"}`
+        }
+      >
+        <FiShoppingBag className="text-xl" />
+        Shop
+      </NavLink>
       <button
         onClick={handleProfileClick}
         className="flex items-center gap-2 hover:text-blue-700"
@@ -136,7 +164,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
       {/* Messages */}
       <div className="relative" ref={messagesRef}>
         <button
-          onClick={handleDesktopDropdown("messages")}
+          onClick={() => setDesktopDropdown("messages")}
           className="flex items-center gap-2 hover:text-blue-700"
           title="Messages"
         >
@@ -164,7 +192,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
       {/* Notifications */}
       <div className="relative" ref={dropdownRef}>
         <button
-          onClick={handleDesktopDropdown("notifications")}
+          onClick={() => setDesktopDropdown("notifications")}
           className="flex items-center gap-2 hover:text-blue-700"
           title="Requests"
         >
@@ -274,12 +302,9 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         className={({ isActive }) =>
           `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
         }
-        style={{ flex: 1, minWidth: 48, minHeight: 48 }}
+        style={{ flex: 1, minWidth: 88, minHeight: 88 }}
       >
-        {/* Home icon only, no logo here */}
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19 21v-6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6M22 11l-10-9-10 9"/>
-        </svg>
+        <IoHomeSharp className="text-5xl" />
       </NavLink>
       {/* Community */}
       <NavLink
@@ -289,15 +314,30 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         }
         style={{ flex: 1, minWidth: 48, minHeight: 48 }}
       >
-        <MdGroups className="w-12 h-12" />
+        <MdGroups className="w-15 h-15" />
       </NavLink>
-      {/* Pet Profile */}
+      {/* Shop */}
+      <NavLink
+        to="/shop"
+        className={({ isActive }) =>
+          `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
+        }
+        style={{ flex: 1, minWidth: 48, minHeight: 48 }}
+      >
+        <FiShoppingBag className="w-11 h-11" />
+      </NavLink>
+      {/* Notifications */}
       <button
-        onClick={handleProfileClick}
-        className="flex items-center justify-center text-gray-400"
+        onClick={() => openDrawer("notifications")}
+        className="flex items-center justify-center text-gray-400 relative"
         style={{ flex: 1, minWidth: 44, minHeight: 44 }}
       >
-        <FaPaw className="w-10 h-10" />
+        <FaBell className="w-11 h-11" />
+        {requests.length > 0 && (
+          <span className="absolute top-2 right-5 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {requests.length}
+          </span>
+        )}
       </button>
       {/* More */}
       <button
@@ -305,7 +345,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         className="flex items-center justify-center text-gray-400"
         style={{ flex: 1, minWidth: 44, minHeight: 44 }}
       >
-        <FiMenu className="w-10 h-10" />
+        <FiMenu className="w-12 h-12" />
       </button>
     </nav>
   );
@@ -338,22 +378,12 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
             </div>
             {drawer === "more" && (
               <>
+                {/* Pet Profile */}
                 <button
                   className="flex items-center gap-3 p-4 border-b w-full"
-                  onClick={() => openDrawer("messages")}
+                  onClick={handleProfileClick}
                 >
-                  <FiMessageCircle className="text-xl" /> Messages
-                </button>
-                <button
-                  className="flex items-center gap-3 p-4 border-b w-full"
-                  onClick={() => openDrawer("notifications")}
-                >
-                  <FaBell className="text-xl" /> Notifications
-                  {requests.length > 0 && (
-                    <span className="ml-2 text-red-600">
-                      ({requests.length})
-                    </span>
-                  )}
+                  <FaPaw className="text-xl" /> My Pet Profile
                 </button>
                 <button
                   className="flex items-center gap-3 p-4 w-full text-red-600"
@@ -390,7 +420,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
                     requests.map((r) => (
                       <div
                         key={r.id}
-                        className="flex justify-between items-center px-4 py-2 border-b last:border-none"
+                        className="flex justify-between items-center px-2 py-2 border-b last:border-none"
                       >
                         <div className="flex items-center space-x-3">
                           {r.fromAvatar && (
@@ -404,16 +434,16 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
                             {r.fromPetName || r.from}
                           </span>
                         </div>
-                        <div className="flex flex-col space-y-1">
+                        <div className="flex flex-row space-x-3">
                           <button
                             onClick={() => handleRespond(r.id, "accept")}
-                            className="bg-green-600 text-white text-sm px-6 py-2 rounded hover:bg-green-800"
+                            className="bg-green-600 text-white text-base font-bold px-7 py-3 rounded hover:bg-green-800"
                           >
                             Accept
                           </button>
                           <button
                             onClick={() => handleRespond(r.id, "reject")}
-                            className="bg-red-600 text-white text-sm px-6 py-2 rounded hover:bg-red-800"
+                            className="bg-red-600 text-white text-base font-bold px-7 py-2 rounded hover:bg-red-800"
                           >
                             Reject
                           </button>

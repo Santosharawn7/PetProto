@@ -11,6 +11,15 @@ function getQueryParam(param) {
   return urlParams.get(param);
 }
 
+// Helper function to flatten user data (from original)
+function flattenUser(user) {
+  if (user && typeof user === "object" && user.user && typeof user.user === "object") {
+    user = { ...user.user, ...user };
+    delete user.user;
+  }
+  return user;
+}
+
 // Your Pet Shop URLs (update as needed)
 const PET_SHOP_URL_LOCAL = "http://localhost:5002/shop";
 const PET_SHOP_URL_LAN = "http://192.168.2.17:5002/shop"; // Update to your network IP as needed
@@ -24,13 +33,27 @@ const Login = ({ setIsLoggedIn }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Redirect to /shop or redirect param if already logged in
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    process.env.VITE_API_URL ||
+    'http://127.0.0.1:5000';
+
+  // Enhanced redirect logic that checks localStorage on mount (from original)
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (token) {
-      const userData = localStorage.getItem('userData');
-      if (userData) {
-        redirectToShop(JSON.parse(userData).userType);
+      const userDataStr = localStorage.getItem('userData');
+      if (userDataStr) {
+        try {
+          let userData = JSON.parse(userDataStr);
+          userData = flattenUser(userData);
+          if (userData.userType === 'pet_shop_owner') navigate('/shop', { replace: true });
+          else if (userData.userType === 'pet_parent') navigate('/home', { replace: true });
+          else navigate('/shop', { replace: true });
+        } catch {
+          // If parsing fails, use the new redirect logic
+          redirectToShop(JSON.parse(userDataStr).userType);
+        }
       } else {
         navigate('/shop');
       }
@@ -41,11 +64,6 @@ const Login = ({ setIsLoggedIn }) => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const API_URL =
-    import.meta.env.VITE_API_URL ||
-    process.env.VITE_API_URL ||
-    'http://127.0.0.1:5000';
 
   // Main redirect logic:
   // - If user is "pet-shop-owner" (code, not display name), send to Pet Shop app.
@@ -72,100 +90,90 @@ const Login = ({ setIsLoggedIn }) => {
     navigate('/shop');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage('');
+  // Enhanced login function that combines both approaches
+  const doLogin = async (payload) => {
     setLoading(true);
-
+    setMessage('');
     try {
-      const response = await axios.post(`${API_URL}/login`, formData);
+      const response = await axios.post(`${API_URL}/login`, payload);
+      if (response.data && response.data.idToken) {
+        const flatUser = flattenUser(response.data);
+        localStorage.setItem('userToken', flatUser.idToken || flatUser.id_token);
+        localStorage.setItem('userData', JSON.stringify(flatUser));
+        if (setIsLoggedIn) setIsLoggedIn(true);
 
-      if (response.data.idToken) {
-        // Store authentication token
-        localStorage.setItem('userToken', response.data.idToken);
-
-        // Store user data including userType
-        const userData = {
-          email: response.data.email,
-          userType: response.data.userType, // e.g., "pet-shop-owner", "pet_parent", etc.
-          localId: response.data.localId,
-          expiresIn: response.data.expiresIn,
-        };
-        localStorage.setItem('userData', JSON.stringify(userData));
-
-        // Update auth state
-        setIsLoggedIn(true);
-
-        // Redirect after login (userType-aware)
-        redirectToShop(response.data.userType);
-
-      } else {
-        setMessage("Login error: No valid token returned");
-      }
-    } catch (error) {
-      if (error.response) {
-        if (error.response.status === 404) {
-          setMessage('User not found');
-        } else if (error.response.status === 403) {
-          setMessage('Please verify your email before logging in');
+        // Check for profile completion (from original)
+        if (!flatUser.profileCompleted) {
+          setMessage('Please complete your registration.');
+          setTimeout(() => navigate('/update-registration'), 1000);
         } else {
-          setMessage(error.response.data.error || 'Login failed');
+          // Use the new redirect logic
+          redirectToShop(flatUser.userType);
         }
       } else {
-        setMessage('Login failed – please check your connection');
+        setMessage(response.data.error || 'Login failed. Please try again.');
       }
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      // Enhanced error handling from original
+      setMessage(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        'Login failed. Please try again.'
+      );
     }
+    setLoading(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.identifier || !formData.password) {
+      setMessage('Please fill in both fields.');
+      return;
+    }
+    doLogin({ identifier: formData.identifier, password: formData.password });
+  };
+
+  // Google sign-in handler (from original)
+  const handleGoogleLogin = (googleIdToken) => {
+    doLogin({ idToken: googleIdToken });
   };
 
   return (
-    <section
-      className="py-24 md:py-32"
-      style={{
-        backgroundImage: "url('flex-ui-assets/elements/pattern-white.svg')",
-        backgroundPosition: 'center',
-      }}
-    >
+    <section className="py-24 md:py-32">
       <div className="container px-4 mx-auto">
         <div className="max-w-sm mx-auto">
           <div className="mb-8 text-center">
             <a className="inline-block" href="#">
-              <img
-                className="h-50 w-50"
-                src={LogoOmniverse}
-                alt="Logo"
-              />
+              <img className="h-50 w-50" src={LogoOmniverse} alt="Logo" />
             </a>
-            <p className="text-lg text-coolGray-500 font-medium">
-              Sign in to your account
-            </p>
+            <p className="text-lg text-coolGray-500 font-medium">Sign in to your account</p>
           </div>
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
-              <label className="block mb-2 text-coolGray-800 font-medium">Email or Username*</label>
+              <label className="block mb-2 text-coolGray-800 font-medium">Email or Username *</label>
               <input
                 type="text"
                 name="identifier"
-                placeholder="Enter email or username"
                 value={formData.identifier}
                 onChange={handleChange}
-                className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
                 required
                 disabled={loading}
+                placeholder="Enter your email or username"
+                className="block w-full p-3 border rounded-lg"
               />
             </div>
             <div className="mb-4">
-              <label className="block mb-2 text-coolGray-800 font-medium">Password*</label>
+              <label className="block mb-2 text-coolGray-800 font-medium">Password *</label>
               <input
                 type="password"
                 name="password"
-                placeholder="Enter password"
                 value={formData.password}
                 onChange={handleChange}
-                className="appearance-none block w-full p-3 leading-5 text-coolGray-900 border border-coolGray-200 rounded-lg shadow-md placeholder-coolGray-400 focus:outline-none focus:ring-3 bg-white"
                 required
                 disabled={loading}
+                placeholder="Enter your password"
+                className="block w-full p-3 border rounded-lg"
               />
             </div>
             <div className="my-4 text-right">
@@ -173,16 +181,11 @@ const Login = ({ setIsLoggedIn }) => {
                 Forgot Password?
               </a>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-block py-3 px-7 mb-4 w-full text-base text-green-50 font-medium text-center leading-6 bg-blue-600 hover:bg-blue-800 focus:ring-3 focus:ring-green-500 focus:ring-opacity-50 rounded-md shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Login'}
+            <button type="submit" disabled={loading} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold">
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
-            <div className="mb-6">
-              <GoogleSignIn />
+            <div className="my-6">
+              <GoogleSignIn onGoogleSuccess={handleGoogleLogin} disabled={loading} />
             </div>
             <p className="text-center">
               <span className="text-sm font-medium">Don't have an account?</span>{' '}
@@ -193,15 +196,11 @@ const Login = ({ setIsLoggedIn }) => {
                 Sign Up
               </a>
             </p>
-
             {message && (
-              <div className="mt-4">
-                <p className={`text-center font-bold ${message.includes('verify') ? 'text-yellow-600' : 'text-red-500'}`}>
-                  {message}
-                </p>
+              <div className={`mt-4 text-center font-bold ${message.includes('success') || message.includes('complete') ? 'text-green-600' : message.includes('verify') ? 'text-yellow-600' : 'text-red-500'}`}>
+                {message}
               </div>
             )}
-
           </form>
         </div>
       </div>

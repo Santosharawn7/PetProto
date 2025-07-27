@@ -1,37 +1,29 @@
-# register.py
 from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
-from firebase_admin import firestore
+from firebase_admin import firestore, auth
+from user_types import ALLOWED_USER_TYPES, USER_TYPE_DISPLAY_NAMES
+import logging
 
 register_bp = Blueprint('register_bp', __name__)
 
-# --- Allowed user types (consistent with login.py) ---
-ALLOWED_USER_TYPES = {
-    "admin",
-    "pet_parent", 
-    "pet_shop_owner",
-    "veterinarian",
-    "pet_sitter"
-}
-
-# User-friendly display names for frontend
-USER_TYPE_DISPLAY_NAMES = {
-    "admin": "Admin",
-    "pet_parent": "Pet Parent",
-    "pet_shop_owner": "Pet Shop Owner", 
-    "veterinarian": "Veterinarian",
-    "pet_sitter": "Pet Sitter"
-}
+def set_user_custom_claims(uid, user_type):
+    """Helper function to set Firebase custom claims"""
+    try:
+        # Set custom claims for the user
+        auth.set_custom_user_claims(uid, {
+            'userType': user_type
+        })
+        logging.info(f"✅ Custom claims set for user {uid}: userType = {user_type}")
+        return True
+    except Exception as e:
+        logging.error(f"❌ Error setting custom claims for {uid}: {e}")
+        return False
 
 @register_bp.route('/user-types', methods=['GET'])
 @cross_origin()
 def get_user_types():
-    """
-    Endpoint to provide allowed user types for registration dropdown.
-    Returns: JSON object with value and display name pairs.
-    """
     user_types = [
-        {"value": key, "display": display} 
+        {"value": key, "display": display}
         for key, display in USER_TYPE_DISPLAY_NAMES.items()
     ]
     return jsonify(user_types), 200
@@ -51,10 +43,10 @@ def register():
     if missing:
         return jsonify({'error': f'Missing fields: {", ".join(missing)}'}), 400
 
-    # Validate userType
-    if data['userType'] not in ALLOWED_USER_TYPES:
-        allowed_display = ", ".join(USER_TYPE_DISPLAY_NAMES.values())
-        return jsonify({'error': f'Invalid userType: {data["userType"]}. Allowed types: {allowed_display}'}), 400
+    # Validate userType (must be canonical)
+    user_type = data['userType']
+    if user_type not in ALLOWED_USER_TYPES:
+        return jsonify({'error': f'Invalid userType: {user_type}'}), 400
 
     try:
         user_data = {
@@ -66,13 +58,26 @@ def register():
             'sex': data['sex'],
             'address': data['address'],
             'uid': data['uid'],
-            'userType': data['userType']
+            'userType': user_type   # only canonical type
         }
 
+        # Save to Firestore
         db = firestore.client()
         db.collection('users').document(data['uid']).set(user_data)
-
-        return jsonify({'message': 'User data saved successfully'}), 201
+        
+        # Set Firebase custom claims
+        claims_success = set_user_custom_claims(data['uid'], user_type)
+        
+        response_data = {
+            'message': 'User data saved successfully',
+            'customClaimsSet': claims_success
+        }
+        
+        if not claims_success:
+            response_data['warning'] = 'User registered but custom claims failed to set'
+        
+        return jsonify(response_data), 201
 
     except Exception as e:
+        logging.error(f"Registration error: {e}")
         return jsonify({'error': str(e)}), 500

@@ -4,7 +4,6 @@ import { auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || "http://127.0.0.1:5000";
-// You can use a default avatar or pet paw icon if avatar is missing.
 const PLACEHOLDER_AVATAR = "https://ui-avatars.com/api/?name=Pet&background=random";
 
 export default function FriendList() {
@@ -37,13 +36,11 @@ export default function FriendList() {
     return () => { isMounted = false; }
   }, []);
 
-  // Optionally: Add last message, unread, etc, if you want
   const openChat = async (friendUid) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
       const token = await user.getIdToken();
-      // Find or create chat with that friend
       const res = await axios.get(`${API_URL}/chats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -51,7 +48,6 @@ export default function FriendList() {
         c => !c.isGroup && c.participants && c.participants.includes(friendUid)
       );
       if (!chat) {
-        // Create if not exists
         const createRes = await axios.post(`${API_URL}/chats`, {
           participants: [user.uid, friendUid],
           isGroup: false
@@ -65,8 +61,18 @@ export default function FriendList() {
   };
 
   return (
-    <div className="w-full max-w-xs bg-white rounded-xl shadow p-0" style={{ minWidth: 260 }}>
-      <h2 className="text-center font-bold text-xl px-4 py-3 border-b-3">Chats</h2>
+    <div
+      className="
+        w-full
+        max-h-[60vh]
+        overflow-y-auto
+        bg-white
+        rounded-xl
+        shadow
+        p-0
+        md:max-w-xs
+      "
+    >
       {loading ? (
         <div className="text-center text-gray-400 py-6">Loading…</div>
       ) : friends.length === 0 ? (
@@ -77,27 +83,22 @@ export default function FriendList() {
             <li
               key={friend.uid}
               className="
-                flex items-center px-3 py-2 gap-3 cursor-pointer
-                hover:bg-gray-200 active:bg-gray-400 transition
+                flex items-center px-4 py-3 gap-4 cursor-pointer
+                hover:bg-gray-100 active:bg-gray-200 transition
                 border-b
               "
-              tabIndex={0}
               onClick={() => openChat(friend.uid)}
             >
               <img
                 src={friend.avatarUrl || PLACEHOLDER_AVATAR}
                 alt={friend.displayName}
-                className="w-11 h-11 rounded-full object-cover border-green-500 border-3"
+                className="w-12 h-12 rounded-full object-cover border-2 border-green-500"
               />
               <div className="flex flex-col flex-1 overflow-hidden">
                 <span className="font-semibold text-base text-gray-900 truncate">
                   {friend.displayName}
                 </span>
-                {/* If you have last message, time, show here */}
-                {/* <span className="text-gray-500 text-sm truncate">Last message…</span> */}
               </div>
-              {/* Optionally, show unread dot or time here */}
-              {/* <span className="ml-auto text-xs text-gray-400">2:13 PM</span> */}
             </li>
           ))}
         </ul>
