@@ -32,6 +32,7 @@ import { buildApiUrl } from './config/api';
 // Auth utils
 import { isValidToken } from './utils/auth';
 import RegistrationForm from './pages/Registration';
+import Messages from './components/Message';
 
 function AppContent() {
   // Main app state
@@ -198,6 +199,7 @@ function AppContent() {
         <Route path="/pet-profile" element={<PrivateRoute><PetProfile /></PrivateRoute>} />
         <Route path="/edit-pet" element={<PrivateRoute><EditPetProfile /></PrivateRoute>} />
         <Route path="/update_registration" element={<PrivateRoute><UpdateRegistration /></PrivateRoute>} />
+        <Route path="/message" element={<PrivateRoute><Messages/></PrivateRoute>} />
         <Route path="/chat/:chatId" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
         <Route path="/community" element={<PrivateRoute><CommunityPage /></PrivateRoute>} />
         <Route path="/friends" element={<PrivateRoute><FriendList /></PrivateRoute>} />

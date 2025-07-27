@@ -11,7 +11,7 @@ import { MdGroups } from "react-icons/md";
 import { FiMessageCircle } from "react-icons/fi";
 import { IoHomeSharp } from "react-icons/io5";
 import { FiShoppingBag } from "react-icons/fi";
-import { logoutAndClear } from "../../utils/auth"; // <-- add this import
+import { logoutAndClear } from "../../utils/auth";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -73,7 +73,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     return () => window.removeEventListener("click", onClick);
   }, [isMobile]);
 
-  // FIXED handleRespond
+  // Respond to requests
   const handleRespond = async (requestId, action) => {
     const token = localStorage.getItem("userToken");
     if (!token) return toast.error("Not logged in!");
@@ -99,15 +99,13 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
   const openDrawer = (type) => setDrawer(type);
   const closeDrawer = () => setDrawer("");
 
-  // LOGOUT - Use enhanced method
   const handleLogout = () => {
-    logoutAndClear(); // <--- clear both userToken and userData
+    logoutAndClear();
     if (setIsLoggedIn) setIsLoggedIn(false);
     closeDrawer();
     navigate("/login");
   };
 
-  // Pet Profile handler for bottom menu (not in drawer)
   const handleProfileClick = async () => {
     const token = localStorage.getItem("userToken");
     if (!token) {
@@ -161,7 +159,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FaPaw className="text-xl" />
         My Pet Profile
       </button>
-      {/* Messages */}
+      {/* --------- UPDATED MESSAGES DROPDOWN ---------- */}
       <div className="relative" ref={messagesRef}>
         <button
           onClick={() => setDesktopDropdown("messages")}
@@ -176,12 +174,18 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
             className="absolute right-0 mt-2 w-72 bg-white border rounded shadow-lg z-30"
             style={{ maxHeight: 350, overflowY: "auto" }}
           >
-            <FriendList mini />
+            <FriendList
+              mini
+              onChatHeadClick={(chatId) => {
+                setDesktopDropdown("");
+                navigate(`/chat/${chatId}`);
+              }}
+            />
             <button
               className="w-full bg-blue-600 text-white py-3 hover:bg-blue-800 "
               onClick={() => {
                 setDesktopDropdown("");
-                navigate("/chat");
+                navigate("/message");
               }}
             >
               See All Messages
@@ -189,6 +193,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           </div>
         )}
       </div>
+      {/* ---------------- END UPDATED ------------------ */}
       {/* Notifications */}
       <div className="relative" ref={dropdownRef}>
         <button
@@ -235,7 +240,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     </nav>
   );
 
-  // ---- Mobile floating logo: Only the logo, big, top left, no bar ----
+  // ---- Mobile floating logo: Only the logo icon, big, top left, no bar ----
   const mobileLogoIcon = (
     <div
       className="md:hidden"
@@ -397,12 +402,18 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
               <>
                 <h2 className="font-bold text-lg p-4 border-b">Messages</h2>
                 <div className="p-2">
-                  <FriendList mini />
+                  <FriendList
+                    mini
+                    onChatHeadClick={(chatId) => {
+                      closeDrawer();
+                      navigate(`/chat/${chatId}`);
+                    }}
+                  />
                   <button
                     className="w-full bg-blue-600 text-white py-3 hover:bg-blue-800 mt-2"
                     onClick={() => {
                       closeDrawer();
-                      navigate("/chat");
+                      navigate("/message");
                     }}
                   >
                     See All Messages
