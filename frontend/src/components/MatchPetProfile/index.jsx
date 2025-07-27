@@ -97,7 +97,7 @@ const MatchPetProfile = () => {
   };
 
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center mt-12">
       <div className="w-full max-w-5xl bg-white border border-gray-300 rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden">
         
         {/* Left: Image */}
@@ -166,7 +166,7 @@ const MatchPetProfile = () => {
           </div>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4 sm:mt-10">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between sm:mt-10">
             <button
               onClick={() => navigate('/home')}
               className="px-6 py-3 bg-gray-600 font-bold text-white rounded-full hover:bg-gray-900 transition duration-200"

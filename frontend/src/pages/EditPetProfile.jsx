@@ -1,53 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Heart, Sparkles } from 'lucide-react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Heart, Sparkles } from "lucide-react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 // Mock characteristics data
 const characteristicsList = [
-  'Playful', 'Calm', 'Energetic', 'Friendly', 'Quiet', 'Intelligent',
-  'Loyal', 'Independent', 'Affectionate', 'Protective', 'Social', 'Gentle',
-  'Curious', 'Brave', 'Shy', 'Active', 'Relaxed', 'Alert'
+  "Playful",
+  "Calm",
+  "Energetic",
+  "Friendly",
+  "Quiet",
+  "Intelligent",
+  "Loyal",
+  "Independent",
+  "Affectionate",
+  "Protective",
+  "Social",
+  "Gentle",
+  "Curious",
+  "Brave",
+  "Shy",
+  "Active",
+  "Relaxed",
+  "Alert",
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  process.env.VITE_API_URL ||
+  "http://127.0.0.1:5000";
 
 export default function EditPetProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [showCharacteristics, setShowCharacteristics] = useState(false);
 
   // You may want to fetch this from backend for a real edit page!
   const [petProfile, setPetProfile] = useState({
-    name: 'Yan',
-    species: 'Cat',
-    breed: 'Birman',
-    sex: 'Female',
-    colour: 'White',
-    location: 'Toronto, Canada',
-    image: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=400&h=400&fit=crop&crop=face',
-    dob: '2020-03-15',
-    characteristics: ['Calm', 'Intelligent', 'Quiet']
+    name: "Yan",
+    species: "Cat",
+    breed: "Birman",
+    sex: "Female",
+    colour: "White",
+    location: "Toronto, Canada",
+    image:
+      "https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=400&h=400&fit=crop&crop=face",
+    dob: "2020-03-15",
+    characteristics: ["Calm", "Intelligent", "Quiet"],
   });
-  
-  const [speciesList] = useState(['Dog','Cat','Bird','Fish','Reptile','Rabbit','Rodent']);
-  const [breedList, setBreedList] = useState(['Birman', 'Siamese', 'Persian', 'Maine Coon']);
-  const [locationList] = useState(['Toronto, Canada', 'Vancouver, Canada', 'Montreal, Canada']);
+
+  const [speciesList] = useState([
+    "Dog",
+    "Cat",
+    "Bird",
+    "Fish",
+    "Reptile",
+    "Rabbit",
+    "Rodent",
+  ]);
+  const [breedList, setBreedList] = useState([
+    "Birman",
+    "Siamese",
+    "Persian",
+    "Maine Coon",
+  ]);
+  const [locationList] = useState([
+    "Toronto, Canada",
+    "Vancouver, Canada",
+    "Montreal, Canada",
+  ]);
 
   // Handle input changes
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setPetProfile(prev => ({ ...prev, [name]: value }));
+    setPetProfile((prev) => ({ ...prev, [name]: value }));
   };
 
   // Characteristic toggle logic
   const handleCharacteristicToggle = (char) => {
-    setPetProfile(prev => {
+    setPetProfile((prev) => {
       let current = prev.characteristics || [];
       if (current.includes(char)) {
-        return { ...prev, characteristics: current.filter(c => c !== char) };
+        return { ...prev, characteristics: current.filter((c) => c !== char) };
       } else if (current.length < 3) {
         return { ...prev, characteristics: [...current, char] };
       }
@@ -57,26 +93,24 @@ export default function EditPetProfile() {
 
   // Core: Save to backend function
   const saveProfile = async () => {
-    const token = localStorage.getItem('userToken');
-    const res = await axios.post(
-      `${API_URL}/update_pet_profile`,
-      petProfile,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const token = localStorage.getItem("userToken");
+    const res = await axios.post(`${API_URL}/update_pet_profile`, petProfile, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     return res.data.message || "Profile saved!";
   };
 
   // Save button handler
-  const handleSave = async e => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setMessage('');
+    setMessage("");
     try {
       const msg = await saveProfile();
       setMessage(msg);
       // Do not navigate here; user stays on page.
     } catch (err) {
-      setMessage('Save failed');
+      setMessage("Save failed");
       console.error(err);
     } finally {
       setSaving(false);
@@ -86,14 +120,14 @@ export default function EditPetProfile() {
   // Save & Next button handler (navigates to survey)
   const handleNext = async () => {
     setSaving(true);
-    setMessage('');
+    setMessage("");
     try {
       await saveProfile();
-      setMessage('');
-      navigate('/survey');
+      setMessage("");
+      navigate("/survey");
     } catch (err) {
       setSaving(false);
-      setMessage('Save failed');
+      setMessage("Save failed");
       console.error(err);
     }
   };
@@ -107,28 +141,26 @@ export default function EditPetProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
-            <Heart className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-            Edit Pet Profile
-          </h1>
-          <p className="text-gray-600">Make your furry friend shine ✨</p>
-        </div>
-
+    <div className="min-h-screen md:py-4 md:px-4 py-12 overflow-auto">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="space-y-6">
           {/* Main Profile Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20">
+          <div className="bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
+                <Heart className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                Edit Pet Profile
+              </h1>
+            </div>
             <div className="grid md:grid-cols-2 gap-8">
               {/* Left Column */}
               <div className="space-y-6">
                 {/* Name */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-gray-800 mb-2">
                     Pet Name
                   </label>
                   <input
@@ -142,7 +174,7 @@ export default function EditPetProfile() {
                 </div>
                 {/* Species */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-gray-800 mb-2">
                     Species
                   </label>
                   <select
@@ -153,14 +185,16 @@ export default function EditPetProfile() {
                     className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
                   >
                     <option value="">Select species</option>
-                    {speciesList.map(sp => (
-                      <option key={sp} value={sp}>{sp}</option>
+                    {speciesList.map((sp) => (
+                      <option key={sp} value={sp}>
+                        {sp}
+                      </option>
                     ))}
                   </select>
                 </div>
                 {/* Breed */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-gray-800 mb-2">
                     Breed
                   </label>
                   <select
@@ -172,14 +206,16 @@ export default function EditPetProfile() {
                     className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 disabled:opacity-50"
                   >
                     <option value="">Select breed</option>
-                    {breedList.map(b => (
-                      <option key={b} value={b}>{b}</option>
+                    {breedList.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
                     ))}
                   </select>
                 </div>
                 {/* Sex */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-gray-800 mb-2">
                     Sex
                   </label>
                   <select
@@ -204,7 +240,7 @@ export default function EditPetProfile() {
                     <img
                       src={petProfile.image}
                       alt="Pet preview"
-                      className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-lg"
+                      className="w-52 h-52 rounded-full object-cover border-4 border-white shadow-lg"
                     />
                     <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                       <Sparkles className="w-6 h-6 text-white" />
@@ -213,7 +249,7 @@ export default function EditPetProfile() {
                 </div>
                 {/* Colour */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-gray-800 mb-2">
                     Colour
                   </label>
                   <input
@@ -227,7 +263,7 @@ export default function EditPetProfile() {
                 </div>
                 {/* Date of Birth */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-gray-800 mb-2">
                     Date of Birth
                   </label>
                   <input
@@ -241,7 +277,7 @@ export default function EditPetProfile() {
                 </div>
                 {/* Location */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-gray-800 mb-2">
                     Location
                   </label>
                   <input
@@ -254,14 +290,14 @@ export default function EditPetProfile() {
                     className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
                   />
                   <datalist id="cities">
-                    {locationList.map(loc => (
+                    {locationList.map((loc) => (
                       <option key={loc} value={loc} />
                     ))}
                   </datalist>
                 </div>
                 {/* Image URL */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-gray-800 mb-2">
                     Image URL
                   </label>
                   <input
@@ -277,7 +313,7 @@ export default function EditPetProfile() {
             </div>
           </div>
           {/* Characteristics Section - Collapsible */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+          <div className="bg-gradient-to-br from-purple-100 via-blue-50 to-pink-100 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
             <button
               type="button"
               onClick={() => setShowCharacteristics(!showCharacteristics)}
@@ -288,7 +324,9 @@ export default function EditPetProfile() {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left">
-                  <h3 className="text-lg font-bold text-gray-800">Top 3 Characteristics</h3>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    Top 3 Characteristics
+                  </h3>
                   <p className="text-sm text-gray-600">
                     {petProfile.characteristics.length}/3 selected
                   </p>
@@ -300,21 +338,29 @@ export default function EditPetProfile() {
                 <ChevronDown className="w-6 h-6 text-gray-400" />
               )}
             </button>
-            <div className={`transition-all duration-300 ease-in-out ${showCharacteristics ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+            <div
+              className={`transition-all duration-300 ease-in-out ${
+                showCharacteristics
+                  ? "max-h-[1000px] opacity-100"
+                  : "max-h-0 opacity-0"
+              } overflow-hidden`}
+            >
               <div className="p-6 pt-0">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {characteristicsList.map((char) => {
-                    const isSelected = petProfile.characteristics.includes(char);
-                    const isDisabled = !isSelected && petProfile.characteristics.length >= 3;
+                    const isSelected =
+                      petProfile.characteristics.includes(char);
+                    const isDisabled =
+                      !isSelected && petProfile.characteristics.length >= 3;
                     return (
                       <label
                         key={char}
                         className={`flex items-center space-x-2 cursor-pointer p-3 rounded-2xl border-2 transition-all duration-200 ${
                           isSelected
-                            ? 'bg-gradient-to-r from-purple-100 to-pink-100 border-purple-300 text-purple-800'
+                            ? "bg-gradient-to-r from-purple-100 to-pink-100 border-purple-300 text-purple-800"
                             : isDisabled
-                            ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-white/60 border-gray-200 hover:bg-purple-50 hover:border-purple-200'
+                            ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                            : "bg-white/60 border-gray-200 hover:bg-purple-50 hover:border-purple-200"
                         }`}
                       >
                         <input
@@ -332,8 +378,10 @@ export default function EditPetProfile() {
                 {/* Selected characteristics preview */}
                 {petProfile.characteristics.length > 0 && (
                   <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Selected:</p>
-                    <div className="flex flex-wrap gap-2">
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Selected:
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center item-center">
                       {petProfile.characteristics.map((char, idx) => (
                         <span
                           key={char}
@@ -367,7 +415,7 @@ export default function EditPetProfile() {
                   <span>Saving...</span>
                 </div>
               ) : (
-                'Save Profile'
+                "Save Profile"
               )}
             </button>
             <button
@@ -382,13 +430,13 @@ export default function EditPetProfile() {
                   <span>Saving...</span>
                 </div>
               ) : (
-                'Save & Next'
+                "Save & Next"
               )}
             </button>
             <button
               type="button"
-              onClick={() => navigate('/pet-profile')}
-              className="px-8 py-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold rounded-2xl hover:from-gray-600 hover:to-gray-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
+              onClick={() => navigate("/pet-profile")}
+              className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-2xl hover:from-red-600 hover:to-red-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
             >
               Cancel
             </button>
