@@ -62,6 +62,8 @@ export default function EditPetProfile() {
   const [breedList, setBreedList] = useState([]);
   const [citiesList, setCitiesList] = useState([]);
   const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [locationInputFocused, setLocationInputFocused] = useState(false);
+
 
   // Fetch the signed-in user's pet profile on mount
   useEffect(() => {
@@ -120,7 +122,7 @@ export default function EditPetProfile() {
   // Load cities when country changes
   useEffect(() => {
     const loadLocationSuggestions = async () => {
-      if (petProfile.location && petProfile.location.length > 2) {
+      if (locationInputFocused && petProfile.location.length > 2) {
         setLoadingCities(true);
         try {
           const suggestions = await getFullAddressSuggestions(petProfile.location);
@@ -138,7 +140,7 @@ export default function EditPetProfile() {
     
     const timeoutId = setTimeout(loadLocationSuggestions, 500); // Debounce
     return () => clearTimeout(timeoutId);
-  }, [petProfile.location]);
+  }, [petProfile.location, locationInputFocused]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -382,6 +384,8 @@ export default function EditPetProfile() {
                     name="location"
                     value={petProfile.location}
                     onChange={handleChange}
+                    onFocus={() => setLocationInputFocused(true)}
+                    onBlur={() => setTimeout(() => setLocationInputFocused(false), 200)}
                     placeholder="Start typing your location..."
                     required
                     className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
@@ -389,7 +393,7 @@ export default function EditPetProfile() {
                   />
                   
                   {/* Location Suggestions Dropdown */}
-                  {locationSuggestions.length > 0 && (
+                  {locationInputFocused && locationSuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-purple-200 rounded-2xl shadow-lg max-h-48 overflow-y-auto">
                       {locationSuggestions.map((suggestion, index) => (
                         <button
@@ -502,7 +506,7 @@ export default function EditPetProfile() {
                 {(petProfile.characteristics || []).length > 0 && (
                   <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl">
                     <p className="text-sm font-medium text-gray-700 mb-2">Selected:</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 justify-center items-center">
                       {(petProfile.characteristics || []).map((char, idx) => (
                         <span
                           key={char}
