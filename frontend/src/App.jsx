@@ -8,7 +8,6 @@ import {
 } from "react-router-dom";
 import axios from "axios";
 import ScrollToTop from "./components/ScrollToTop";
-import EnsureScrollable from './components/EnsureScrollable';
 
 // Main PetProto components
 import Landing from "./components/Landing";
@@ -38,8 +37,9 @@ import { getSessionId } from "./utils/sessionId";
 import { buildApiUrl } from "./config/api";
 
 // Auth utils
-import { isValidToken } from "./utils/auth";
-import RegistrationForm from "./pages/Registration";
+import { isValidToken } from './utils/auth';
+import RegistrationForm from './pages/Registration';
+import Messages from './components/Message';
 
 function AppContent() {
   // Main app state
