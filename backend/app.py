@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
+from flask_socketio import SocketIO
 import firebase_admin
 from firebase_admin import credentials, firestore
 from dotenv import load_dotenv
@@ -17,7 +18,7 @@ from update_registration import update_registration_bp
 from current_user import current_user_bp
 from sentiment_matches import sentiment_bp
 from social_requests import requests_bp
-from social_chats import chat_bp
+from social_chats import chat_bp, init_socketio_events  # Import Socket.IO events
 from social_search import search_bp
 from social_events import events_bp
 from social_events import posts_bp
@@ -51,6 +52,27 @@ CORS(app, origins=[
     "http://127.0.0.1:5173",             # Localhost with IP
     "http://127.0.0.1:3000"
 ])
+
+# ---- Initialize Socket.IO ----
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=[
+        "https://frontend-2o3e.onrender.com",
+        "https://pet-proto.vercel.app",      # Production (Vercel) - removed trailing slash
+        "http://localhost:5173",             # Local React Vite default
+        "http://localhost:3000",             # Local React alternative
+        "http://127.0.0.1:5173",             # Localhost with IP
+        "http://127.0.0.1:3000"
+    ],
+    logger=True,
+    engineio_logger=True,
+    async_mode='threading'  # Use threading mode for better compatibility
+)
+
+# Store socketio in app extensions for access in blueprints
+app.extensions['socketio'] = socketio
+
+print("✅ Socket.IO initialized successfully")
 
 # --- Firebase credentials loading ---
 cred = None
@@ -137,6 +159,27 @@ app.register_blueprint(dashboard_bp)
 
 print("✅ All blueprints registered successfully")
 
+# ---- Initialize Socket.IO Event Handlers ----
+# This must come AFTER the blueprints are registered
+init_socketio_events(socketio)
+print("✅ Socket.IO event handlers initialized successfully")
+
+# ---- Socket.IO Connection Events ----
+@socketio.on('connect')
+def handle_connect():
+    print(f"✅ Client connected: {request.sid}")
+
+@socketio.on('disconnect')  
+def handle_disconnect():
+    print(f"❌ Client disconnected: {request.sid}")
+
 if __name__ == '__main__':
-    print("🚀 Starting Flask application...")
-    app.run(debug=True)
+    print("🚀 Starting Flask application with Socket.IO...")
+    # Use socketio.run instead of app.run for Socket.IO support
+    socketio.run(
+        app, 
+        debug=True,
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000)),  # Use PORT env variable for deployment
+        allow_unsafe_werkzeug=True  # Only for development
+    )
