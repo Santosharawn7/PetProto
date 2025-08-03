@@ -6,10 +6,13 @@ import { useNavigate } from "react-router-dom";
 const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || "http://127.0.0.1:5000";
 const PLACEHOLDER_AVATAR = "https://ui-avatars.com/api/?name=Pet&background=random";
 
-export default function FriendList() {
+export default function FriendList({ onChatHeadClick, mini }) {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Simple mobile check (tailwind md)
+  const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false;
 
   useEffect(() => {
     let isMounted = true;
@@ -36,7 +39,8 @@ export default function FriendList() {
     return () => { isMounted = false; }
   }, []);
 
-  const openChat = async (friendUid) => {
+  // Find or create chat
+  const openChat = async (friend) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
@@ -45,16 +49,27 @@ export default function FriendList() {
         headers: { Authorization: `Bearer ${token}` }
       });
       let chat = (res.data.chats || []).find(
-        c => !c.isGroup && c.participants && c.participants.includes(friendUid)
+        c => !c.isGroup && c.participants && c.participants.includes(friend.uid)
       );
       if (!chat) {
         const createRes = await axios.post(`${API_URL}/chats`, {
-          participants: [user.uid, friendUid],
+          participants: [user.uid, friend.uid],
           isGroup: false
         }, { headers: { Authorization: `Bearer ${token}` } });
         chat = { id: createRes.data.chatId };
       }
-      navigate(`/chat/${chat.id}`);
+      if (isMobile) {
+        // Navigate to chat page directly on mobile
+        navigate(`/chat/${chat.id}`);
+      } else {
+        // Desktop: use floater logic
+        onChatHeadClick?.({
+          chatId: chat.id,
+          avatar: friend.avatarUrl || PLACEHOLDER_AVATAR,
+          name: friend.displayName,
+          uid: friend.uid
+        });
+      }
     } catch (err) {
       alert("Could not open chat. Please try again.");
     }
@@ -87,7 +102,7 @@ export default function FriendList() {
                 hover:bg-gray-100 active:bg-gray-200 transition
                 border-b
               "
-              onClick={() => openChat(friend.uid)}
+              onClick={() => openChat(friend)}
             >
               <img
                 src={friend.avatarUrl || PLACEHOLDER_AVATAR}

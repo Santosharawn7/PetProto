@@ -6,10 +6,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import axios from "axios";
 import ScrollToTop from "./components/ScrollToTop";
-
-// Main PetProto components
 import Landing from "./components/Landing";
 import Login from "./pages/Login";
 import PrivateRoute from "./PrivateRoute";
@@ -20,13 +17,12 @@ import MatchPetProfile from "./components/MatchPetProfile";
 import PasswordReset from "./pages/PasswordReset";
 import SurveyPage from "./components/Survey";
 import EditPetProfile from "./pages/EditPetProfile";
-import ChatPage from "./components/ChatPage";
 import CommunityPage from "./components/CommunityPage";
 import FriendList from "./components/FriendList";
 import PreHome from "./components/Prehome";
 import Header from "./components/Header";
+import RegistrationForm from './pages/Registration';
 
-// Shop components
 import ShopHeader from "./shop-components/Header";
 import ItemUploader from "./shop-components/ItemUploader";
 import ItemProductList from "./shop-components/ItemProductList";
@@ -35,18 +31,24 @@ import Checkout from "./shop-components/Checkout";
 import Dashboard from "./shop-components/Dashboard";
 import { getSessionId } from "./utils/sessionId";
 import { buildApiUrl } from "./config/api";
-
-// Auth utils
 import { isValidToken } from './utils/auth';
-import RegistrationForm from './pages/Registration';
-import Messages from './components/Message';
+
+// --- Chat UI ---
+import MiniChatModal from "./components/MiniChatModal";
+import ChatFloater from "./components/ChatFloater";
+import ChatFloaterIcon from "./components/ChatFloaterIcon";
+import ChatModal from "./components/ChatModal";
+import Message from "./components/Message";
 
 function AppContent() {
-  // Main app state
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
+
+  // Floater/modal for chat
+  const [floaterOpen, setFloaterOpen] = useState(false);
+  const [chatModalOpen, setChatModalOpen] = useState(false);
 
   // Shop state
   const [category, setCategory] = useState("");
@@ -61,7 +63,6 @@ function AppContent() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showUploader, setShowUploader] = useState(false);
 
-  // Auth check for the entire app
   useEffect(() => {
     const token = localStorage.getItem("userToken");
     setIsLoggedIn(isValidToken(token));
@@ -69,7 +70,6 @@ function AppContent() {
   }, [location.pathname]);
 
   useEffect(() => {
-    // Cross-tab login/logout
     const handleStorageChange = (e) => {
       if (e.key === "userToken") {
         setIsLoggedIn(isValidToken(e.newValue));
@@ -79,7 +79,6 @@ function AppContent() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // SHOP: Fetch cart count
   useEffect(() => {
     fetchCartCount();
     // eslint-disable-next-line
@@ -87,20 +86,24 @@ function AppContent() {
 
   const fetchCartCount = async () => {
     try {
-      const response = await axios.get(buildApiUrl(`/api/cart/${sessionId}`));
-      setCartItemCount(response.data.length);
+      const response = await fetch(buildApiUrl(`/api/cart/${sessionId}`));
+      const data = await response.json();
+      setCartItemCount(data.length);
     } catch (err) {
       setCartItemCount(0);
     }
   };
 
-  // --- Shop handlers ---
   const handleAddToCart = async (product) => {
     try {
-      await axios.post(buildApiUrl("/api/cart"), {
-        product_id: product.id,
-        quantity: 1,
-        session_id: sessionId,
+      await fetch(buildApiUrl("/api/cart"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_id: product.id,
+          quantity: 1,
+          session_id: sessionId,
+        }),
       });
       fetchCartCount();
       alert(`${product.name} added to cart!`);
@@ -133,7 +136,6 @@ function AppContent() {
     setShowUploader(false);
   };
 
-  // --- Auth/Logout ---
   const handleLogout = () => {
     localStorage.removeItem("userToken");
     setIsLoggedIn(false);
@@ -158,7 +160,6 @@ function AppContent() {
     );
   }
 
-  // ----- RENDER -----
   return (
     <>
       {/* Main PetProto header */}
@@ -182,125 +183,117 @@ function AppContent() {
       )}
 
       <ScrollToTop />
-        <Routes>
-          {/* --- PetProto routes --- */}
-          <Route path="/prehome" element={<PreHome />} />
-          <Route path="/" element={<Landing />} />
-          <Route path="/register" element={<RegistrationForm />} />
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
-          <Route path="/password-reset" element={<PasswordReset />} />
-          <Route path="/match" element={<MatchPetProfile />} />
-          <Route
-            path="/home"
-            element={
-              <PrivateRoute>
-                <Home
-                  showSearchModal={showSearchModal}
-                  setShowSearchModal={setShowSearchModal}
+      <Routes>
+        {/* --- PetProto routes --- */}
+        <Route path="/prehome" element={<PreHome />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/register" element={<RegistrationForm />} />
+        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        <Route path="/password-reset" element={<PasswordReset />} />
+        <Route path="/match" element={<MatchPetProfile />} />
+        <Route
+          path="/home"
+          element={
+            <PrivateRoute>
+              <Home
+                showSearchModal={showSearchModal}
+                setShowSearchModal={setShowSearchModal}
+              />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/survey"
+          element={
+            <PrivateRoute>
+              <SurveyPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/pet-profile"
+          element={
+            <PrivateRoute>
+              <PetProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/edit-pet"
+          element={
+            <PrivateRoute>
+              <EditPetProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/update_registration"
+          element={
+            <PrivateRoute>
+              <UpdateRegistration />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/community"
+          element={
+            <PrivateRoute>
+              <CommunityPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/friends"
+          element={
+            <PrivateRoute>
+              <FriendList />
+            </PrivateRoute>
+          }
+        />
+
+        {/* --- Shop Routes --- */}
+        <Route
+          path="/shop"
+          element={
+            <PrivateRoute>
+              <>
+                <div className="mb-6 mt-6">
+                  {category && (
+                    <p className="text-lg text-gray-600">
+                      Category:{" "}
+                      <span className="font-semibold">{category}</span>
+                    </p>
+                  )}
+                  {searchTerm && (
+                    <p className="text-lg text-gray-600">
+                      Search results for:{" "}
+                      <span className="font-semibold">"{searchTerm}"</span>
+                    </p>
+                  )}
+                </div>
+                <ItemProductList
+                  key={refreshKey}
+                  category={category}
+                  searchTerm={searchTerm}
+                  onAddToCart={handleAddToCart}
                 />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/survey"
-            element={
-              <PrivateRoute>
-                <SurveyPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/pet-profile"
-            element={
-              <PrivateRoute>
-                <PetProfile />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/edit-pet"
-            element={
-              <PrivateRoute>
-                <EditPetProfile />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/update_registration"
-            element={
-              <PrivateRoute>
-                <UpdateRegistration />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/chat/:chatId"
-            element={
-              <PrivateRoute>
-                <ChatPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/community"
-            element={
-              <PrivateRoute>
-                <CommunityPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/friends"
-            element={
-              <PrivateRoute>
-                <FriendList />
-              </PrivateRoute>
-            }
-          />
+              </>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/shop/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        {/* Add more shop subroutes as needed */}
 
-          {/* --- Shop Routes --- */}
-          <Route
-            path="/shop"
-            element={
-              <PrivateRoute>
-                <>
-                  <div className="mb-6 mt-6">
-                    {category && (
-                      <p className="text-lg text-gray-600">
-                        Category:{" "}
-                        <span className="font-semibold">{category}</span>
-                      </p>
-                    )}
-                    {searchTerm && (
-                      <p className="text-lg text-gray-600">
-                        Search results for:{" "}
-                        <span className="font-semibold">"{searchTerm}"</span>
-                      </p>
-                    )}
-                  </div>
-                  <ItemProductList
-                    key={refreshKey}
-                    category={category}
-                    searchTerm={searchTerm}
-                    onAddToCart={handleAddToCart}
-                  />
-                </>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/shop/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
-          {/* Add more shop subroutes as needed */}
-
-          {/* Fallback: redirect unknown routes to / */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        {/* Fallback: redirect unknown routes to / */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       {/* Shop Modals */}
       {showCart && location.pathname.startsWith("/shop") && (
@@ -333,6 +326,37 @@ function AppContent() {
             <ItemUploader onProductUpload={handleRefreshInventory} />
           </div>
         </div>
+      )}
+
+      {/* --------- Chat Floater Icon, Floater, and Full Modal --------- */}
+      {isLoggedIn && (
+        <>
+          {/* Floater Icon, desktop only */}
+          {!floaterOpen && !chatModalOpen && (
+            <div className="hidden md:block">
+              <ChatFloaterIcon onClick={() => setFloaterOpen(true)} />
+            </div>
+          )}
+
+          {/* MiniChatModal only on desktop, not mobile */}
+          <MiniChatModal open={floaterOpen} onClose={() => setFloaterOpen(false)} onExpand={() => {
+            setFloaterOpen(false);
+            setChatModalOpen(true);
+          }}>
+            <ChatFloater
+              onClose={() => setFloaterOpen(false)}
+              onExpand={() => {
+                setFloaterOpen(false);
+                setChatModalOpen(true);
+              }}
+            />
+          </MiniChatModal>
+
+          {/* Messenger Modal */}
+          <ChatModal open={chatModalOpen} onClose={() => setChatModalOpen(false)}>
+            <Message />
+          </ChatModal>
+        </>
       )}
     </>
   );

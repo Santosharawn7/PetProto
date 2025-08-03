@@ -51,7 +51,7 @@ CORS(app, origins=[
     "http://localhost:3000",             # Local React alternative
     "http://127.0.0.1:5173",             # Localhost with IP
     "http://127.0.0.1:3000"
-])
+], supports_credentials=True)
 
 # ---- Initialize Socket.IO ----
 socketio = SocketIO(
