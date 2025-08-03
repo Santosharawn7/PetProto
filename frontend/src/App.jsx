@@ -8,7 +8,6 @@ import {
 } from "react-router-dom";
 import axios from "axios";
 import ScrollToTop from "./components/ScrollToTop";
-import EnsureScrollable from './components/EnsureScrollable';
 
 // Main PetProto components
 import Landing from "./components/Landing";

@@ -123,43 +123,78 @@ const UpdateRegistration = () => {
   if (loading) return <div className="text-center py-10">Loading...</div>;
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50 py-8">
-      <div className="max-w-xl w-full mx-auto p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-center text-3xl font-bold mb-6 text-gray-800">
+    <div className="flex justify-center items-center min-h-screen mt-12 md:-mt-60">
+      <div className="max-w-3xl w-full bg-white rounded-3xl shadow-xl p-8 borderborder-white/20">
+        <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 text-nowrap mt-2 mb-8">
           {creating ? "Create Your Account" : "Complete Your Registration"}
         </h2>
         {creating && (
-          <p className="text-center mb-6 text-gray-600">
+          <p className="text-center mb-6 text-gray-500">
             Welcome! Please complete your profile to get started.
           </p>
         )}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input name="firstName" value={regInfo.firstName} onChange={handleChange} placeholder="First Name" required className="border p-2 rounded" />
-            <input name="lastName" value={regInfo.lastName} onChange={handleChange} placeholder="Last Name" required className="border p-2 rounded" />
+            <div>
+              <label className="block font-bold text-lg text-gray-800 mb-1">First Name</label>
+              <input name="firstName" value={regInfo.firstName} onChange={handleChange} placeholder="First Name" required className="w-full border border-purple-200 rounded-xl px-4 py-3" />
+            </div>
+            <div>
+              <label className="block font-bold text-lg text-gray-800 mb-1">Last Name</label>
+              <input name="lastName" value={regInfo.lastName} onChange={handleChange} placeholder="Last Name" required className="w-full border border-purple-200 rounded-xl px-4 py-3" />
+            </div>
           </div>
-          <input name="preferredUsername" value={regInfo.preferredUsername} onChange={handleChange} placeholder="Preferred Username" required className="border p-2 rounded w-full" />
-          <input name="phone" value={regInfo.phone} onChange={handleChange} placeholder="Phone" required className="border p-2 rounded w-full" />
-          <select name="userType" value={regInfo.userType} onChange={handleChange} required className="border p-2 rounded w-full">
-            <option value="">Select user type</option>
-            {userTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.display}</option>)}
-          </select>
-          <select name="sex" value={regInfo.sex} onChange={handleChange} required className="border p-2 rounded w-full">
-            <option value="">Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-            <option value="Prefer not to say">Prefer not to say</option>
-          </select>
-          <input name="address" value={regInfo.address} onChange={handleChange} placeholder="Address" required className="border p-2 rounded w-full" />
-          <button type="submit" disabled={loading} className="bg-blue-600 text-white px-6 py-3 rounded font-bold w-full">
+  
+          <div>
+            <label className="block font-bold text-lg text-gray-800 mb-1">Preferred Username</label>
+            <input name="preferredUsername" value={regInfo.preferredUsername} onChange={handleChange} placeholder="Username" required className="w-full border border-purple-200 rounded-xl px-4 py-3" />
+          </div>
+  
+          <div>
+            <label className="block font-bold text-lg text-gray-800 mb-1">Phone</label>
+            <input name="phone" value={regInfo.phone} onChange={handleChange} placeholder="Phone" required className="w-full border border-purple-200 rounded-xl px-4 py-3" />
+          </div>
+  
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-lg text-gray-800 mb-1">User Type</label>
+              <select name="userType" value={regInfo.userType} onChange={handleChange} required className="w-full border border-purple-200 rounded-xl px-4 py-3">
+                <option value="">Select user type</option>
+                {userTypeOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.display}</option>
+                ))}
+              </select>
+            </div>
+  
+            <div>
+              <label className="block font-bold text-lg text-gray-800 mb-1">Gender</label>
+              <select name="sex" value={regInfo.sex} onChange={handleChange} required className="w-full border border-purple-200 rounded-xl px-4 py-3">
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
+          </div>
+  
+          <div>
+            <label className="block font-bold text-lg text-gray-800 mb-1">Address</label>
+            <input name="address" value={regInfo.address} onChange={handleChange} placeholder="Address" required className="w-full border border-purple-200 rounded-xl px-4 py-3" />
+          </div>
+  
+          <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl py-3 transition-all duration-200">
             {loading ? "Updating..." : creating ? "Create Account" : "Update Registration"}
           </button>
-          {message && <div className="mt-4 text-center text-red-600">{message}</div>}
+  
+          {message && (
+            <div className="mt-4 text-center text-red-600">{message}</div>
+          )}
         </form>
       </div>
     </div>
   );
+  
 };
 
 export default UpdateRegistration;
