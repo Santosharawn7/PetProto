@@ -1,332 +1,230 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import { auth } from '../../firebase';
+// components/community/Events.jsx
+import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { ReactionButtons, Comments, RSVPButtons } from '../../config/CommunityCommon';
 
-const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
-const EMOJIS = { like: '👍', love: '❤️', haha: '😂', sad: '😢' };
+export default function EventsTab(props) {
+  const {
+    user, events, openComments, setOpenComments,
+    showDropdown, setShowDropdown, showDeleteModal, setShowDeleteModal,
+    isAuthor, handleEdit, handleDelete, dropdownRefs,
+    showEventForm, setShowEventForm, isEdit, setIsEdit, setEditItem,
+    title, setTitle, desc, setDesc, dateFilter, setDateFilter, location, setLocation, photos, setPhotos, handleCreateEvent,
+    authHeaders
+  } = props;
 
-export default function EventsPage() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const now = new Date();
+  const visibleEvents = events.filter(ev => !ev.dateFilter || new Date(ev.dateFilter) >= now);
 
-  // New Event Modal State
-  const [showCreate, setShowCreate] = useState(false);
-
-  // Form fields
-  const [title, setTitle] = useState('');
-  const [desc, setDesc] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [location, setLocation] = useState('');
-  const [photos, setPhotos] = useState(['']);
-
-  const authHeaders = async () => {
-    const t = await auth.currentUser.getIdToken();
-    return { Authorization: `Bearer ${t}` };
-  };
-
-  const fetchEvents = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/events`, { headers: await authHeaders() });
-      setEvents(res.data.events || []);
-    } catch {
-      toast.error('Could not load events');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchEvents(); }, []);
-
-  const handleCreate = async e => {
-    e.preventDefault();
-    if (!title.trim()) return toast.warn('Title required');
-    try {
-      await axios.post(
-        `${API_URL}/events`,
-        { title, description: desc, dateFilter, location, photos: photos.filter(u => u) },
-        { headers: await authHeaders() }
-      );
-      toast.success('Event created');
-      setTitle(''); setDesc(''); setDateFilter(''); setLocation(''); setPhotos(['']);
-      setShowCreate(false); // Hide after creation
-      fetchEvents();
-    } catch {
-      toast.error('Event failed');
-    }
-  };
-
-  const ReactionButtons = ({ entityId }) => {
-    const [counts, setCounts] = useState({});
-    const fetchR = async () => {
-      const res = await axios.get(
-        `${API_URL}/reactions?entityType=event&entityId=${entityId}`,
-        { headers: await authHeaders() }
-      );
-      const c = {};
-      res.data.reactions.forEach(r => (c[r.type] = (c[r.type]||0)+1));
-      setCounts(c);
-    };
-    useEffect(() => { fetchR(); }, [entityId]);
-    const react = async type => {
-      await axios.post(
-        `${API_URL}/reactions`,
-        { entityType: 'event', entityId, type },
-        { headers: await authHeaders() }
-      );
-      fetchR();
-    };
-    return (
-      <div className="flex space-x-3 mt-2">
-        {Object.entries(EMOJIS).map(([t,e]) => (
-          <button key={t} onClick={()=>react(t)} className="px-2 py-1 bg-gray-100 rounded-full">
-            {e}<span className="ml-1 text-sm">{counts[t]||0}</span>
-          </button>
-        ))}
-      </div>
-    );
-  };
-
-  // RSVP section: gets your RSVP and RSVP summary from backend
-  const RSVPButtons = ({ eventId }) => {
-    const [status, setStatus] = useState(null);
-    const [summary, setSummary] = useState({yes: [], no: [], maybe: []});
-    const [userId, setUserId] = useState('');
-
-    // Fetch your RSVP and summary
-    const fetchRSVP = async () => {
-      const t = await auth.currentUser.getIdToken();
-      const uid = auth.currentUser.uid;
-      setUserId(uid);
-      try {
-        const res = await axios.get(`${API_URL}/events/${eventId}/rsvps`, { headers: { Authorization: `Bearer ${t}` } });
-        const rsvps = res.data.rsvps || [];
-        const yours = rsvps.find(r => r.user === uid);
-        setStatus(yours ? yours.status : null);
-
-        // Build summary
-        const summary = { yes: [], no: [], maybe: [] };
-        rsvps.forEach(r => {
-          if (summary[r.status]) summary[r.status].push(r.userName || r.user);
-        });
-        setSummary(summary);
-      } catch {/* ignore */}
-    };
-
-    useEffect(() => { fetchRSVP(); }, [eventId]);
-
-    const reply = async s => {
-      await axios.post(
-        `${API_URL}/events/${eventId}/rsvp`,
-        { status: s },
-        { headers: await authHeaders() }
-      );
-      setStatus(s);
-      toast.success(`RSVP ${s}`);
-      fetchRSVP();
-    };
-
-    return (
-      <div className="flex flex-col items-start mt-2">
-        <div className="flex space-x-2 mb-1">
-          {['yes','no','maybe'].map(s => (
-            <button
-              key={s}
-              onClick={()=>reply(s)}
-              className={`px-3 py-1 rounded-full border ${status===s?'bg-blue-600 text-white':'bg-white text-gray-700'}`}
-              style={{ textAlign: 'left' }}
-            >
-              {s.charAt(0).toUpperCase()+s.slice(1)}
-            </button>
-          ))}
-        </div>
-        <div className="text-xs text-gray-700 mt-1">
-          <span className="mr-3">Going: {summary.yes.join(', ') || 'None'}</span>
-          <span className="mr-3">Maybe: {summary.maybe.join(', ') || 'None'}</span>
-          <span>Not Going: {summary.no.join(', ') || 'None'}</span>
-        </div>
-      </div>
-    );
-  };
-
-  // Comments section for events, improved left-aligned & threaded
-  const Comments = ({ eventId }) => {
-    const [comments, setComments] = useState([]);
-    const [text, setText] = useState('');
-    const [replyTo, setReplyTo] = useState(null);
-
-    const fetchComments = async () => {
-      try {
-        const res = await axios.get(
-          `${API_URL}/events/${eventId}/comments`,
-          { headers: await authHeaders() }
-        );
-        setComments(res.data.comments || []);
-      } catch {/* ignore */}
-    };
-
-    useEffect(() => { fetchComments(); }, [eventId]);
-
-    const submit = async e => {
-      e.preventDefault();
-      if (!text.trim()) return;
-      try {
-        await axios.post(
-          `${API_URL}/events/${eventId}/comments`,
-          { text, parentCommentId: replyTo || undefined },
-          { headers: await authHeaders() }
-        );
-        setText(''); setReplyTo(null);
-        fetchComments();
-      } catch {
-        toast.error('Could not post comment');
-      }
-    };
-
-    const renderThread = (pid, depth = 0) =>
-      comments.filter(c => (c.parentCommentId||null) === pid).map(c => (
-        <div
-          key={c.id}
-          className={`py-2 ${depth > 0 ? 'pl-6 border-l-2 border-gray-300 ml-2' : 'pl-0'}`}
-          style={{ textAlign: 'left' }}
-        >
-          <div className="text-sm text-gray-800">
-            <strong>{c.authorName || c.author}</strong>
-            <span className="text-gray-500 font-normal ml-2">
-              {formatDistanceToNow(new Date(c.createdAt))} ago
-            </span>
-          </div>
-          <div className="text-gray-700">{c.text}</div>
-          <div className="flex space-x-4 text-xs mt-1">
-            <button onClick={() => setReplyTo(c.id)} className="text-blue-600">Reply</button>
-            <ReactionButtons entityId={c.id} />
-          </div>
-          {renderThread(c.id, depth+1)}
-        </div>
-      ));
-
-    return (
-      <div className="mt-4" style={{ textAlign: 'left' }}>
-        {renderThread(null)}
-        <form onSubmit={submit} className="mt-2 flex space-x-2" style={{ textAlign: 'left' }}>
-          {replyTo && (
-            <div className="text-sm text-gray-600">
-              Replying…{' '}
-              <button type="button" onClick={() => setReplyTo(null)} className="underline">
-                Cancel
-              </button>
-            </div>
-          )}
-          <textarea
-            value={text}
-            onChange={e => setText(e.target.value)}
-            className="flex-1 p-2 border rounded"
-            rows={2}
-            placeholder="Add a comment…"
-            style={{ textAlign: 'left' }}
-          />
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
-            Post
-          </button>
-        </form>
-      </div>
-    );
-  };
-
-  if (loading) return <p className="p-4 text-center">Loading events…</p>;
+  const CommentIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8-1.593 0-3.086-.308-4.405-.86L3 21l1.02-3.186C3.364 16.026 3 14.547 3 13c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  );
 
   return (
-    <div>
+    <div className="space-y-8">
       <button
-        className="mb-4 px-4 py-2 bg-blue-600 text-white rounded"
-        onClick={() => setShowCreate(sc => !sc)}
+        className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        onClick={() => {
+          setShowEventForm(f => !f);
+          setIsEdit(false);
+          setEditItem(null);
+          setTitle(''); setDesc(''); setDateFilter(''); setLocation(''); setPhotos(['']);
+        }}
       >
-        {showCreate ? "Close New Event" : "New Event"}
+        {showEventForm ? (isEdit ? "Cancel Edit" : "Cancel") : (isEdit ? "Edit Event" : "Create New Event")}
       </button>
-      {showCreate && (
-        <form onSubmit={handleCreate} className="mb-6 p-4 border rounded" style={{ textAlign: 'left' }}>
-          <h3 className="font-semibold">New Event</h3>
+      {showEventForm && (
+        <form 
+          onSubmit={handleCreateEvent}
+          className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-6 mb-8 text-left
+                     bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900"
+        >
+          <h3 className="font-semibold text-lg text-blue-900 dark:text-blue-100">
+            {isEdit ? "Edit Event" : "Create New Event"}
+          </h3>
           <input
-            className="w-full p-2 border rounded mb-2"
-            placeholder="Title"
-            value={title} onChange={e=>setTitle(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Event title"
+            value={title} 
+            onChange={e => setTitle(e.target.value)}
             required
-            style={{ textAlign: 'left' }}
           />
           <textarea
-            className="w-full p-2 border rounded mb-2"
-            rows={2}
-            placeholder="Description"
-            value={desc} onChange={e=>setDesc(e.target.value)}
-            style={{ textAlign: 'left' }}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            rows={3}
+            placeholder="Event description"
+            value={desc} 
+            onChange={e => setDesc(e.target.value)}
           />
           <input
             type="date"
-            className="w-full p-2 border rounded mb-2"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={dateFilter}
-            onChange={e=>setDateFilter(e.target.value)}
-            style={{ textAlign: 'left' }}
+            onChange={e => setDateFilter(e.target.value)}
           />
           <input
-            className="w-full p-2 border rounded mb-2"
-            placeholder="Location"
-            value={location} onChange={e=>setLocation(e.target.value)}
-            style={{ textAlign: 'left' }}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Event location"
+            value={location} 
+            onChange={e => setLocation(e.target.value)}
           />
-          {photos.map((u,i) => (
-            <input
-              key={i}
-              className="w-full p-2 border rounded mb-2"
-              placeholder="Photo URL"
-              value={u}
-              onChange={e=>{
-                const a = [...photos]; a[i]=e.target.value; setPhotos(a);
-              }}
-              style={{ textAlign: 'left' }}
-            />
-          ))}
-          <button
-            type="button"
-            onClick={()=>setPhotos(ps=>[...ps,''])}
-            className="text-sm text-blue-600 mb-2"
-          >
-            + Add photo
-          </button>
-          <br/>
-          <button className="px-4 py-2 bg-green-600 text-white rounded">Event</button>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Event Photos</label>
+            {photos.map((url, i) => (
+              <input
+                key={i}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Photo URL"
+                value={url}
+                onChange={e => {
+                  const newPhotos = [...photos]; 
+                  newPhotos[i] = e.target.value; 
+                  setPhotos(newPhotos);
+                }}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => setPhotos(prev => [...prev, ''])}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              + Add another photo
+            </button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button 
+              type="submit"
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              {isEdit ? "Update Event" : "Create Event"}
+            </button>
+            <button 
+              type="button"
+              onClick={() => { setShowEventForm(false); setIsEdit(false); setEditItem(null); }}
+              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       )}
-
-      {/* List */}
-      {events.map(ev => (
-        <div key={ev.id} className="mb-6 p-2 border rounded bg-white shadow-sm" style={{ textAlign: 'left' }}>
-          <div className="flex items-center mb-2">
-            <div className="w-8 h-8 bg-gray-200 rounded-full mr-3"/>
-            <div>
-              <p className="font-semibold">{ev.authorName || ev.author}</p>
-              <p className="text-xs text-gray-500">
-                {formatDistanceToNow(new Date(ev.createdAt))} ago
-              </p>
-            </div>
-          </div>
-          <h3 className="font-bold">{ev.title}</h3>
-          <p className="mt-1">{ev.description}</p>
-          {ev.dateFilter && (
-            <p className="mt-1"><strong>Date:</strong> {new Date(ev.dateFilter).toLocaleDateString()}</p>
-          )}
-          {ev.location && (
-            <p className="mt-1"><strong>Location:</strong> {ev.location}</p>
-          )}
-          {ev.photos?.map((u,i) => (
-            <img key={i} src={u} alt="" className="w-full my-2 rounded"/>
-          ))}
-          <RSVPButtons eventId={ev.id}/>
-          <ReactionButtons entityId={ev.id}/>
-          <Comments eventId={ev.id} />
+      {/* Events List */}
+      {visibleEvents.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">No events yet. Create the first one!</p>
         </div>
-      ))}
-      {events.length===0 && <p className="text-center text-gray-600">No events yet.</p>}
+      ) : (
+        visibleEvents.map(ev => {
+          const key = 'event-' + ev.id;
+          return (
+            <div key={key} className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-4 sm:p-6 mb-8 text-left
+                                      bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 relative">
+              {isAuthor(ev) && (
+                <div className="absolute top-4 right-4 z-10" ref={el => dropdownRefs.current[key] = el}>
+                  <button
+                    onClick={() => setShowDropdown(prev => ({ ...prev, [key]: !prev[key] }))}
+                    className="p-2 rounded-full hover:bg-gray-200"
+                  >
+                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="5" cy="12" r="2"/>
+                      <circle cx="12" cy="12" r="2"/>
+                      <circle cx="19" cy="12" r="2"/>
+                    </svg>
+                  </button>
+                  {showDropdown[key] && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                      <button
+                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        onClick={() => { setShowDropdown({}); handleEdit({ ...ev, __type: 'event' }); }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                        onClick={() => { setShowDropdown({}); setShowDeleteModal(prev => ({ ...prev, [key]: true })); }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Delete modal */}
+              {showDeleteModal[key] && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-30">
+                  <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full relative">
+                    <h3 className="font-semibold text-lg mb-3">Are you sure?</h3>
+                    <p className="mb-4">This will permanently delete your event.</p>
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        className="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 hover:bg-gray-400"
+                        onClick={() => setShowDeleteModal(prev => ({ ...prev, [key]: false }))}
+                      >
+                        No
+                      </button>
+                      <button
+                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                        onClick={() => handleDelete({ ...ev, __type: 'event' })}
+                      >
+                        Yes, Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 text-left">
+                <h3 className="text-lg sm:text-xl font-extrabold text-blue-900 dark:text-blue-100 mb-2 sm:mb-0 tracking-tight">{ev.title}</h3>
+                <span className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                  {formatDistanceToNow(new Date(ev.createdAt))} ago
+                </span>
+              </div>
+              {ev.description && (
+                <p className="text-indigo-800 dark:text-indigo-200 mb-4 leading-relaxed text-left">{ev.description}</p>
+              )}
+              <div className="space-y-2 mb-4">
+                {ev.dateFilter && (
+                  <p className="flex items-center text-sm text-gray-600">
+                    <span className="font-medium mr-2">📅 Date:</span>
+                    {new Date(ev.dateFilter).toLocaleDateString()}
+                  </p>
+                )}
+                {ev.location && (
+                  <p className="flex items-center text-sm text-gray-600">
+                    <span className="font-medium mr-2">📍 Location:</span>
+                    {ev.location}
+                  </p>
+                )}
+              </div>
+              {ev.photos?.filter(u => u).map((url, i) => (
+                <img 
+                  key={i} 
+                  src={url} 
+                  alt={`Event photo ${i + 1}`}
+                  className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-md"
+                />
+              ))}
+              <RSVPButtons eventId={ev.id} user={user} authHeaders={authHeaders} />
+              <ReactionButtons entityType="event" entityId={ev.id} user={user} authHeaders={authHeaders} />
+              <button
+                className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mt-2 text-sm"
+                onClick={() =>
+                  setOpenComments((prev) => ({
+                    ...prev,
+                    [key]: !prev[key],
+                  }))
+                }
+              >
+                {CommentIcon} Comments
+              </button>
+              {openComments[key] && (
+                <Comments parentType="events" parentId={ev.id} user={user} authHeaders={authHeaders} />
+              )}
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
