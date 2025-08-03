@@ -17,7 +17,8 @@ const ACCESSIBLE_ROUTES = {
     '/friends',
     '/update_registration',
     '/match',
-    '/shop', // optionally allow shop browsing for pet_parent (remove if you want only pet_shop_owner in /shop)
+    '/shop',
+    '/messages' // optionally allow shop browsing for pet_parent (remove if you want only pet_shop_owner in /shop)
   ],
   // add other user types here...
 };

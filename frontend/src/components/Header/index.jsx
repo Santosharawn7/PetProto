@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { getCurrentUser } from "@/services/userService";
 import FriendList from "../FriendList";
 import LogoOmniverse from "../../assets/LogoOmniverse.png";
-import { FaPaw, FaBell, FaSearch } from "react-icons/fa";
+import { FaPaw, FaBell, FaSearch, FaChevronUp } from "react-icons/fa";
 import { FiLogOut, FiMenu } from "react-icons/fi";
 import { MdGroups } from "react-icons/md";
 import { FiMessageCircle } from "react-icons/fi";
@@ -33,11 +33,19 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
   const isMobile = useIsMobile();
 
   const [requests, setRequests] = useState([]);
-  const [desktopDropdown, setDesktopDropdown] = useState(""); // "messages" or "notifications"
+  const [desktopDropdown, setDesktopDropdown] = useState(""); // "notifications" only now
   const [drawer, setDrawer] = useState(""); // "", "more", "messages", "notifications"
 
+  // New state for mobile navigation collapse
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const navRef = useRef(null);
+
   const dropdownRef = useRef(null);
-  const messagesRef = useRef(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -61,9 +69,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
       if (!isMobile) {
         if (
           dropdownRef.current &&
-          !dropdownRef.current.contains(e.target) &&
-          messagesRef.current &&
-          !messagesRef.current.contains(e.target)
+          !dropdownRef.current.contains(e.target)
         ) {
           setDesktopDropdown("");
         }
@@ -72,6 +78,37 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     window.addEventListener("click", onClick);
     return () => window.removeEventListener("click", onClick);
   }, [isMobile]);
+
+  // Touch handlers for swipe functionality
+  const onTouchStart = (e) => {
+    setTouchEnd(null); // Reset touchEnd
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isDownSwipe = distance < -minSwipeDistance;
+    const isUpSwipe = distance > minSwipeDistance;
+
+    if (isDownSwipe && !isNavCollapsed) {
+      // Swipe down to collapse
+      setIsNavCollapsed(true);
+    } else if (isUpSwipe && isNavCollapsed) {
+      // Swipe up to expand
+      setIsNavCollapsed(false);
+    }
+  };
+
+  // Handle click on collapsed nav arrow
+  const handleCollapsedNavClick = () => {
+    setIsNavCollapsed(false);
+  };
 
   // Respond to requests
   const handleRespond = async (requestId, action) => {
@@ -123,7 +160,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     }
   };
 
-  // -------- DESKTOP NAVIGATION --------
+  // -------- DESKTOP NAVIGATION (Messages removed) --------
   const desktopNav = (
     <nav className="hidden md:flex space-x-8 items-center text-gray-700 font-extrabold mr-12">
       <NavLink
@@ -159,41 +196,6 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FaPaw className="text-xl" />
         My Pet Profile
       </button>
-      {/* --------- UPDATED MESSAGES DROPDOWN ---------- */}
-      <div className="relative" ref={messagesRef}>
-        <button
-          onClick={() => setDesktopDropdown("messages")}
-          className="flex items-center gap-2 hover:text-blue-700"
-          title="Messages"
-        >
-          <FiMessageCircle className="text-xl" />
-          Message
-        </button>
-        {desktopDropdown === "messages" && (
-          <div
-            className="absolute right-0 mt-2 w-72 bg-white border rounded shadow-lg z-30"
-            style={{ maxHeight: 350, overflowY: "auto" }}
-          >
-            <FriendList
-              mini
-              onChatHeadClick={(chatId) => {
-                setDesktopDropdown("");
-                navigate(`/chat/${chatId}`);
-              }}
-            />
-            <button
-              className="w-full bg-blue-600 text-white py-3 hover:bg-blue-800 "
-              onClick={() => {
-                setDesktopDropdown("");
-                navigate("/message");
-              }}
-            >
-              See All Messages
-            </button>
-          </div>
-        )}
-      </div>
-      {/* ---------------- END UPDATED ------------------ */}
       {/* Notifications */}
       <div className="relative" ref={dropdownRef}>
         <button
@@ -295,64 +297,106 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     </div>
   );
 
-  // -------- MOBILE NAVIGATION --------
+  // -------- MOBILE NAVIGATION WITH COLLAPSE FUNCTIONALITY --------
   const mobileBottomNav = (
-    <nav
-      className="fixed bottom-0 left-0 right-0 bg-white shadow-lg flex items-center justify-between px-3 pb-2 pt-2 rounded-t-3xl z-50 md:hidden gap-x-2"
-      style={{ minHeight: 76 }}
-    >
-      {/* Home Icon */}
-      <NavLink
-        to="/home"
-        className={({ isActive }) =>
-          `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
-        }
-        style={{ flex: 1, minWidth: 88, minHeight: 88 }}
-      >
-        <IoHomeSharp className="text-5xl" />
-      </NavLink>
-      {/* Community */}
-      <NavLink
-        to="/community"
-        className={({ isActive }) =>
-          `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
-        }
-        style={{ flex: 1, minWidth: 48, minHeight: 48 }}
-      >
-        <MdGroups className="w-15 h-15" />
-      </NavLink>
-      {/* Shop */}
-      <NavLink
-        to="/shop"
-        className={({ isActive }) =>
-          `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
-        }
-        style={{ flex: 1, minWidth: 48, minHeight: 48 }}
-      >
-        <FiShoppingBag className="w-11 h-11" />
-      </NavLink>
-      {/* Notifications */}
-      <button
-        onClick={() => openDrawer("notifications")}
-        className="flex items-center justify-center text-gray-400 relative"
-        style={{ flex: 1, minWidth: 44, minHeight: 44 }}
-      >
-        <FaBell className="w-11 h-11" />
-        {requests.length > 0 && (
-          <span className="absolute top-2 right-5 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {requests.length}
-          </span>
-        )}
-      </button>
-      {/* More */}
-      <button
-        onClick={() => openDrawer("more")}
-        className="flex items-center justify-center text-gray-400"
-        style={{ flex: 1, minWidth: 44, minHeight: 44 }}
-      >
-        <FiMenu className="w-12 h-12" />
-      </button>
-    </nav>
+    <>
+      {/* Collapsed state - just up arrow */}
+      {isNavCollapsed && (
+        <div
+          className="fixed bottom-0 left-0 right-0 bg-white shadow-lg flex items-center justify-center py-3 rounded-t-3xl z-50 md:hidden cursor-pointer"
+          onClick={handleCollapsedNavClick}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          style={{ 
+            minHeight: 50,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        >
+          <FaChevronUp className="text-gray-600 text-2xl animate-bounce" />
+          {/* Notification indicator on collapsed state */}
+          {requests.length > 0 && (
+            <span className="absolute top-2 right-4 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {requests.length}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Expanded state - full navigation */}
+      {!isNavCollapsed && (
+        <nav
+          ref={navRef}
+          className="fixed bottom-0 left-0 right-0 bg-white shadow-lg flex items-center justify-between px-3 pb-2 pt-2 rounded-t-3xl z-50 md:hidden gap-x-2"
+          style={{ 
+            minHeight: 76,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          {/* Swipe indicator */}
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-gray-300 rounded-full" />
+          
+          {/* Home Icon */}
+          <NavLink
+            to="/home"
+            className={({ isActive }) =>
+              `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
+            }
+            style={{ flex: 1, minWidth: 88, minHeight: 88 }}
+          >
+            <IoHomeSharp className="text-5xl" />
+          </NavLink>
+          
+          {/* Community */}
+          <NavLink
+            to="/community"
+            className={({ isActive }) =>
+              `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
+            }
+            style={{ flex: 1, minWidth: 48, minHeight: 48 }}
+          >
+            <MdGroups className="w-15 h-15" />
+          </NavLink>
+          
+          {/* Shop */}
+          <NavLink
+            to="/shop"
+            className={({ isActive }) =>
+              `flex items-center justify-center ${isActive ? "text-green-500" : "text-gray-400"}`
+            }
+            style={{ flex: 1, minWidth: 48, minHeight: 48 }}
+          >
+            <FiShoppingBag className="w-11 h-11" />
+          </NavLink>
+          
+          {/* Notifications */}
+          <button
+            onClick={() => openDrawer("notifications")}
+            className="flex items-center justify-center text-gray-400 relative"
+            style={{ flex: 1, minWidth: 44, minHeight: 44 }}
+          >
+            <FaBell className="w-11 h-11" />
+            {requests.length > 0 && (
+              <span className="absolute top-2 right-5 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {requests.length}
+              </span>
+            )}
+          </button>
+          
+          {/* More */}
+          <button
+            onClick={() => openDrawer("more")}
+            className="flex items-center justify-center text-gray-400"
+            style={{ flex: 1, minWidth: 44, minHeight: 44 }}
+          >
+            <FiMenu className="w-12 h-12" />
+          </button>
+        </nav>
+      )}
+    </>
   );
 
   // ------ MOBILE: Drawer Overlay ------
@@ -413,7 +457,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
                     className="w-full bg-blue-600 text-white py-3 hover:bg-blue-800 mt-2"
                     onClick={() => {
                       closeDrawer();
-                      navigate("/message");
+                      navigate("/messages");
                     }}
                   >
                     See All Messages
@@ -474,15 +518,6 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
             ✕
           </button>
         </div>
-        <style>{`
-          .slide-up-drawer {
-            animation: slideupdrawer 0.25s cubic-bezier(.4,0,.2,1);
-          }
-          @keyframes slideupdrawer {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-          }
-        `}</style>
       </div>
     </div>
   );
