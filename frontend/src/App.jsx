@@ -40,6 +40,15 @@ import ChatFloaterIcon from "./components/ChatFloaterIcon";
 import ChatModal from "./components/ChatModal";
 import Message from "./components/Message";
 
+// --- New Profile Pages ---
+import UserProfile from "./pages/UserProfile";
+import UserProfileEdit from "./pages/UserProfileEdit";
+
+// --- Mobile Chat ---
+import MobileChatView from "./components/MobileChatView";
+import MobileChat from "./components/MobileChat";
+import OmniverseLandingPage from "./pages/DesktopLandingPage";
+
 function AppContent() {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -50,7 +59,12 @@ function AppContent() {
   const [floaterOpen, setFloaterOpen] = useState(false);
   const [chatModalOpen, setChatModalOpen] = useState(false);
 
-  // Shop state
+  // --- Mobile Chat State ---
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [mobileChatFriend, setMobileChatFriend] = useState(null);
+  const [mobileChatId, setMobileChatId] = useState(null);
+
+  // --- Shop state ---
   const [category, setCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showCart, setShowCart] = useState(false);
@@ -62,6 +76,14 @@ function AppContent() {
   const [orderComplete, setOrderComplete] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showUploader, setShowUploader] = useState(false);
+
+  // Detect mobile: use a hook or just inline for simplicity
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("userToken");
@@ -145,23 +167,79 @@ function AppContent() {
     setIsLoggedIn(true);
   };
 
+  // ---- MOBILE CHAT LOGIC ----
+
+  // Set a global function so Header can open mobile chat
+  useEffect(() => {
+    window.openMobileChat = () => {
+      setMobileChatOpen(true);
+      setMobileChatFriend(null);
+      setMobileChatId(null);
+    };
+    return () => { window.openMobileChat = undefined; };
+  }, []);
+
+  // Select a friend in mobile chat, lookup or create chatId
+  const handleMobileChatSelectFriend = async (friend) => {
+    try {
+      const { auth } = await import("./firebase");
+      const user = auth.currentUser;
+      if (!user) return;
+      const token = await user.getIdToken();
+      // Try to find or create chat
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000'}/chats`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const { chats } = await res.json();
+      let chat = (chats || []).find(
+        c => !c.isGroup && c.participants && c.participants.includes(friend.uid)
+      );
+      if (!chat) {
+        // Create new chat
+        const createRes = await fetch(
+          `${import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000'}/chats`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              participants: [user.uid, friend.uid],
+              isGroup: false
+            })
+          }
+        );
+        const data = await createRes.json();
+        chat = { id: data.chatId };
+      }
+      setMobileChatFriend(friend);
+      setMobileChatId(chat.id);
+    } catch (err) {
+      alert("Unable to start chat. Please try again.");
+    }
+  };
+  // Close mobile chat/friends list
+  const handleMobileChatClose = () => {
+    setMobileChatOpen(false);
+    setMobileChatFriend(null);
+    setMobileChatId(null);
+  };
+  // Go back to friend list from chat
+  const handleMobileChatBack = () => {
+    setMobileChatFriend(null);
+    setMobileChatId(null);
+  };
+
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
+      <div className="min-h-screen bg-gradient-to-r from-orange-100 to-purple-100 flex justify-center items-center">
         Loading...
       </div>
     );
   }
 
   return (
-    <>
+    // MAIN WRAPPER WITH GRADIENT BACKGROUND FOR ALL PAGES
+    <div className="min-h-screen bg-gradient-to-r from-orange-100 to-purple-100">
       {/* Main PetProto header */}
       {isLoggedIn && !location.pathname.startsWith("/shop") && (
         <Header
@@ -182,11 +260,26 @@ function AppContent() {
         />
       )}
 
+      {/* --------- MOBILE CHAT EXPERIENCE --------- */}
+      {mobileChatOpen && isMobile && (
+        !mobileChatFriend ?
+          <MobileChatView
+            onSelectFriend={handleMobileChatSelectFriend}
+            onClose={handleMobileChatClose}
+          />
+        :
+          <MobileChat
+            friend={mobileChatFriend}
+            chatId={mobileChatId}
+            onBack={handleMobileChatBack}
+          />
+      )}
+
       <ScrollToTop />
       <Routes>
         {/* --- PetProto routes --- */}
         <Route path="/prehome" element={<PreHome />} />
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<OmniverseLandingPage />} />
         <Route path="/register" element={<RegistrationForm />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route path="/password-reset" element={<PasswordReset />} />
@@ -250,7 +343,23 @@ function AppContent() {
             </PrivateRoute>
           }
         />
-
+        {/* --- Profile Routes --- */}
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <UserProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile/edit"
+          element={
+            <PrivateRoute>
+              <UserProfileEdit />
+            </PrivateRoute>
+          }
+        />
         {/* --- Shop Routes --- */}
         <Route
           path="/shop"
@@ -358,7 +467,7 @@ function AppContent() {
           </ChatModal>
         </>
       )}
-    </>
+    </div>
   );
 }
 

@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { getCurrentUser } from "@/services/userService";
 import FriendList from "../FriendList";
 import LogoOmniverse from "../../assets/LogoOmniverse.png";
-import { FaPaw, FaBell, FaSearch, FaChevronUp } from "react-icons/fa";
+import { FaPaw, FaBell, FaSearch, FaChevronUp, FaUserCircle } from "react-icons/fa";
 import { FiLogOut, FiMenu } from "react-icons/fi";
 import { MdGroups } from "react-icons/md";
 import { FiMessageCircle } from "react-icons/fi";
@@ -13,6 +13,7 @@ import { IoHomeSharp } from "react-icons/io5";
 import { FiShoppingBag } from "react-icons/fi";
 import { logoutAndClear } from "../../utils/auth";
 
+// Mobile detection utility
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
@@ -35,16 +36,12 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
   const [requests, setRequests] = useState([]);
   const [desktopDropdown, setDesktopDropdown] = useState(""); // "notifications" only now
   const [drawer, setDrawer] = useState(""); // "", "more", "messages", "notifications"
-
-  // New state for mobile navigation collapse
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const navRef = useRef(null);
-
   const dropdownRef = useRef(null);
 
-  // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
 
   useEffect(() => {
@@ -81,40 +78,23 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
 
   // Touch handlers for swipe functionality
   const onTouchStart = (e) => {
-    setTouchEnd(null); // Reset touchEnd
+    setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientY);
   };
-
-  const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientY);
-  };
-
+  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientY);
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
     const distance = touchStart - touchEnd;
     const isDownSwipe = distance < -minSwipeDistance;
     const isUpSwipe = distance > minSwipeDistance;
-
-    if (isDownSwipe && !isNavCollapsed) {
-      // Swipe down to collapse
-      setIsNavCollapsed(true);
-    } else if (isUpSwipe && isNavCollapsed) {
-      // Swipe up to expand
-      setIsNavCollapsed(false);
-    }
+    if (isDownSwipe && !isNavCollapsed) setIsNavCollapsed(true);
+    else if (isUpSwipe && isNavCollapsed) setIsNavCollapsed(false);
   };
+  const handleCollapsedNavClick = () => setIsNavCollapsed(false);
 
-  // Handle click on collapsed nav arrow
-  const handleCollapsedNavClick = () => {
-    setIsNavCollapsed(false);
-  };
-
-  // Respond to requests
   const handleRespond = async (requestId, action) => {
     const token = localStorage.getItem("userToken");
     if (!token) return toast.error("Not logged in!");
-
     try {
       const res = await axios.post(
         `${API_URL}/requests/${requestId}/respond`,
@@ -132,10 +112,8 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     }
   };
 
-  // Drawer controls
   const openDrawer = (type) => setDrawer(type);
   const closeDrawer = () => setDrawer("");
-
   const handleLogout = () => {
     logoutAndClear();
     if (setIsLoggedIn) setIsLoggedIn(false);
@@ -160,7 +138,13 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     }
   };
 
-  // -------- DESKTOP NAVIGATION (Messages removed) --------
+  // Handler for navigating to the USER profile page
+  const handleUserProfileClick = () => {
+    closeDrawer();
+    navigate("/profile");
+  };
+
+  // -------- DESKTOP NAVIGATION --------
   const desktopNav = (
     <nav className="hidden md:flex space-x-8 items-center text-gray-700 font-extrabold mr-12">
       <NavLink
@@ -195,6 +179,15 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
       >
         <FaPaw className="text-xl" />
         My Pet Profile
+      </button>
+      {/* User Profile Icon */}
+      <button
+        onClick={handleUserProfileClick}
+        className="flex items-center gap-2 hover:text-blue-700"
+        title="My Profile"
+      >
+        <FaUserCircle className="text-2xl" />
+        My Profile
       </button>
       {/* Notifications */}
       <div className="relative" ref={dropdownRef}>
@@ -288,7 +281,13 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FaSearch className="text-white text-2xl" />
       </button>
       <button
-        onClick={() => openDrawer("messages")}
+        onClick={() => {
+          if (isMobile && typeof window.openMobileChat === "function") {
+            window.openMobileChat();
+          } else {
+            openDrawer("messages");
+          }
+        }}
         className="bg-white rounded-full p-3 shadow-md flex items-center justify-center"
         style={{ width: 48, height: 48 }}
       >
@@ -300,7 +299,6 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
   // -------- MOBILE NAVIGATION WITH COLLAPSE FUNCTIONALITY --------
   const mobileBottomNav = (
     <>
-      {/* Collapsed state - just up arrow */}
       {isNavCollapsed && (
         <div
           className="fixed bottom-0 left-0 right-0 bg-white shadow-lg flex items-center justify-center py-3 rounded-t-3xl z-50 md:hidden cursor-pointer"
@@ -308,13 +306,12 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
-          style={{ 
+          style={{
             minHeight: 50,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
           <FaChevronUp className="text-gray-600 text-2xl animate-bounce" />
-          {/* Notification indicator on collapsed state */}
           {requests.length > 0 && (
             <span className="absolute top-2 right-4 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {requests.length}
@@ -323,12 +320,11 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         </div>
       )}
 
-      {/* Expanded state - full navigation */}
       {!isNavCollapsed && (
         <nav
           ref={navRef}
           className="fixed bottom-0 left-0 right-0 bg-white shadow-lg flex items-center justify-between px-3 pb-2 pt-2 rounded-t-3xl z-50 md:hidden gap-x-2"
-          style={{ 
+          style={{
             minHeight: 76,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
@@ -336,10 +332,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          {/* Swipe indicator */}
           <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-gray-300 rounded-full" />
-          
-          {/* Home Icon */}
           <NavLink
             to="/home"
             className={({ isActive }) =>
@@ -349,8 +342,6 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           >
             <IoHomeSharp className="text-5xl" />
           </NavLink>
-          
-          {/* Community */}
           <NavLink
             to="/community"
             className={({ isActive }) =>
@@ -360,8 +351,6 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           >
             <MdGroups className="w-15 h-15" />
           </NavLink>
-          
-          {/* Shop */}
           <NavLink
             to="/shop"
             className={({ isActive }) =>
@@ -371,8 +360,6 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           >
             <FiShoppingBag className="w-11 h-11" />
           </NavLink>
-          
-          {/* Notifications */}
           <button
             onClick={() => openDrawer("notifications")}
             className="flex items-center justify-center text-gray-400 relative"
@@ -385,8 +372,6 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
               </span>
             )}
           </button>
-          
-          {/* More */}
           <button
             onClick={() => openDrawer("more")}
             className="flex items-center justify-center text-gray-400"
@@ -427,12 +412,17 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
             </div>
             {drawer === "more" && (
               <>
-                {/* Pet Profile */}
                 <button
                   className="flex items-center gap-3 p-4 border-b w-full"
                   onClick={handleProfileClick}
                 >
                   <FaPaw className="text-xl" /> My Pet Profile
+                </button>
+                <button
+                  className="flex items-center gap-3 p-4 border-b w-full"
+                  onClick={handleUserProfileClick}
+                >
+                  <FaUserCircle className="text-xl" /> My Profile
                 </button>
                 <button
                   className="flex items-center gap-3 p-4 w-full text-red-600"
@@ -541,11 +531,8 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         {desktopNav}
       </header>
 
-      {/* Mobile: Only the logo icon, big, top left, no bar */}
       {isMobile && mobileLogoIcon}
-      {/* Mobile: Top right, search & message icons */}
       {isMobile && mobileTopRightIcons}
-
       {mobileBottomNav}
       {drawerOverlay}
     </>

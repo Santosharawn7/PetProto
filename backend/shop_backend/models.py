@@ -10,7 +10,7 @@ class Product(db.Model):
     image_url = db.Column(db.String(500))
     category = db.Column(db.String(100))
     stock = db.Column(db.Integer, default=0)
-    owner_uid = db.Column(db.String(128), nullable=True)
+    owner_uid = db.Column(db.String(128), nullable=False)  # <--- ENFORCE owner required!
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):

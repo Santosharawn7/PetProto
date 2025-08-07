@@ -1,3 +1,4 @@
+// src/pages/Messages.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { auth } from '../../firebase';
@@ -6,6 +7,16 @@ import io from 'socket.io-client';
 
 const API_URL = import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000';
 const PLACEHOLDER_AVATAR = "https://ui-avatars.com/api/?name=Pet&background=random";
+
+// Helper to format date as "Friday, May 17, 2024"
+function formatDate(date) {
+  return date.toLocaleDateString(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+}
 
 export default function Messages() {
   const [friends, setFriends] = useState([]);
@@ -22,7 +33,7 @@ export default function Messages() {
   const bottomRef = useRef(null);
   const currentUid = auth.currentUser?.uid;
 
-  // Responsive behavior
+  // --- Responsive ---
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
@@ -33,7 +44,7 @@ export default function Messages() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch friends on load
+  // --- Fetch friends on load ---
   useEffect(() => {
     async function fetchFriends() {
       try {
@@ -49,7 +60,7 @@ export default function Messages() {
     if (auth.currentUser) fetchFriends();
   }, []);
 
-  // Socket initialization
+  // --- Socket for real-time messages ---
   useEffect(() => {
     if (!auth.currentUser || !selectedChatId) return;
     socketRef.current = io(API_URL, { transports: ['websocket', 'polling'], timeout: 20000 });
@@ -64,17 +75,25 @@ export default function Messages() {
     // eslint-disable-next-line
   }, [selectedChatId]);
 
-  // Fetch messages for selected chat
+  // --- Fetch messages when selectedChatId changes ---
   useEffect(() => {
     if (selectedChatId) fetchMessages(selectedChatId);
     // eslint-disable-next-line
-  }, [selectedChatId]);
+  }, [selectedChatId, friends]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Fetch messages for selected chat
+  // --- Get friend info for header ---
+  const getFriendForChat = (chatId) => {
+    let found = friends.find(f => f.chatId === chatId);
+    if (found) return found;
+    if (currentChat && currentChat.chatId === chatId) return currentChat;
+    return null;
+  };
+
+  // --- Fetch messages for selected chatId ---
   const fetchMessages = async (chatId) => {
     setLoadingMessages(true);
     try {
@@ -83,7 +102,7 @@ export default function Messages() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages(response.data.messages || []);
-      setCurrentChat(friends.find(f => f.chatId === chatId) || null);
+      setCurrentChat(getFriendForChat(chatId));
     } catch {
       toast.error('Failed to load messages');
       setMessages([]);
@@ -92,32 +111,33 @@ export default function Messages() {
     }
   };
 
-  // Open chat with friend (or create new one)
+  // --- Open or create chat with friend ---
   const handleFriendClick = async (friend) => {
     if (!friend) return;
-    if (friend.chatId) {
-      setSelectedChatId(friend.chatId);
-      setCurrentChat(friend);
-      return;
-    }
-    try {
-      const token = await auth.currentUser.getIdToken();
-      // Try to find existing chat
-      let chatId = friend.chatId;
-      if (!chatId) {
-        // Create new chat
+    let chatId = friend.chatId;
+    if (!chatId) {
+      try {
+        const token = await auth.currentUser.getIdToken();
         const response = await axios.post(`${API_URL}/chat-with-user/${friend.uid}`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         chatId = response.data.chatId;
+        setFriends(prevFriends =>
+          prevFriends.map(f =>
+            f.uid === friend.uid ? { ...f, chatId } : f
+          )
+        );
+      } catch {
+        toast.error('Could not start chat');
+        return;
       }
-      setSelectedChatId(chatId);
-      setCurrentChat(friend);
-    } catch {
-      toast.error('Could not start chat');
     }
+    setSelectedChatId(chatId);
+    setCurrentChat({ ...friend, chatId });
+    if (isMobile) setShowChatsList(false);
   };
 
+  // --- Send message ---
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || !selectedChatId) return;
@@ -165,7 +185,7 @@ export default function Messages() {
     );
   }
 
-  // Filter friends by search query
+  // --- Filter friends by search ---
   const filteredFriends = friends.filter(friend =>
     friend.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -188,7 +208,7 @@ export default function Messages() {
         bg-white border-r border-gray-200 flex flex-col
         transition-transform duration-300 ease-in-out
       `}>
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-white">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
           <h1 className="text-xl font-bold text-gray-900 mb-4">Friends</h1>
           <div className="relative">
             <input
@@ -203,7 +223,8 @@ export default function Messages() {
             </svg>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        {/* Sidebar Friend List Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0">
           {filteredFriends.length > 0 ? (
             <ul>
               {filteredFriends.map(friend => (
@@ -235,13 +256,13 @@ export default function Messages() {
 
       {/* --- MAIN CHAT AREA --- */}
       <div className={`
-        flex-1 flex flex-col
+        flex-1 flex flex-col h-full bg-gray-50
         ${isMobile && showChatsList ? 'hidden' : ''}
-        bg-gray-50
       `}>
-        {selectedChatId ? (
+        {selectedChatId && currentChat ? (
           <>
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-white border-b border-gray-200">
+            {/* Fixed Chat Header */}
+            <div className="flex-shrink-0 flex items-center justify-between px-4 sm:px-6 py-4 bg-white border-b border-gray-200 z-10">
               <div className="flex items-center space-x-3 min-w-0 flex-1">
                 <button
                   onClick={handleBackToChats}
@@ -267,34 +288,67 @@ export default function Messages() {
                 </div>
               </div>
             </div>
-            {/* --- Messages Container --- */}
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 bg-gray-50">
+            {/* Scrollable Messages Container */}
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 chat-messages-scroll bg-gray-50 min-h-0">
               {loadingMessages ? (
                 <div className="flex justify-center items-center h-full">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
                 </div>
               ) : messages.length ? (
-                messages.map((m, idx) => {
-                  const isMe = m.from === currentUid;
-                  return (
-                    <div key={m.id} className={`flex items-end mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-xs sm:max-w-sm lg:max-w-md ${isMe ? 'ml-auto' : ''}`}>
-                        <div
-                          className={`px-4 py-2 rounded-2xl relative ${
-                            isMe
-                              ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white ml-auto'
-                              : 'bg-white text-gray-900 shadow-sm'
-                          } mt-2`}
-                        >
-                          <p className="text-sm leading-relaxed break-words">{m.text}</p>
-                          <div className={`text-xs opacity-70 mt-1 ${isMe ? 'text-right' : 'text-left'}`}>
-                            {new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                (() => {
+                  let lastDate = null;
+                  return messages.map((m, idx) => {
+                    const isMe = m.from === currentUid;
+                    const msgDate = new Date(m.sentAt);
+                    const msgDateStr = formatDate(msgDate);
+                    let showDate = false;
+                    if (idx === 0 || formatDate(new Date(messages[idx - 1].sentAt)) !== msgDateStr) {
+                      showDate = true;
+                      lastDate = msgDateStr;
+                    }
+                    const isConsecutive =
+                      idx > 0 &&
+                      messages[idx - 1].from === m.from &&
+                      (msgDate - new Date(messages[idx - 1].sentAt)) < 60000;
+                    const showTime =
+                      idx === messages.length - 1 ||
+                      messages[idx + 1]?.from !== m.from ||
+                      formatDate(new Date(messages[idx + 1]?.sentAt)) !== msgDateStr ||
+                      (new Date(messages[idx + 1]?.sentAt) - msgDate) > 60000;
+                    return (
+                      <React.Fragment key={m.id}>
+                        {showDate && (
+                          <div className="flex justify-center my-6">
+                            <span className="px-3 py-1 text-xs text-gray-500 bg-white rounded-full font-medium shadow-sm">
+                              {msgDateStr}
+                            </span>
+                          </div>
+                        )}
+                        <div className={`flex items-end mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-xs sm:max-w-sm lg:max-w-md ${isMe ? 'ml-auto' : ''}`}>
+                            <div
+                              className={`px-4 py-2 rounded-2xl relative ${
+                                isMe
+                                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white ml-auto'
+                                  : 'bg-white text-gray-900 shadow-sm'
+                              } ${isConsecutive ? 'mt-1' : 'mt-2'}`}
+                            >
+                              <p className="text-sm leading-relaxed break-words">{m.text}</p>
+                              {showTime && (
+                                <div className={`text-xs opacity-70 mt-1 ${isMe ? 'text-right' : 'text-left'}`}>
+                                  {msgDate.toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })
+                      </React.Fragment>
+                    );
+                  });
+                })()
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
                   <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center mb-4">
@@ -308,8 +362,8 @@ export default function Messages() {
               )}
               <div ref={bottomRef} />
             </div>
-            {/* Input Area */}
-            <div className="px-4 sm:px-6 py-4 bg-white border-t border-gray-200 safe-area-inset-bottom">
+            {/* Fixed Input Area */}
+            <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-white border-t border-gray-200 safe-area-inset-bottom">
               <form onSubmit={handleSend} className="flex items-center space-x-3">
                 <div className="flex-1 relative">
                   <input
