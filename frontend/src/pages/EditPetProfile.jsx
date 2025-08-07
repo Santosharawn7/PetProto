@@ -370,6 +370,8 @@ export default function EditPetProfile() {
                     name="dob"
                     value={petProfile.dob}
                     onChange={handleChange}
+                    min="1900-01-01"
+                    max={new Date().toISOString().split('T')[0]}
                     required
                     className="w-full p-4 bg-white/60 border border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
                   />

@@ -31,6 +31,8 @@ from shop_backend.cart import cart_bp
 from shop_backend.orders import orders_bp
 from shop_backend.dashboard import dashboard_bp
 from shop_backend.db import db as shop_db
+from user_profile import user_profile_bp
+
 
 # --- Load environment variables ---
 load_dotenv()
@@ -156,6 +158,8 @@ app.register_blueprint(products_bp)
 app.register_blueprint(cart_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(dashboard_bp)
+app.register_blueprint(user_profile_bp)
+
 
 print("✅ All blueprints registered successfully")
 

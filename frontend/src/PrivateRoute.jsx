@@ -5,7 +5,7 @@ import { getAuthToken, isValidToken, getUserData } from './utils/auth';
 // Allowed route prefixes for each user type
 const ACCESSIBLE_ROUTES = {
   pet_shop_owner: [
-    '/shop', // allow /shop and ALL its subroutes
+    '/shop',
   ],
   pet_parent: [
     '/home',
@@ -18,16 +18,18 @@ const ACCESSIBLE_ROUTES = {
     '/update_registration',
     '/match',
     '/shop',
-    '/messages' // optionally allow shop browsing for pet_parent (remove if you want only pet_shop_owner in /shop)
+    '/messages'
   ],
   // add other user types here...
 };
 
 // Checks if route is allowed for the userType
 function isRouteAllowed(userType, pathname) {
+  // **Allow ALL user types to access /profile and /profile/edit**
+  if (pathname === '/profile' || pathname === '/profile/edit') return true;
+
   if (!userType) return false;
   const allowedPrefixes = ACCESSIBLE_ROUTES[userType] || [];
-  // Must match *exactly* the start of the pathname
   return allowedPrefixes.some(prefix =>
     prefix === pathname || pathname.startsWith(prefix + '/')
   );

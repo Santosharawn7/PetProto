@@ -1,126 +1,196 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { buildApiUrl } from "../../config/api";
 import { getAuthToken, isPetShopOwner, getUserData } from "../../utils/auth";
 
+// -- Edit Modal Component --
+function EditProductModal({ open, product, onClose, onSave }) {
+  const [form, setForm] = useState(product || {});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setForm(product || {});
+    setError("");
+  }, [product, open]);
+
+  if (!open || !product) return null;
+
+  const handleChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const token = getAuthToken();
+      await axios.put(buildApiUrl(`/api/products/${product.id}`), form, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      onSave();
+      onClose();
+    } catch (err) {
+      setError("Failed to save product: " + (err.response?.data?.error || ""));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative animate-fadeIn">
+        <button
+          className="absolute top-3 right-4 text-2xl text-gray-500 hover:text-red-600"
+          onClick={onClose}
+          aria-label="Close edit modal"
+        >✕</button>
+        <h2 className="text-2xl font-bold mb-4">Edit Product</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1 font-semibold">Name</label>
+            <input name="name" value={form.name || ""} onChange={handleChange} className="w-full border p-2 rounded" required maxLength={100} />
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Category</label>
+            <input name="category" value={form.category || ""} onChange={handleChange} className="w-full border p-2 rounded" maxLength={50} />
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Price ($)</label>
+            <input name="price" type="number" step="0.01" min="0.01" value={form.price || ""} onChange={handleChange} className="w-full border p-2 rounded" required />
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Stock</label>
+            <input name="stock" type="number" min="0" value={form.stock || ""} onChange={handleChange} className="w-full border p-2 rounded" required />
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Image URL</label>
+            <input name="image_url" value={form.image_url || ""} onChange={handleChange} className="w-full border p-2 rounded" maxLength={500} />
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Description</label>
+            <textarea name="description" value={form.description || ""} onChange={handleChange} rows={3} className="w-full border p-2 rounded" maxLength={1000} />
+          </div>
+          {error && <div className="text-red-600">{error}</div>}
+          <div className="flex gap-4 justify-end mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-gray-200 px-5 py-2 rounded hover:bg-gray-300"
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-800"
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// -- Delete Confirm Modal --
+function DeleteProductConfirm({ open, product, onCancel, onConfirm, loading }) {
+  if (!open || !product) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 relative animate-fadeIn">
+        <h2 className="text-xl font-bold mb-4 text-red-600">Confirm Delete</h2>
+        <p className="mb-6">
+          Are you sure you want to <span className="font-semibold">delete</span> <span className="font-bold">{product.name}</span>?
+        </p>
+        <div className="flex gap-4 justify-end">
+          <button
+            onClick={onCancel}
+            className="bg-gray-200 px-5 py-2 rounded hover:bg-gray-300"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="bg-red-600 text-white px-5 py-2 rounded hover:bg-red-800"
+            disabled={loading}
+          >
+            {loading ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- MAIN DASHBOARD ----
 export default function Dashboard() {
   const [products, setProducts] = useState([]);
   const [activeProductId, setActiveProductId] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [forbidden, setForbidden] = useState(false);
-  const navigate = useNavigate();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteProduct, setDeleteProduct] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Use `/api/my-products` so only products by logged-in owner are shown
+  const fetchProducts = async () => {
+    try {
+      const token = getAuthToken();
+      const res = await axios.get(buildApiUrl("/api/my-products"), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // If response shape is {products: [...], count: ...}
+      setProducts((res.data.products && Array.isArray(res.data.products)) ? res.data.products : []);
+    } catch (e) {
+      setProducts([]);
+    }
+  };
 
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
-    // Add a small delay to ensure localStorage is fully loaded
-    setTimeout(() => {
-      const userData = getUserData();
-      const isPetOwner = isPetShopOwner();
-      
-      console.log("=== DASHBOARD DEBUG ===");
-      console.log("Full userData:", userData);
-      console.log("userType from userData:", userData?.userType);
-      console.log("isPetShopOwner() result:", isPetOwner);
-      console.log("localStorage userData:", localStorage.getItem("userData"));
-      console.log("localStorage userToken:", localStorage.getItem("userToken"));
-      console.log("======================");
-
-      // If userData is null, try to refresh or redirect to login
-      if (!userData) {
-        console.log("No userData found, redirecting to login");
-        navigate('/login');
-        return;
-      }
-
-      // Check if user is pet shop owner
-      if (!isPetOwner) {
-        console.log("Access denied - not a pet shop owner");
-        setForbidden(true);
-        setAuthChecked(true);
-        return;
-      }
-
-      console.log("Access granted - fetching dashboard data");
-
-      // Fetch dashboard data with auth header
-      axios
-        .get(buildApiUrl("/api/admin/dashboard"), {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        .then((res) => {
-          console.log("Dashboard data received:", res.data);
-          setProducts(res.data);
-        })
-        .catch((error) => {
-          console.error("Dashboard API error:", error);
-          setProducts([]);
-        });
-
-      setAuthChecked(true);
-    }, 100); // Small delay to ensure localStorage is ready
-
+    fetchProducts();
     // eslint-disable-next-line
-  }, [navigate]);
+  }, []);
 
   const toggleDrawer = (productId) => {
     setActiveProductId((prevId) => (prevId === productId ? null : productId));
   };
 
-  if (!authChecked) {
-    return (
-      <div className="p-10 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading dashboard...</p>
-      </div>
-    );
-  }
+  // -- Edit product handler
+  const handleEditClick = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
 
-  if (forbidden) {
-    const userData = getUserData();
-    return (
-      <div className="p-10 text-center">
-        <h1 className="text-2xl font-bold mb-4 text-red-600">🚫 Access Forbidden</h1>
-        <p className="text-gray-700">Only Pet Shop Owners can access the dashboard.</p>
-        
-        {/* DETAILED DEBUG INFO */}
-        <div className="mt-6 p-4 bg-gray-100 rounded text-left text-sm max-w-2xl mx-auto">
-          <strong>🐛 Debug Information:</strong>
-          <div className="mt-2 space-y-2">
-            <div><strong>getUserData():</strong> {userData ? 'Found' : 'null/undefined'}</div>
-            <div><strong>userType:</strong> {userData?.userType || 'Not found'}</div>
-            <div><strong>isPetShopOwner():</strong> {isPetShopOwner().toString()}</div>
-            <div><strong>localStorage userData:</strong> {localStorage.getItem("userData") ? 'Exists' : 'Missing'}</div>
-            <div><strong>localStorage userToken:</strong> {localStorage.getItem("userToken") ? 'Exists' : 'Missing'}</div>
-            
-            {userData && (
-              <div className="mt-3">
-                <strong>Full User Data:</strong>
-                <pre className="mt-1 p-2 bg-white rounded text-xs overflow-auto">
-                  {JSON.stringify(userData, null, 2)}
-                </pre>
-              </div>
-            )}
-          </div>
-          
-          <div className="mt-4 p-3 bg-yellow-100 rounded">
-            <strong>💡 Possible Solutions:</strong>
-            <ul className="mt-1 text-xs list-disc list-inside">
-              <li>Try logging out and logging in again</li>
-              <li>Clear browser cache and localStorage</li>
-              <li>Check if your account type was updated in Firebase</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // -- Delete product handler
+  const handleDeleteClick = (product) => {
+    setDeleteProduct(product);
+    setDeleteModalOpen(true);
+  };
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteProduct) return;
+    setDeleting(true);
+    try {
+      const token = getAuthToken();
+      await axios.delete(buildApiUrl(`/api/products/${deleteProduct.id}`), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDeleteModalOpen(false);
+      setDeleteProduct(null);
+      fetchProducts(); // Refresh
+    } catch (err) {
+      alert("Failed to delete product: " + (err.response?.data?.error || ""));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ----------- UI RENDER -----------
   return (
     <div className="p-6">
       <h1 className="text-2xl font-semibold mb-4">📊 Inventory Dashboard</h1>
@@ -149,19 +219,31 @@ export default function Dashboard() {
                   <td className="px-4 py-2">
                     <img
                       src={product.image_url}
-                      alt={product.title}
+                      alt={product.name}
                       className="w-16 h-16 object-cover rounded"
                     />
                   </td>
-                  <td className="px-4 py-2">{product.title}</td>
+                  <td className="px-4 py-2">{product.name}</td>
                   <td className="px-4 py-2">{product.stock}</td>
-                  <td className="px-4 py-2">{product.sold}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-2">{product.sold || 0}</td>
+                  <td className="px-4 py-2 flex gap-2 items-center">
                     <button
                       className="text-blue-600 hover:underline"
                       onClick={() => toggleDrawer(product.id)}
                     >
                       {activeProductId === product.id ? "Hide" : "View Buyers"}
+                    </button>
+                    <button
+                      className="text-yellow-600 hover:underline ml-2"
+                      onClick={() => handleEditClick(product)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="text-red-600 hover:underline ml-2"
+                      onClick={() => handleDeleteClick(product)}
+                    >
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -170,9 +252,9 @@ export default function Dashboard() {
                     <td colSpan="5" className="px-4 pb-4">
                       <div className="bg-gray-50 p-4 border rounded-md">
                         <h3 className="text-lg font-semibold mb-2">
-                          🧾 Buyers for {product.title}
+                          🧾 Buyers for {product.name}
                         </h3>
-                        {product.buyers.length === 0 ? (
+                        {product.buyers && product.buyers.length === 0 ? (
                           <p className="text-gray-500">No purchases yet.</p>
                         ) : (
                           <table className="w-full text-sm">
@@ -188,7 +270,7 @@ export default function Dashboard() {
                               </tr>
                             </thead>
                             <tbody>
-                              {product.buyers.map((b, idx) => (
+                              {product.buyers && product.buyers.map((b, idx) => (
                                 <tr key={idx} className="border-t">
                                   <td className="p-2">{b.buyer_name}</td>
                                   <td className="p-2">{b.product_name}</td>
@@ -213,6 +295,21 @@ export default function Dashboard() {
           </tbody>
         </table>
       </div>
+
+      {/* --- Modals --- */}
+      <EditProductModal
+        open={editModalOpen}
+        product={editProduct}
+        onClose={() => setEditModalOpen(false)}
+        onSave={fetchProducts}
+      />
+      <DeleteProductConfirm
+        open={deleteModalOpen}
+        product={deleteProduct}
+        onCancel={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        loading={deleting}
+      />
     </div>
   );
 }
