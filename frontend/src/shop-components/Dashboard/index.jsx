@@ -193,7 +193,7 @@ export default function Dashboard() {
   // ----------- UI RENDER -----------
   return (
     <div className="p-6">
-      <h1 className="text-3xl md:text-4xl text-white text-center font-bold mb-4">📊 Inventory Dashboard</h1>
+      <h1 className="text-2xl font-semibold mb-4">📊 Inventory Dashboard</h1>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border rounded-lg">
           <thead>
