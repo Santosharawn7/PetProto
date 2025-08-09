@@ -6,8 +6,10 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+
 import ScrollToTop from "./components/ScrollToTop";
-import Landing from "./components/Landing";
+// NOTE: We use the updated landing page component you mentioned
+import OmniverseLandingPage from "./pages/DesktopLandingPage";
 import Login from "./pages/Login";
 import PrivateRoute from "./PrivateRoute";
 import Home from "./pages/Home";
@@ -21,7 +23,7 @@ import CommunityPage from "./components/CommunityPage";
 import FriendList from "./components/FriendList";
 import PreHome from "./components/Prehome";
 import Header from "./components/Header";
-import RegistrationForm from './pages/Registration';
+import RegistrationForm from "./pages/Registration";
 
 import ShopHeader from "./shop-components/Header";
 import ItemUploader from "./shop-components/ItemUploader";
@@ -29,25 +31,52 @@ import ItemProductList from "./shop-components/ItemProductList";
 import Cart from "./shop-components/Cart";
 import Checkout from "./shop-components/Checkout";
 import Dashboard from "./shop-components/Dashboard";
+
 import { getSessionId } from "./utils/sessionId";
 import { buildApiUrl } from "./config/api";
-import { isValidToken } from './utils/auth';
+import { isValidToken } from "./utils/auth";
 
-// --- Chat UI ---
+// --- Chat UI (desktop) ---
 import MiniChatModal from "./components/MiniChatModal";
 import ChatFloater from "./components/ChatFloater";
 import ChatFloaterIcon from "./components/ChatFloaterIcon";
 import ChatModal from "./components/ChatModal";
 import Message from "./components/Message";
 
-// --- New Profile Pages ---
+// --- User Profile Pages ---
 import UserProfile from "./pages/UserProfile";
 import UserProfileEdit from "./pages/UserProfileEdit";
 
-// --- Mobile Chat ---
+// --- Mobile Chat (overlay pages) ---
 import MobileChatView from "./components/MobileChatView";
 import MobileChat from "./components/MobileChat";
-import OmniverseLandingPage from "./pages/DesktopLandingPage";
+
+
+// ---------- Body background theme switcher (shop vs. default) ----------
+function BodyTheme() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const prev = document.body.className;
+
+    if (location.pathname.startsWith("/shop")) {
+      // Shop look
+      document.body.className =
+        "bg-gradient-to-br from-purple-800 via-indigo-900 to-purple-800 min-h-screen w-screen overflow-x-hidden";
+    } else {
+      // Default app look
+      document.body.className =
+        "bg-gradient-to-r from-orange-100 to-purple-100 min-h-screen";
+    }
+
+    return () => {
+      document.body.className = prev;
+    };
+  }, [location.pathname]);
+
+  return null;
+}
+
 
 function AppContent() {
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -55,7 +84,7 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
 
-  // Floater/modal for chat
+  // Floater/modal for chat (desktop)
   const [floaterOpen, setFloaterOpen] = useState(false);
   const [chatModalOpen, setChatModalOpen] = useState(false);
 
@@ -77,7 +106,7 @@ function AppContent() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showUploader, setShowUploader] = useState(false);
 
-  // Detect mobile: use a hook or just inline for simplicity
+  // Detect mobile
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -85,12 +114,14 @@ function AppContent() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Auth state from localStorage token
   useEffect(() => {
     const token = localStorage.getItem("userToken");
     setIsLoggedIn(isValidToken(token));
     setIsLoading(false);
   }, [location.pathname]);
 
+  // React to token changes in other tabs
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === "userToken") {
@@ -101,6 +132,7 @@ function AppContent() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // Cart count
   useEffect(() => {
     fetchCartCount();
     // eslint-disable-next-line
@@ -110,8 +142,8 @@ function AppContent() {
     try {
       const response = await fetch(buildApiUrl(`/api/cart/${sessionId}`));
       const data = await response.json();
-      setCartItemCount(data.length);
-    } catch (err) {
+      setCartItemCount(Array.isArray(data) ? data.length : 0);
+    } catch {
       setCartItemCount(0);
     }
   };
@@ -133,6 +165,7 @@ function AppContent() {
       alert("Failed to add item to cart.");
     }
   };
+
   const handleSearch = (term) => setSearchTerm(term);
   const handleCategoryChange = (cat) => setCategory(cat);
   const handleCartClick = () => setShowCart(true);
@@ -168,62 +201,75 @@ function AppContent() {
   };
 
   // ---- MOBILE CHAT LOGIC ----
-
-  // Set a global function so Header can open mobile chat
+  // Make a global function so Header can open mobile chat overlay
   useEffect(() => {
     window.openMobileChat = () => {
       setMobileChatOpen(true);
       setMobileChatFriend(null);
       setMobileChatId(null);
     };
-    return () => { window.openMobileChat = undefined; };
+    return () => {
+      window.openMobileChat = undefined;
+    };
   }, []);
 
-  // Select a friend in mobile chat, lookup or create chatId
   const handleMobileChatSelectFriend = async (friend) => {
     try {
       const { auth } = await import("./firebase");
       const user = auth.currentUser;
       if (!user) return;
       const token = await user.getIdToken();
-      // Try to find or create chat
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000'}/chats`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+
+      const apiBase =
+        import.meta.env.VITE_API_URL ||
+        process.env.VITE_API_URL ||
+        "http://127.0.0.1:5000";
+
+      // Fetch chats
+      const res = await fetch(`${apiBase}/chats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const { chats } = await res.json();
-      let chat = (chats || []).find(
-        c => !c.isGroup && c.participants && c.participants.includes(friend.uid)
-      );
+
+      // Find direct chat with friend
+      let chat =
+        (chats || []).find(
+          (c) =>
+            !c.isGroup &&
+            c.participants &&
+            c.participants.includes(friend.uid)
+        ) || null;
+
+      // Create if not found
       if (!chat) {
-        // Create new chat
-        const createRes = await fetch(
-          `${import.meta.env.VITE_API_URL || process.env.VITE_API_URL || 'http://127.0.0.1:5000'}/chats`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              participants: [user.uid, friend.uid],
-              isGroup: false
-            })
-          }
-        );
+        const createRes = await fetch(`${apiBase}/chats`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            participants: [user.uid, friend.uid],
+            isGroup: false,
+          }),
+        });
         const data = await createRes.json();
         chat = { id: data.chatId };
       }
+
       setMobileChatFriend(friend);
       setMobileChatId(chat.id);
-    } catch (err) {
+    } catch {
       alert("Unable to start chat. Please try again.");
     }
   };
-  // Close mobile chat/friends list
+
   const handleMobileChatClose = () => {
     setMobileChatOpen(false);
     setMobileChatFriend(null);
     setMobileChatId(null);
   };
-  // Go back to friend list from chat
+
   const handleMobileChatBack = () => {
     setMobileChatFriend(null);
     setMobileChatId(null);
@@ -231,16 +277,18 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-r from-orange-100 to-purple-100 flex justify-center items-center">
+      <div className="min-h-screen bg-gradient-to-r from-orange-100 to-purple-100 flex items-center justify-center">
         Loading...
       </div>
     );
   }
 
   return (
-    // MAIN WRAPPER WITH GRADIENT BACKGROUND FOR ALL PAGES
-    <div className="min-h-screen bg-gradient-to-r from-orange-100 to-purple-100">
-      {/* Main PetProto header */}
+    <>
+      {/* Swap body background theme depending on route */}
+      <BodyTheme />
+
+      {/* Header (not shown on /shop, there we use ShopHeader) */}
       {isLoggedIn && !location.pathname.startsWith("/shop") && (
         <Header
           onSearchClick={() => setShowSearchModal(true)}
@@ -249,7 +297,7 @@ function AppContent() {
         />
       )}
 
-      {/* Shop header, always shown on shop routes */}
+      {/* Shop header on /shop routes */}
       {location.pathname.startsWith("/shop") && (
         <ShopHeader
           onSearch={handleSearch}
@@ -260,30 +308,34 @@ function AppContent() {
         />
       )}
 
-      {/* --------- MOBILE CHAT EXPERIENCE --------- */}
+      {/* --------- MOBILE CHAT OVERLAY EXPERIENCE --------- */}
       {mobileChatOpen && isMobile && (
-        !mobileChatFriend ?
+        !mobileChatFriend ? (
           <MobileChatView
             onSelectFriend={handleMobileChatSelectFriend}
             onClose={handleMobileChatClose}
           />
-        :
+        ) : (
           <MobileChat
             friend={mobileChatFriend}
             chatId={mobileChatId}
             onBack={handleMobileChatBack}
           />
+        )
       )}
 
       <ScrollToTop />
+
       <Routes>
-        {/* --- PetProto routes --- */}
-        <Route path="/prehome" element={<PreHome />} />
+        {/* --- Public routes --- */}
         <Route path="/" element={<OmniverseLandingPage />} />
+        <Route path="/prehome" element={<PreHome />} />
         <Route path="/register" element={<RegistrationForm />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route path="/password-reset" element={<PasswordReset />} />
         <Route path="/match" element={<MatchPetProfile />} />
+
+        {/* --- Private routes --- */}
         <Route
           path="/home"
           element={
@@ -343,7 +395,8 @@ function AppContent() {
             </PrivateRoute>
           }
         />
-        {/* --- Profile Routes --- */}
+
+        {/* --- User Profile --- */}
         <Route
           path="/profile"
           element={
@@ -360,7 +413,8 @@ function AppContent() {
             </PrivateRoute>
           }
         />
-        {/* --- Shop Routes --- */}
+
+        {/* --- Shop --- */}
         <Route
           path="/shop"
           element={
@@ -368,13 +422,12 @@ function AppContent() {
               <>
                 <div className="mb-6 mt-6">
                   {category && (
-                    <p className="text-lg text-gray-600">
-                      Category:{" "}
-                      <span className="font-semibold">{category}</span>
+                    <p className="text-lg text-gray-200">
+                      Category: <span className="font-semibold">{category}</span>
                     </p>
                   )}
                   {searchTerm && (
-                    <p className="text-lg text-gray-600">
+                    <p className="text-lg text-gray-200">
                       Search results for:{" "}
                       <span className="font-semibold">"{searchTerm}"</span>
                     </p>
@@ -398,9 +451,8 @@ function AppContent() {
             </PrivateRoute>
           }
         />
-        {/* Add more shop subroutes as needed */}
 
-        {/* Fallback: redirect unknown routes to / */}
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
@@ -437,21 +489,23 @@ function AppContent() {
         </div>
       )}
 
-      {/* --------- Chat Floater Icon, Floater, and Full Modal --------- */}
+      {/* --------- Chat Floater (desktop only) --------- */}
       {isLoggedIn && (
         <>
-          {/* Floater Icon, desktop only */}
           {!floaterOpen && !chatModalOpen && (
             <div className="hidden md:block">
               <ChatFloaterIcon onClick={() => setFloaterOpen(true)} />
             </div>
           )}
 
-          {/* MiniChatModal only on desktop, not mobile */}
-          <MiniChatModal open={floaterOpen} onClose={() => setFloaterOpen(false)} onExpand={() => {
-            setFloaterOpen(false);
-            setChatModalOpen(true);
-          }}>
+          <MiniChatModal
+            open={floaterOpen}
+            onClose={() => setFloaterOpen(false)}
+            onExpand={() => {
+              setFloaterOpen(false);
+              setChatModalOpen(true);
+            }}
+          >
             <ChatFloater
               onClose={() => setFloaterOpen(false)}
               onExpand={() => {
@@ -461,13 +515,15 @@ function AppContent() {
             />
           </MiniChatModal>
 
-          {/* Messenger Modal */}
-          <ChatModal open={chatModalOpen} onClose={() => setChatModalOpen(false)}>
+          <ChatModal
+            open={chatModalOpen}
+            onClose={() => setChatModalOpen(false)}
+          >
             <Message />
           </ChatModal>
         </>
       )}
-    </div>
+    </>
   );
 }
 

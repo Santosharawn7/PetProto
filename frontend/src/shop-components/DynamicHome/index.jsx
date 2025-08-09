@@ -104,7 +104,7 @@ const DynamicHome = () => {
 
         {/* Back to Pet Home Button - For Pet Parents */}
         {isPetParent() && (
-          <div className="mb-8 animate-fadeIn">
+          <div className="mb-8 animate-fadeIn flex justify-center">
             <button
               onClick={handleBackToPetHome}
               className="group flex items-center gap-3 bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 text-purple-700 px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-purple-200 hover:border-purple-300 transform hover:scale-105"
@@ -121,24 +121,24 @@ const DynamicHome = () => {
         )}
 
         {/* Welcome Header Section */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 mb-8 border border-white/50 relative overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8 mb-8 border border-white/50 relative overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full -translate-y-16 translate-x-16 opacity-50"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-200 to-purple-200 rounded-full translate-y-12 -translate-x-12 opacity-50"></div>
           
-          <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
+          <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-6">
+            <div className="flex-1 text-center lg:text-left">
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-4">
                 <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl">
                   <FaStore className="text-3xl text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                  <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                     🐾 Pet Paradise Store
                   </h1>
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 text-gray-600">
                     <MdPets className="text-xl" />
-                    <p className="text-lg">
+                    <p className="text-base sm:text-lg">
                       {isPetShopOwnerCheck() 
                         ? "Manage your pet product inventory with ease" 
                         : "Discover amazing products for your beloved pets"
@@ -150,10 +150,10 @@ const DynamicHome = () => {
             </div>
             
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full lg:w-auto">
               <button
                 onClick={() => alert('Cart feature coming soon! 🛒')}
-                className="group relative bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-w-[140px]"
+                className="group relative bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto min-w-[140px]"
               >
                 <div className="flex items-center justify-center gap-3">
                   <FaShoppingCart className="text-xl group-hover:scale-110 transition-transform duration-300" />
@@ -165,7 +165,7 @@ const DynamicHome = () => {
               {isPetShopOwnerCheck() && (
                 <button
                   onClick={() => setShowUploader(true)}
-                  className="group relative bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 hover:from-green-600 hover:via-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 min-w-[180px]"
+                  className="group relative bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 hover:from-green-600 hover:via-green-700 hover:to-emerald-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto min-w-[180px]"
                 >
                   <div className="flex items-center justify-center gap-3">
                     <FaPlus className="text-xl group-hover:rotate-90 transition-transform duration-300" />
@@ -179,9 +179,9 @@ const DynamicHome = () => {
         </div>
 
         {/* Product Grid Section */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/50 relative overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8 border border-white/50 relative overflow-hidden">
           {/* Section Header */}
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-3 mb-8 text-center sm:text-left">
             <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl">
               <MdInventory className="text-2xl text-white" />
             </div>
@@ -191,36 +191,40 @@ const DynamicHome = () => {
             </div>
           </div>
 
-          {/* Product List */}
+          {/* Product List Container */}
           <div className="relative">
-            <ItemProductList
-              key={refreshKey}
-              onAddToCart={(product) => console.log('Add to cart:', product)}
-            />
+            <div className="flex justify-center">
+              <div className="w-full max-w-6xl">
+                <ItemProductList
+                  key={refreshKey}
+                  onAddToCart={(product) => console.log('Add to cart:', product)}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Enhanced Modal Popup */}
         {showUploader && isPetShopOwnerCheck() && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl w-full max-w-2xl p-8 relative border border-white/50 animate-modalSlideIn">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative border border-white/50 animate-modalSlideIn">
               {/* Close Button */}
               <button
-                className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 hover:bg-gray-100 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 group"
+                className="absolute top-4 sm:top-6 right-4 sm:right-6 text-gray-400 hover:text-gray-600 hover:bg-gray-100 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 group z-10"
                 onClick={() => setShowUploader(false)}
               >
                 <FaTimes className="text-xl group-hover:rotate-90 transition-transform duration-300" />
               </button>
               
               {/* Modal Header */}
-              <div className="mb-8">
-                <div className="flex items-center gap-4 mb-4">
+              <div className="mb-6 sm:mb-8 pr-12">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-4">
                   <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
                     <FaPlus className="text-2xl text-white" />
                   </div>
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-800">Add New Product</h2>
-                    <p className="text-gray-600 text-lg">Expand your inventory with amazing pet products</p>
+                  <div className="text-center sm:text-left">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Add New Product</h2>
+                    <p className="text-gray-600 text-base sm:text-lg">Expand your inventory with amazing pet products</p>
                   </div>
                 </div>
               </div>
@@ -252,6 +256,14 @@ const DynamicHome = () => {
         
         .animate-modalSlideIn {
           animation: modalSlideIn 0.4s ease-out;
+        }
+
+        /* Ensure proper centering for product cards */
+        @media (max-width: 640px) {
+          .max-w-7xl {
+            padding-left: 1rem;
+            padding-right: 1rem;
+          }
         }
       `}</style>
     </div>
