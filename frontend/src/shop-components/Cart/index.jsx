@@ -17,14 +17,15 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
     // eslint-disable-next-line
   }, [sessionId]);
 
+  const authConfig = () => {
+    const token = getAuthToken();
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  };
+
   const fetchCartItems = async () => {
     try {
       setLoading(true);
-      const token = getAuthToken();
-      const config = token
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
-      const response = await axios.get(buildApiUrl(`/api/cart/${sessionId}`), config);
+      const response = await axios.get(buildApiUrl(`/api/cart/${sessionId}`), authConfig());
       setCartItems(response.data || []);
       setError(null);
     } catch (err) {
@@ -36,61 +37,18 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
     }
   };
 
-  const updateQuantity = async (itemId, newQuantity) => {
-    if (newQuantity < 1) return;
-    try {
-      setUpdatingItem(itemId);
-      const token = getAuthToken();
-      const config = token
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
-      await axios.put(buildApiUrl(`/api/cart/${itemId}`), { quantity: newQuantity }, config);
-      await fetchCartItems(); // Make sure to wait for the fetch
-    } catch (err) {
-      console.error('Failed to update cart item:', err.message);
-      setError('Failed to update item quantity. Please try again.');
-    } finally {
-      setUpdatingItem(null);
-    }
-  };
-
-  // ENHANCED REMOVE FUNCTION WITH BETTER ERROR HANDLING AND LOGGING
   const removeItem = async (itemId) => {
-    console.log('Remove button clicked for item:', itemId); // Debug log
-    
     if (!itemId) {
-      console.error('No itemId provided to removeItem function');
       setError('Unable to remove item: Invalid item ID');
       return;
     }
-
     try {
       setRemovingItem(itemId);
-      setError(null); // Clear any previous errors
-      
-      const token = getAuthToken();
-      const config = token
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
-
-      console.log('Making DELETE request to:', buildApiUrl(`/api/cart/${itemId}`)); // Debug log
-      
-      const response = await axios.delete(buildApiUrl(`/api/cart/${itemId}`), config);
-      console.log('Delete response:', response.status, response.data); // Debug log
-      
-      // Refresh the cart items after successful deletion
+      setError(null);
+      await axios.delete(buildApiUrl(`/api/cart/${itemId}`), authConfig());
       await fetchCartItems();
-      
-      console.log('Item removed successfully and cart refreshed'); // Debug log
     } catch (err) {
       console.error('Failed to remove item from cart:', err);
-      console.error('Error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
-      });
-      
-      // Set a user-friendly error message
       if (err.response?.status === 404) {
         setError('Item not found. It may have already been removed.');
       } else if (err.response?.status === 401) {
@@ -103,14 +61,34 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
     }
   };
 
+  const updateQuantity = async (itemId, newQuantity) => {
+    // If decrementing past 1, remove the item (clean UX)
+    if (newQuantity < 1) {
+      await removeItem(itemId);
+      return;
+    }
+    try {
+      setUpdatingItem(itemId);
+      await axios.put(buildApiUrl(`/api/cart/${itemId}`), { quantity: newQuantity }, authConfig());
+      await fetchCartItems();
+    } catch (err) {
+      console.error('Failed to update cart item:', err.message);
+      setError('Failed to update item quantity. Please try again.');
+    } finally {
+      setUpdatingItem(null);
+    }
+  };
+
   const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => {
-      return total + (item.product.price * item.quantity);
-    }, 0).toFixed(2);
+    const total = cartItems.reduce((sum, item) => {
+      const price = Number(item?.product?.price || 0);
+      return sum + price * (item?.quantity || 0);
+    }, 0);
+    return total.toFixed(2);
   };
 
   const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+    return cartItems.reduce((total, item) => total + (item?.quantity || 0), 0);
   };
 
   const handleCheckout = () => {
@@ -205,8 +183,8 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
                       <div className="relative">
                         <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-purple-200 shadow-lg">
                           <img
-                            src={item.product.image_url || "https://via.placeholder.com/400x400?text=Product"}
-                            alt={item.product.name}
+                            src={item?.product?.image_url || "https://via.placeholder.com/400x400?text=Product"}
+                            alt={item?.product?.name || 'Product'}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           />
                         </div>
@@ -218,15 +196,15 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
                       {/* Product Details */}
                       <div className="flex-1 text-center sm:text-left">
                         <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-purple-700 transition-colors duration-300">
-                          {item.product.name}
+                          {item?.product?.name || 'Item'}
                         </h3>
-                        {item.product.category && (
+                        {item?.product?.category && (
                           <span className="inline-block bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 text-sm font-semibold px-3 py-1 rounded-full border border-indigo-200 mb-3">
                             {item.product.category}
                           </span>
                         )}
                         <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                          ${item.product.price}
+                          ${Number(item?.product?.price || 0).toFixed(2)}
                         </div>
                       </div>
 
@@ -234,8 +212,8 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center bg-gray-100 rounded-2xl p-1 border border-gray-200 shadow-inner">
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1 || updatingItem === item.id}
+                            onClick={() => updateQuantity(item.id, (item.quantity || 0) - 1)}
+                            disabled={updatingItem === item.id}
                             className="p-3 hover:bg-white hover:shadow-md rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                           >
                             <FaMinus className="text-gray-600 group-hover:text-purple-600 transition-colors duration-200" />
@@ -244,11 +222,11 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
                             {updatingItem === item.id ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mx-auto"></div>
                             ) : (
-                              item.quantity
+                              item?.quantity || 0
                             )}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.id, (item.quantity || 0) + 1)}
                             disabled={updatingItem === item.id}
                             className="p-3 hover:bg-white hover:shadow-md rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                           >
@@ -257,19 +235,16 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
                         </div>
                       </div>
 
-                      {/* Item Total & Remove - ENHANCED REMOVE BUTTON */}
+                      {/* Item Total & Remove */}
                       <div className="text-center sm:text-right">
                         <div className="text-2xl font-bold text-gray-800 mb-3">
-                          ${(item.product.price * item.quantity).toFixed(2)}
+                          ${(Number(item?.product?.price || 0) * (item?.quantity || 0)).toFixed(2)}
                         </div>
                         <button
-                          onClick={() => {
-                            console.log('Remove button clicked, item.id:', item.id); // Debug log
-                            removeItem(item.id);
-                          }}
+                          onClick={() => removeItem(item.id)}
                           disabled={removingItem === item.id}
                           className="group flex items-center justify-center gap-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 border border-red-200 hover:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                          type="button" // Explicitly set button type
+                          type="button"
                         >
                           {removingItem === item.id ? (
                             <>

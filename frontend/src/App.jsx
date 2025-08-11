@@ -8,7 +8,6 @@ import {
 } from "react-router-dom";
 
 import ScrollToTop from "./components/ScrollToTop";
-// NOTE: We use the updated landing page component you mentioned
 import OmniverseLandingPage from "./pages/DesktopLandingPage";
 import Login from "./pages/Login";
 import PrivateRoute from "./PrivateRoute";
@@ -55,14 +54,15 @@ import MobileChat from "./components/MobileChat";
 // ---------- Body background theme switcher (shop vs. default) ----------
 function BodyTheme() {
   const location = useLocation();
+  const isShop = location.pathname.startsWith("/shop");
 
   useEffect(() => {
     const prev = document.body.className;
 
-    if (location.pathname.startsWith("/shop")) {
-      // Shop look
+    if (isShop) {
+      // Match the Shop Header gradient exactly
       document.body.className =
-        "bg-gradient-to-br from-purple-800 via-indigo-900 to-purple-800 min-h-screen w-screen overflow-x-hidden";
+        "bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800 min-h-screen w-screen overflow-x-hidden";
     } else {
       // Default app look
       document.body.className =
@@ -72,9 +72,17 @@ function BodyTheme() {
     return () => {
       document.body.className = prev;
     };
-  }, [location.pathname]);
+  }, [isShop]);
 
-  return null;
+  // Add the same animated blobs so header + body feel continuous
+  return isShop ? (
+    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      <div className="absolute top-10 left-10 w-20 h-20 bg-purple-400 rounded-full opacity-10 animate-pulse"></div>
+      <div className="absolute top-1/4 right-20 w-16 h-16 bg-pink-400 rounded-full opacity-15 animate-bounce"></div>
+      <div className="absolute bottom-10 left-1/4 w-12 h-12 bg-indigo-400 rounded-full opacity-20 animate-pulse"></div>
+      <div className="absolute top-1/2 right-1/3 w-8 h-8 bg-purple-300 rounded-full opacity-10 animate-ping"></div>
+    </div>
+  ) : null;
 }
 
 
@@ -201,7 +209,6 @@ function AppContent() {
   };
 
   // ---- MOBILE CHAT LOGIC ----
-  // Make a global function so Header can open mobile chat overlay
   useEffect(() => {
     window.openMobileChat = () => {
       setMobileChatOpen(true);
@@ -300,8 +307,8 @@ function AppContent() {
       {/* Shop header on /shop routes */}
       {location.pathname.startsWith("/shop") && (
         <ShopHeader
-          onSearch={handleSearch}
-          onCategoryChange={handleCategoryChange}
+          onSearch={setSearchTerm}
+          onCategoryChange={setCategory}
           cartItemCount={cartItemCount}
           onCartClick={handleCartClick}
           onAddProductClick={() => setShowUploader(true)}

@@ -5,13 +5,30 @@ import { ReactionButtons, Comments, RSVPButtons } from '../../config/CommunityCo
 
 export default function EventsTab(props) {
   const {
-    user, events, openComments, setOpenComments,
+    user, events = [], openComments, setOpenComments,
     showDropdown, setShowDropdown, showDeleteModal, setShowDeleteModal,
     isAuthor, handleEdit, handleDelete, dropdownRefs,
     showEventForm, setShowEventForm, isEdit, setIsEdit, setEditItem,
     title, setTitle, desc, setDesc, dateFilter, setDateFilter, location, setLocation, photos, setPhotos, handleCreateEvent,
     authHeaders
   } = props;
+
+  // Ensure ref object exists
+  if (dropdownRefs && !dropdownRefs.current) dropdownRefs.current = {};
+
+  // Author helpers to mirror Posts.jsx behavior
+  const getAuthorName = (ev) =>
+    ev?.authorName ||
+    ev?.author?.displayName ||
+    ev?.author?.name ||
+    ev?.user?.displayName ||
+    ev?.user?.name ||
+    ev?.createdBy?.name ||
+    ev?.createdByUsername ||
+    (isAuthor(ev) ? 'You' : 'User');
+
+  const getAuthorInitial = (name) =>
+    (name || 'U').trim().charAt(0).toUpperCase() || 'U';
 
   const now = new Date();
   const visibleEvents = events.filter(ev => !ev.dateFilter || new Date(ev.dateFilter) >= now);
@@ -35,8 +52,9 @@ export default function EventsTab(props) {
       >
         {showEventForm ? (isEdit ? "Cancel Edit" : "Cancel") : (isEdit ? "Edit Event" : "Create New Event")}
       </button>
+
       {showEventForm && (
-        <form 
+        <form
           onSubmit={handleCreateEvent}
           className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-6 mb-8 text-left
                      bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900"
@@ -44,33 +62,38 @@ export default function EventsTab(props) {
           <h3 className="font-semibold text-lg text-blue-900 dark:text-blue-100">
             {isEdit ? "Edit Event" : "Create New Event"}
           </h3>
+
           <input
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mt-3"
             placeholder="Event title"
-            value={title} 
+            value={title}
             onChange={e => setTitle(e.target.value)}
             required
           />
+
           <textarea
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none mt-3"
             rows={3}
             placeholder="Event description"
-            value={desc} 
+            value={desc}
             onChange={e => setDesc(e.target.value)}
           />
+
           <input
             type="date"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mt-3"
             value={dateFilter}
             onChange={e => setDateFilter(e.target.value)}
           />
+
           <input
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mt-3"
             placeholder="Event location"
-            value={location} 
+            value={location}
             onChange={e => setLocation(e.target.value)}
           />
-          <div className="space-y-2">
+
+          <div className="space-y-2 mt-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Event Photos</label>
             {photos.map((url, i) => (
               <input
@@ -79,9 +102,9 @@ export default function EventsTab(props) {
                 placeholder="Photo URL"
                 value={url}
                 onChange={e => {
-                  const newPhotos = [...photos]; 
-                  newPhotos[i] = e.target.value; 
-                  setPhotos(newPhotos);
+                  const next = [...photos];
+                  next[i] = e.target.value;
+                  setPhotos(next);
                 }}
               />
             ))}
@@ -93,14 +116,15 @@ export default function EventsTab(props) {
               + Add another photo
             </button>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button 
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <button
               type="submit"
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
             >
               {isEdit ? "Update Event" : "Create Event"}
             </button>
-            <button 
+            <button
               type="button"
               onClick={() => { setShowEventForm(false); setIsEdit(false); setEditItem(null); }}
               className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
@@ -110,6 +134,7 @@ export default function EventsTab(props) {
           </div>
         </form>
       )}
+
       {/* Events List */}
       {visibleEvents.length === 0 ? (
         <div className="text-center py-12">
@@ -118,19 +143,25 @@ export default function EventsTab(props) {
       ) : (
         visibleEvents.map(ev => {
           const key = 'event-' + ev.id;
+          const authorName = getAuthorName(ev);
+          const authorInitial = getAuthorInitial(authorName);
+
           return (
-            <div key={key} className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-4 sm:p-6 mb-8 text-left
-                                      bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 relative">
+            <div
+              key={key}
+              className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-4 sm:p-6 mb-8 text-left
+                         bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 relative"
+            >
               {isAuthor(ev) && (
-                <div className="absolute top-4 right-4 z-10" ref={el => dropdownRefs.current[key] = el}>
+                <div className="absolute top-4 right-4 z-10" ref={el => (dropdownRefs.current[key] = el)}>
                   <button
                     onClick={() => setShowDropdown(prev => ({ ...prev, [key]: !prev[key] }))}
                     className="p-2 rounded-full hover:bg-gray-200"
                   >
                     <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <circle cx="5" cy="12" r="2"/>
-                      <circle cx="12" cy="12" r="2"/>
-                      <circle cx="19" cy="12" r="2"/>
+                      <circle cx="5" cy="12" r="2" />
+                      <circle cx="12" cy="12" r="2" />
+                      <circle cx="19" cy="12" r="2" />
                     </svg>
                   </button>
                   {showDropdown[key] && (
@@ -151,6 +182,7 @@ export default function EventsTab(props) {
                   )}
                 </div>
               )}
+
               {/* Delete modal */}
               {showDeleteModal[key] && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-30">
@@ -174,15 +206,35 @@ export default function EventsTab(props) {
                   </div>
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 text-left">
-                <h3 className="text-lg sm:text-xl font-extrabold text-blue-900 dark:text-blue-100 mb-2 sm:mb-0 tracking-tight">{ev.title}</h3>
-                <span className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-                  {formatDistanceToNow(new Date(ev.createdAt))} ago
-                </span>
+
+              {/* Author block (matches Posts.jsx) */}
+              <div className="flex items-center mb-4 text-left">
+                <div className="w-10 h-10 bg-gradient-to-r from-indigo-400 to-blue-600 rounded-full mr-3 flex items-center justify-center">
+                  <span className="text-white font-medium text-sm">
+                    {authorInitial}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-semibold text-blue-900 dark:text-blue-200">{authorName}</p>
+                  <p className="text-xs text-gray-500">
+                    {formatDistanceToNow(new Date(ev.createdAt || ev.updatedAt || Date.now()))} ago
+                  </p>
+                </div>
               </div>
+
+              {/* Title */}
+              <h3 className="text-lg sm:text-xl font-extrabold text-blue-900 dark:text-blue-100 mb-3 text-left tracking-tight">
+                {ev.title}
+              </h3>
+
+              {/* Description */}
               {ev.description && (
-                <p className="text-indigo-800 dark:text-indigo-200 mb-4 leading-relaxed text-left">{ev.description}</p>
+                <p className="text-indigo-800 dark:text-indigo-200 mb-4 leading-relaxed text-left">
+                  {ev.description}
+                </p>
               )}
+
+              {/* Meta */}
               <div className="space-y-2 mb-4">
                 {ev.dateFilter && (
                   <p className="flex items-center text-sm text-gray-600">
@@ -197,16 +249,21 @@ export default function EventsTab(props) {
                   </p>
                 )}
               </div>
-              {ev.photos?.filter(u => u).map((url, i) => (
-                <img 
-                  key={i} 
-                  src={url} 
+
+              {/* Photos */}
+              {ev.photos?.filter(Boolean).map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
                   alt={`Event photo ${i + 1}`}
                   className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-md"
                 />
               ))}
+
+              {/* Actions */}
               <RSVPButtons eventId={ev.id} user={user} authHeaders={authHeaders} />
               <ReactionButtons entityType="event" entityId={ev.id} user={user} authHeaders={authHeaders} />
+
               <button
                 className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mt-2 text-sm"
                 onClick={() =>
@@ -218,6 +275,7 @@ export default function EventsTab(props) {
               >
                 {CommentIcon} Comments
               </button>
+
               {openComments[key] && (
                 <Comments parentType="events" parentId={ev.id} user={user} authHeaders={authHeaders} />
               )}
