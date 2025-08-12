@@ -1,5 +1,6 @@
+// src/components/layout/Header.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { getCurrentUser } from "@/services/userService";
@@ -13,13 +14,13 @@ import { IoHomeSharp } from "react-icons/io5";
 import { FiShoppingBag } from "react-icons/fi";
 import { logoutAndClear } from "../../utils/auth";
 
-// Mobile detection utility
+// --- Mobile helper
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
   return isMobile;
 }
@@ -29,13 +30,28 @@ const API_URL =
   process.env.VITE_API_URL ||
   "http://127.0.0.1:5000";
 
+const MOBILE_NAV_HEIGHT = 76; // keep in sync with styles below
+
 const Header = ({ onSearchClick, setIsLoggedIn }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location.pathname || "/";
+
   const isMobile = useIsMobile();
+  const isShop = pathname.startsWith("/shop");
+
+  // Hide mobile top icons & bottom nav on any messaging-related route
+  const isMessagingView = /^\/(chat|messages|friends|friendlist|chats)\b/.test(pathname);
+
+  // Show blocks per platform/route
+  const showDesktopSticky = !isMobile && !isShop;      // sticky only on Pet Home side
+  const showDesktopHeader = !isMobile;                 // header always on desktop
+  const showMobileTop = isMobile && !isMessagingView;  // hide top icons on chat/messages/friends
+  const showMobileBottomNav = isMobile && !isMessagingView;
 
   const [requests, setRequests] = useState([]);
-  const [desktopDropdown, setDesktopDropdown] = useState(""); // "notifications" only now
-  const [drawer, setDrawer] = useState(""); // "", "more", "messages", "notifications"
+  const [desktopDropdown, setDesktopDropdown] = useState(""); // "notifications"
+  const [drawer, setDrawer] = useState("");                   // "", "more", "messages", "notifications"
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -44,6 +60,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
 
   const minSwipeDistance = 50;
 
+  // Fetch friend requests (badges)
   useEffect(() => {
     const fetchRequests = async () => {
       const token = localStorage.getItem("userToken");
@@ -61,13 +78,11 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     fetchRequests();
   }, []);
 
+  // Close desktop dropdown when clicking outside
   useEffect(() => {
     const onClick = (e) => {
       if (!isMobile) {
-        if (
-          dropdownRef.current &&
-          !dropdownRef.current.contains(e.target)
-        ) {
+        if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
           setDesktopDropdown("");
         }
       }
@@ -76,7 +91,23 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     return () => window.removeEventListener("click", onClick);
   }, [isMobile]);
 
-  // Touch handlers for swipe functionality
+  // Prevent mobile bottom nav from overlapping body content
+  useEffect(() => {
+    if (showMobileBottomNav) {
+      const safeBottom = parseInt(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--sat") || "0", 10
+      );
+      document.body.style.paddingBottom = `${MOBILE_NAV_HEIGHT + (Number.isFinite(safeBottom) ? safeBottom : 0) + 8}px`;
+    } else {
+      document.body.style.paddingBottom = "";
+    }
+    return () => {
+      document.body.style.paddingBottom = "";
+    };
+  }, [showMobileBottomNav]);
+
+  // Touch handlers for swipe up/down on bottom nav
   const onTouchStart = (e) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientY);
@@ -92,28 +123,9 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
   };
   const handleCollapsedNavClick = () => setIsNavCollapsed(false);
 
-  const handleRespond = async (requestId, action) => {
-    const token = localStorage.getItem("userToken");
-    if (!token) return toast.error("Not logged in!");
-    try {
-      const res = await axios.post(
-        `${API_URL}/requests/${requestId}/respond`,
-        { action },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data.message) {
-        toast.success(res.data.message || `Request ${action}ed!`);
-        setRequests((prev) => prev.filter((r) => r.id !== requestId));
-      } else {
-        toast.error(res.data.error || "Failed to respond.");
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to respond.");
-    }
-  };
-
   const openDrawer = (type) => setDrawer(type);
   const closeDrawer = () => setDrawer("");
+
   const handleLogout = () => {
     logoutAndClear();
     if (setIsLoggedIn) setIsLoggedIn(false);
@@ -138,10 +150,29 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     }
   };
 
-  // Handler for navigating to the USER profile page
   const handleUserProfileClick = () => {
     closeDrawer();
     navigate("/profile");
+  };
+
+  const handleRespond = async (requestId, action) => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return toast.error("Not logged in!");
+    try {
+      const res = await axios.post(
+        `${API_URL}/requests/${requestId}/respond`,
+        { action },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.message) {
+        toast.success(res.data.message || `Request ${action}ed!`);
+        setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      } else {
+        toast.error(res.data.error || "Failed to respond.");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to respond.");
+    }
   };
 
   // -------- DESKTOP NAVIGATION --------
@@ -156,6 +187,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <MdGroups className="text-2xl" />
         <span>Community</span>
       </NavLink>
+
       <button
         onClick={onSearchClick}
         className="flex items-center gap-2 hover:text-blue-700"
@@ -164,6 +196,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FaSearch className="text-xl" />
         Search
       </button>
+
       <NavLink
         to="/shop"
         className={({ isActive }) =>
@@ -173,6 +206,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FiShoppingBag className="text-xl" />
         Shop
       </NavLink>
+
       <button
         onClick={handleProfileClick}
         className="flex items-center gap-2 hover:text-blue-700"
@@ -180,7 +214,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FaPaw className="text-xl" />
         My Pet Profile
       </button>
-      {/* User Profile Icon */}
+
       <button
         onClick={handleUserProfileClick}
         className="flex items-center gap-2 hover:text-blue-700"
@@ -189,10 +223,10 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
         <FaUserCircle className="text-2xl" />
         My Profile
       </button>
-      {/* Notifications */}
+
       <div className="relative" ref={dropdownRef}>
         <button
-          onClick={() => setDesktopDropdown("notifications")}
+          onClick={() => setDesktopDropdown((v) => (v ? "" : "notifications"))}
           className="flex items-center gap-2 hover:text-blue-700"
           title="Requests"
         >
@@ -209,15 +243,33 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
             {requests.length === 0 ? (
               <p className="p-4 text-center text-gray-600">No new requests</p>
             ) : (
-              requests.map(r => (
+              requests.map((r) => (
                 <div key={r.id} className="flex justify-between items-center px-4 py-2 border-b last:border-none">
                   <div className="flex items-center space-x-3">
-                    {r.fromAvatar && <img src={r.fromAvatar} alt={r.fromPetName || r.from} className="w-12 h-12 rounded-full object-cover" />}
-                    <span className="font-bold text-lg truncate max-w-[100px]">{r.fromPetName || r.from}</span>
+                    {r.fromAvatar && (
+                      <img
+                        src={r.fromAvatar}
+                        alt={r.fromPetName || r.from}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    )}
+                    <span className="font-bold text-lg truncate max-w-[100px]">
+                      {r.fromPetName || r.from}
+                    </span>
                   </div>
                   <div className="flex flex-col space-y-1">
-                    <button onClick={() => handleRespond(r.id, 'accept')} className="bg-green-600 text-white text-sm px-6 py-2 rounded hover:bg-green-800">Accept</button>
-                    <button onClick={() => handleRespond(r.id, 'reject')} className="bg-red-600 text-white text-sm px-6 py-2 rounded hover:bg-red-800">Reject</button>
+                    <button
+                      onClick={() => handleRespond(r.id, "accept")}
+                      className="bg-green-600 text-white text-sm px-6 py-2 rounded hover:bg-green-800"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleRespond(r.id, "reject")}
+                      className="bg-red-600 text-white text-sm px-6 py-2 rounded hover:bg-red-800"
+                    >
+                      Reject
+                    </button>
                   </div>
                 </div>
               ))
@@ -225,79 +277,65 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           </div>
         )}
       </div>
-      <button
-        onClick={handleLogout}
-        className="flex items-center gap-2 hover:text-red-600"
-      >
+
+      <button onClick={handleLogout} className="flex items-center gap-2 hover:text-red-600">
         <FiLogOut className="text-xl" />
         Logout
       </button>
     </nav>
   );
 
-  // ---- Mobile floating logo: Only the logo icon, big, top left, no bar ----
-  const mobileLogoIcon = (
+  // ---- Mobile: STICKY top logo + icons (hidden in chat/messages/friends) ----
+  const mobileTopBar = showMobileTop && (
     <div
-      className="md:hidden"
+      className="md:hidden w-full"
       style={{
-        position: "absolute",
-        top: 16,
-        left: 18,
-        zIndex: 30,
-        background: "transparent",
+        position: "sticky",
+        top: 0,
+        zIndex: 40,
         pointerEvents: "none",
       }}
     >
-      <a
-        href="/home"
-        style={{ pointerEvents: "auto", display: "inline-block" }}
-      >
-        <img
-          src={LogoOmniverse}
-          alt="Omniverse of Pets Logo"
-          className="h-20 w-auto"
-          style={{ display: "block" }}
-        />
-      </a>
+      {/* Keep it visually seamless: no background, no border */}
+      <div style={{ position: "relative", height: 88 }}>
+        {/* Logo (top-left) */}
+        <div style={{ position: "absolute", top: 16, left: 18, pointerEvents: "auto" }}>
+          <a href="/home">
+            <img src={LogoOmniverse} alt="Omniverse of Pets Logo" className="h-20 w-auto" />
+          </a>
+        </div>
+        {/* Search + Messenger (top-right) */}
+        <div
+          className="flex items-center gap-4"
+          style={{ position: "absolute", top: 18, right: 18, pointerEvents: "auto" }}
+        >
+          <button
+            onClick={onSearchClick}
+            className="bg-purple-500 rounded-full p-3 shadow-md flex items-center justify-center"
+            style={{ width: 48, height: 48 }}
+          >
+            <FaSearch className="text-white text-2xl" />
+          </button>
+          <button
+            onClick={() => {
+              if (isMobile && typeof window.openMobileChat === "function") {
+                window.openMobileChat();
+              } else {
+                openDrawer("messages");
+              }
+            }}
+            className="bg-white rounded-full p-3 shadow-md flex items-center justify-center"
+            style={{ width: 48, height: 48 }}
+          >
+            <FiMessageCircle className="text-purple-500 text-2xl" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 
-  // ---- Mobile: Top right search/message row ----
-  const mobileTopRightIcons = (
-    <div
-      className="md:hidden flex items-center gap-4"
-      style={{
-        position: "absolute",
-        top: 18,
-        right: 18,
-        zIndex: 31,
-      }}
-    >
-      <button
-        onClick={onSearchClick}
-        className="bg-purple-500 rounded-full p-3 shadow-md flex items-center justify-center"
-        style={{ width: 48, height: 48 }}
-      >
-        <FaSearch className="text-white text-2xl" />
-      </button>
-      <button
-        onClick={() => {
-          if (isMobile && typeof window.openMobileChat === "function") {
-            window.openMobileChat();
-          } else {
-            openDrawer("messages");
-          }
-        }}
-        className="bg-white rounded-full p-3 shadow-md flex items-center justify-center"
-        style={{ width: 48, height: 48 }}
-      >
-        <FiMessageCircle className="text-purple-500 text-2xl" />
-      </button>
-    </div>
-  );
-
-  // -------- MOBILE NAVIGATION WITH COLLAPSE FUNCTIONALITY --------
-  const mobileBottomNav = (
+  // -------- MOBILE BOTTOM NAV (collapsible, non-overlapping) --------
+  const mobileBottomNav = showMobileBottomNav && (
     <>
       {isNavCollapsed && (
         <div
@@ -308,7 +346,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           onTouchEnd={onTouchEnd}
           style={{
             minHeight: 50,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
         >
           <FaChevronUp className="text-gray-600 text-2xl animate-bounce" />
@@ -325,14 +363,14 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
           ref={navRef}
           className="fixed bottom-0 left-0 right-0 bg-white shadow-lg flex items-center justify-between px-3 pb-2 pt-2 rounded-t-3xl z-50 md:hidden gap-x-2"
           style={{
-            minHeight: 76,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            minHeight: MOBILE_NAV_HEIGHT,
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-300 rounded-full" />
           <NavLink
             to="/home"
             className={({ isActive }) =>
@@ -386,52 +424,34 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
 
   // ------ MOBILE: Drawer Overlay ------
   const drawerOverlay = isMobile && drawer && (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-40" onClick={closeDrawer}>
-      <div
-        className={`
-          fixed bottom-0 left-0 right-0 z-50
-          flex justify-center
-        `}
-        style={{ pointerEvents: "none" }}
-      >
+    <div className="fixed inset-0 z-50 bg-black/40" onClick={closeDrawer}>
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center" style={{ pointerEvents: "none" }}>
         <div
-          className={`
-            bg-white w-full max-w-md mx-auto rounded-t-3xl shadow-2xl
-            transform transition-transform duration-300
-            ${drawer ? "translate-y-0" : "translate-y-full"}
-          `}
-          style={{
-            minHeight: 220,
-            pointerEvents: "auto",
-          }}
+          className={`bg-white w-full max-w-md mx-auto rounded-t-3xl shadow-2xl transform transition-transform duration-300 ${
+            drawer ? "translate-y-0" : "translate-y-full"
+          }`}
+          style={{ minHeight: 220, pointerEvents: "auto" }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex flex-col gap-2 pt-6 pb-6 px-6">
             <div className="flex justify-center pb-3">
               <div className="w-10 h-1.5 rounded-full bg-gray-300" />
             </div>
+
             {drawer === "more" && (
               <>
-                <button
-                  className="flex items-center gap-3 p-4 border-b w-full"
-                  onClick={handleProfileClick}
-                >
+                <button className="flex items-center gap-3 p-4 border-b w-full" onClick={handleProfileClick}>
                   <FaPaw className="text-xl" /> My Pet Profile
                 </button>
-                <button
-                  className="flex items-center gap-3 p-4 border-b w-full"
-                  onClick={handleUserProfileClick}
-                >
+                <button className="flex items-center gap-3 p-4 border-b w-full" onClick={handleUserProfileClick}>
                   <FaUserCircle className="text-xl" /> My Profile
                 </button>
-                <button
-                  className="flex items-center gap-3 p-4 w-full text-red-600"
-                  onClick={handleLogout}
-                >
+                <button className="flex items-center gap-3 p-4 w-full text-red-600" onClick={handleLogout}>
                   <FiLogOut className="text-xl" /> Logout
                 </button>
               </>
             )}
+
             {drawer === "messages" && (
               <>
                 <h2 className="font-bold text-lg p-4 border-b">Messages</h2>
@@ -455,6 +475,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
                 </div>
               </>
             )}
+
             {drawer === "notifications" && (
               <>
                 <h2 className="font-bold text-lg p-4 border-b">Notifications</h2>
@@ -463,10 +484,7 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
                     <p className="text-center text-gray-600">No new requests</p>
                   ) : (
                     requests.map((r) => (
-                      <div
-                        key={r.id}
-                        className="flex justify-between items-center px-2 py-2 border-b last:border-none"
-                      >
+                      <div key={r.id} className="flex justify-between items-center px-2 py-2 border-b last:border-none">
                         <div className="flex items-center space-x-3">
                           {r.fromAvatar && (
                             <img
@@ -500,11 +518,8 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
               </>
             )}
           </div>
-          <button
-            className="absolute top-2 right-5 text-2xl text-gray-400"
-            onClick={closeDrawer}
-            style={{ zIndex: 10 }}
-          >
+
+          <button className="absolute top-2 right-5 text-2xl text-gray-400" onClick={closeDrawer} style={{ zIndex: 10 }}>
             ✕
           </button>
         </div>
@@ -512,28 +527,34 @@ const Header = ({ onSearchClick, setIsLoggedIn }) => {
     </div>
   );
 
-  // --------- Main Render ---------
+  // --------- Render ---------
   return (
     <>
-      {/* Desktop: Logo at top-left */}
-      <header className="w-full pb-8 flex justify-between items-center md:pb-8 relative">
-        {!isMobile && (
+      {/* DESKTOP HEADER (transparent, sticky only on Pet Home) */}
+      {showDesktopHeader && (
+        <header
+          className={`w-full flex justify-between items-center relative ${
+            showDesktopSticky ? "sticky top-0 z-40" : ""
+          }`}
+          // Transparent to avoid color seams with page bg
+          style={{ background: "transparent" }}
+        >
           <div className="flex items-center">
             <a href="/home">
-              <img
-                src={LogoOmniverse}
-                alt="Omniverse of Pets Logo"
-                className="h-36 w-auto ml-8"
-              />
+              <img src={LogoOmniverse} alt="Omniverse of Pets Logo" className="h-36 w-auto ml-8" />
             </a>
           </div>
-        )}
-        {desktopNav}
-      </header>
+          {desktopNav}
+        </header>
+      )}
 
-      {isMobile && mobileLogoIcon}
-      {isMobile && mobileTopRightIcons}
+      {/* MOBILE TOP BAR (logo + search + messenger) */}
+      {mobileTopBar}
+
+      {/* MOBILE BOTTOM NAV */}
       {mobileBottomNav}
+
+      {/* MOBILE DRAWERS */}
       {drawerOverlay}
     </>
   );

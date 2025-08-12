@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { buildApiUrl } from "../../config/api";;
+import { buildApiUrl } from "../../config/api";
 import { getAuthToken } from '../../utils/auth';
+import { FaCreditCard, FaTimes, FaShoppingCart, FaPaw, FaUser, FaPhone, FaHome, FaCity, FaMapMarkerAlt, FaGlobe, FaLock } from 'react-icons/fa';
+import { MdPets, MdLocalShipping } from 'react-icons/md';
 
 const Checkout = ({ cartItems, totalPrice, sessionId, onClose, onOrderComplete }) => {
   const [form, setForm] = useState({
@@ -62,56 +64,276 @@ ${form.country}`.trim();
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold">Checkout</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
-        </div>
-
-        <div className="p-6">
-          {error && (
-            <div className="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-
-          <div className="mb-6">
-            <h3 className="font-semibold mb-2">Order Summary</h3>
-            <div className="space-y-2 text-sm">
-              {cartItems.map((item) => (
-                <div key={item.id} className="flex justify-between">
-                  <span>{item.product.name} x {item.quantity}</span>
-                  <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden border border-white/50 animate-modalSlideIn">
+        
+        {/* Header */}
+        <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-white/10"></div>
+          <div className="absolute top-4 right-4 w-16 h-16 bg-white/20 rounded-full"></div>
+          <div className="absolute bottom-4 left-4 w-12 h-12 bg-white/10 rounded-full"></div>
+          
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                <FaCreditCard className="text-3xl text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-1">Checkout</h2>
+                <div className="flex items-center gap-2 text-white/90">
+                  <MdPets className="text-lg" />
+                  <span className="text-lg">Secure checkout for your pets</span>
                 </div>
-              ))}
-              <div className="border-t pt-2 font-bold text-base">
-                Total: ${totalPrice}
               </div>
             </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <input name="fullName" value={form.fullName} onChange={handleChange} placeholder="Full Name" className="w-full border p-2 rounded" required />
-            <input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone Number" className="w-full border p-2 rounded" required />
-            <input name="address" value={form.address} onChange={handleChange} placeholder="Street Address" className="w-full border p-2 rounded" required />
-            <input name="city" value={form.city} onChange={handleChange} placeholder="City" className="w-full border p-2 rounded" required />
-            <input name="province" value={form.province} onChange={handleChange} placeholder="Province/State" className="w-full border p-2 rounded" required />
-            <input name="postalCode" value={form.postalCode} onChange={handleChange} placeholder="Postal/ZIP Code" className="w-full border p-2 rounded" required />
-            <input name="country" value={form.country} onChange={handleChange} placeholder="Country" className="w-full border p-2 rounded" required />
-
             <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-              } text-white`}
+              onClick={onClose}
+              className="group p-3 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 backdrop-blur-sm"
             >
-              {loading ? 'Placing Order...' : 'Place Order'}
+              <FaTimes className="text-2xl text-white group-hover:rotate-90 transition-transform duration-300" />
             </button>
-          </form>
+          </div>
+        </div>
+
+        <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+          <div className="p-6 sm:p-8">
+            {error && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-2xl text-red-700">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-full">
+                    <FaPaw className="text-red-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Oops! Something went wrong</p>
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Order Summary */}
+            <div className="mb-8 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-6 border border-purple-100 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl">
+                  <FaShoppingCart className="text-xl text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800">Order Summary</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {cartItems.map((item, index) => (
+                  <div 
+                    key={item.id} 
+                    className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-sm"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-purple-200">
+                        <img
+                          src={item.product.image_url || "https://via.placeholder.com/200x200?text=Product"}
+                          alt={item.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800">{item.product.name}</p>
+                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-600">${(item.product.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="border-t-2 border-purple-200 pt-4 mt-4">
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl border border-green-200">
+                    <div className="flex items-center gap-2">
+                      <MdPets className="text-2xl text-green-600" />
+                      <span className="text-xl font-bold text-gray-800">Total Amount</span>
+                    </div>
+                    <span className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                      ${totalPrice}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping Information Form */}
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-3xl p-6 border border-blue-100 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl">
+                  <MdLocalShipping className="text-xl text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800">Shipping Information</h3>
+                <div className="flex items-center gap-1 text-green-600 bg-green-100 px-3 py-1 rounded-full text-sm font-semibold">
+                  <FaLock className="text-xs" />
+                  <span>Secure</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <FaUser className="text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                    </div>
+                    <input
+                      name="fullName"
+                      value={form.fullName}
+                      onChange={handleChange}
+                      placeholder="Full Name"
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder-gray-500"
+                      required
+                    />
+                  </div>
+
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <FaPhone className="text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                    </div>
+                    <input
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      placeholder="Phone Number"
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder-gray-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <FaHome className="text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                  </div>
+                  <input
+                    name="address"
+                    value={form.address}
+                    onChange={handleChange}
+                    placeholder="Street Address"
+                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder-gray-500"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <FaCity className="text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                    </div>
+                    <input
+                      name="city"
+                      value={form.city}
+                      onChange={handleChange}
+                      placeholder="City"
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder-gray-500"
+                      required
+                    />
+                  </div>
+
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <FaMapMarkerAlt className="text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                    </div>
+                    <input
+                      name="province"
+                      value={form.province}
+                      onChange={handleChange}
+                      placeholder="Province/State"
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder-gray-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <FaMapMarkerAlt className="text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                    </div>
+                    <input
+                      name="postalCode"
+                      value={form.postalCode}
+                      onChange={handleChange}
+                      placeholder="Postal/ZIP Code"
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder-gray-500"
+                      required
+                    />
+                  </div>
+
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <FaGlobe className="text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                    </div>
+                    <input
+                      name="country"
+                      value={form.country}
+                      onChange={handleChange}
+                      placeholder="Country"
+                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder-gray-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`group relative w-full py-4 px-6 rounded-2xl font-bold text-lg shadow-lg transition-all duration-300 transform ${
+                      loading 
+                        ? 'bg-gray-400 cursor-not-allowed opacity-60' 
+                        : 'bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 hover:from-green-600 hover:via-green-700 hover:to-emerald-700 hover:shadow-xl hover:scale-105'
+                    } text-white`}
+                  >
+                    <div className="flex items-center justify-center gap-3">
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                          <span>Placing Order...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FaLock className="text-xl group-hover:scale-110 transition-transform duration-300" />
+                          <span>Place Secure Order</span>
+                          <FaPaw className="text-xl group-hover:rotate-12 transition-transform duration-300" />
+                        </>
+                      )}
+                    </div>
+                    {!loading && (
+                      <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 text-gray-500 text-sm mt-4">
+                  <FaLock className="text-xs" />
+                  <span>Your information is secure and encrypted</span>
+                  <FaPaw className="text-xs animate-pulse" />
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Custom Animations */}
+      <style jsx>{`
+        @keyframes modalSlideIn {
+          from { opacity: 0; transform: scale(0.9) translateY(20px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
+        .animate-modalSlideIn {
+          animation: modalSlideIn 0.4s ease-out;
+        }
+
+        input:focus {
+          outline: none;
+        }
+      `}</style>
     </div>
   );
 };
