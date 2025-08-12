@@ -1,17 +1,18 @@
 // components/community/Events.jsx
-import React from "react";
+import React, { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   ReactionButtons,
   Comments,
   RSVPButtons,
 } from "../../config/CommunityCommon";
-import { FaShare } from "react-icons/fa";
+import { FaShare, FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 
 export default function EventsTab(props) {
   const {
     user,
-    events,
+    events = [],
     openComments,
     setOpenComments,
     showDropdown,
@@ -41,10 +42,64 @@ export default function EventsTab(props) {
     authHeaders,
   } = props;
 
+  // State for share dropdown
+  const [showShareDropdown, setShowShareDropdown] = useState({});
+
+  // Ensure ref object exists
+  if (dropdownRefs && !dropdownRefs.current) dropdownRefs.current = {};
+
+  // Author helpers to mirror Posts.jsx behavior (keep your version)
+  const getAuthorName = (ev) =>
+    ev?.authorName ||
+    ev?.author?.displayName ||
+    ev?.author?.name ||
+    ev?.user?.displayName ||
+    ev?.user?.name ||
+    ev?.createdBy?.name ||
+    ev?.createdByUsername ||
+    (isAuthor(ev) ? "You" : "User");
+
+  const getAuthorInitial = (name) =>
+    (name || "U").trim().charAt(0).toUpperCase() || "U";
+
   const now = new Date();
   const visibleEvents = events.filter(
     (ev) => !ev.dateFilter || new Date(ev.dateFilter) >= now
   );
+
+  // Social media share functions
+  const shareToSocial = (platform, event) => {
+    const eventUrl = `${window.location.origin}?event=${event.id}`;
+    const eventText = `Check out this event: ${event.title || 'Awesome Event'}`;
+    const eventDescription = event.description ? ` - ${event.description}` : '';
+    
+    let shareUrl = '';
+    
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}&quote=${encodeURIComponent(eventText + eventDescription)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(eventText + eventDescription)}&url=${encodeURIComponent(eventUrl)}`;
+        break;
+      case 'instagram':
+        // Instagram doesn't support direct URL sharing, so we'll copy to clipboard with instructions
+        navigator.clipboard.writeText(eventUrl + '\n\n' + eventText + eventDescription);
+        alert('Event details copied to clipboard! You can now paste this in your Instagram story or post.');
+        return;
+      case 'tiktok':
+        // TikTok doesn't support direct URL sharing, so we'll copy to clipboard with instructions
+        navigator.clipboard.writeText(eventUrl + '\n\n' + eventText + eventDescription);
+        alert('Event details copied to clipboard! You can now share this in your TikTok video description.');
+        return;
+      default:
+        return;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
+  };
 
   const CommentIcon = (
     <svg
@@ -65,8 +120,9 @@ export default function EventsTab(props) {
 
   return (
     <div className="space-y-8">
+      {/* Create/Edit toggle */}
       <button
-        className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-orange-500 to-purple-600 text-white rounded-lg hover:from-orange-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg"
         onClick={() => {
           setShowEventForm((f) => !f);
           setIsEdit(false);
@@ -86,49 +142,55 @@ export default function EventsTab(props) {
           ? "Edit Event"
           : "Create New Event"}
       </button>
+
+      {/* Event form */}
       {showEventForm && (
         <form
           onSubmit={handleCreateEvent}
-          className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-6 mb-8 text-left
-                     bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900"
+          className="rounded-2xl border border-orange-200 dark:border-purple-800 shadow-xl p-6 mb-8 text-left bg-gradient-to-br from-orange-100 to-purple-100 dark:from-gray-800 dark:to-gray-900"
         >
-          <h3 className="font-semibold text-lg text-blue-900 dark:text-blue-100">
+          <h3 className="font-semibold text-lg text-gray-800 dark:text-white">
             {isEdit ? "Edit Event" : "Create New Event"}
           </h3>
+
           <input
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mt-3 dark:bg-gray-700 dark:text-white placeholder:text-white/70 dark:placeholder:text-white/70"
             placeholder="Event title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
           />
+
           <textarea
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none mt-3 dark:bg-gray-700 dark:text-white placeholder:text-white/70 dark:placeholder:text-white/70"
             rows={3}
             placeholder="Event description"
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
           />
+
           <input
             type="date"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mt-3 dark:bg-gray-700 dark:text-white placeholder:text-white/70 dark:placeholder:text-white/70"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           />
+
           <input
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mt-3 dark:bg-gray-700 dark:text-white placeholder:text-white/70 dark:placeholder:text-white/70"
             placeholder="Event location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           />
-          <div className="space-y-2">
+
+          <div className="space-y-2 mt-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
               Event Photos
             </label>
             {photos.map((url, i) => (
               <input
                 key={i}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white placeholder:text-white/70 dark:placeholder:text-white/70"
                 placeholder="Photo URL"
                 value={url}
                 onChange={(e) => {
@@ -141,15 +203,16 @@ export default function EventsTab(props) {
             <button
               type="button"
               onClick={() => setPhotos((prev) => [...prev, ""])}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="text-sm text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 font-medium"
             >
               + Add another photo
             </button>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
             <button
               type="submit"
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-medium shadow-lg"
             >
               {isEdit ? "Update Event" : "Create Event"}
             </button>
@@ -160,27 +223,34 @@ export default function EventsTab(props) {
                 setIsEdit(false);
                 setEditItem(null);
               }}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+              className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 font-medium shadow-lg"
             >
               Cancel
             </button>
           </div>
         </form>
       )}
+
       {/* Events List */}
       {visibleEvents.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500">No events yet. Create the first one!</p>
+          <p className="text-gray-500 dark:text-gray-400">No events yet. Create the first one!</p>
         </div>
       ) : (
         visibleEvents.map((ev) => {
           const key = "event-" + ev.id;
+          const authorName = getAuthorName(ev);
+          const authorInitial = getAuthorInitial(authorName);
+
           return (
             <div
               key={key}
-              className="rounded-2xl border border-blue-100 dark:border-indigo-900 shadow-lg p-4 sm:p-6 mb-8 text-left
-                                      bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 relative"
+              className="rounded-2xl border border-orange-300/50 dark:border-purple-700/50 shadow-xl p-4 sm:p-6 mb-8 text-left relative backdrop-blur-sm"
+              style={{
+                background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.9) 0%, rgba(88, 28, 135, 0.95) 100%)'
+              }}
             >
+              {/* Author controls */}
               {isAuthor(ev) && (
                 <div
                   className="absolute top-4 right-4 z-10"
@@ -193,10 +263,11 @@ export default function EventsTab(props) {
                         [key]: !prev[key],
                       }))
                     }
-                    className="p-2 rounded-full hover:bg-gray-200"
+                    className="p-2 rounded-full hover:bg-white/20 transition-colors duration-200"
+                    aria-label="More actions"
                   >
                     <svg
-                      className="w-6 h-6 text-gray-500"
+                      className="w-6 h-6 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -207,9 +278,9 @@ export default function EventsTab(props) {
                     </svg>
                   </button>
                   {showDropdown[key] && (
-                    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                    <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20">
                       <button
-                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        className="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
                         onClick={() => {
                           setShowDropdown({});
                           handleEdit({ ...ev, __type: "event" });
@@ -218,7 +289,7 @@ export default function EventsTab(props) {
                         Edit
                       </button>
                       <button
-                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
                         onClick={() => {
                           setShowDropdown({});
                           setShowDeleteModal((prev) => ({
@@ -233,19 +304,18 @@ export default function EventsTab(props) {
                   )}
                 </div>
               )}
+
               {/* Delete modal */}
               {showDeleteModal[key] && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-30">
-                  <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full relative">
-                    <h3 className="font-semibold text-lg mb-3">
-                      Are you sure?
-                    </h3>
-                    <p className="mb-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-sm w-full relative">
+                    <h3 className="font-semibold text-lg mb-3 text-gray-800 dark:text-white">Are you sure?</h3>
+                    <p className="mb-4 text-gray-600 dark:text-gray-300">
                       This will permanently delete your event.
                     </p>
                     <div className="flex justify-end space-x-2">
                       <button
-                        className="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 hover:bg-gray-400"
+                        className="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-200"
                         onClick={() =>
                           setShowDeleteModal((prev) => ({
                             ...prev,
@@ -256,7 +326,7 @@ export default function EventsTab(props) {
                         No
                       </button>
                       <button
-                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
                         onClick={() => handleDelete({ ...ev, __type: "event" })}
                       >
                         Yes, Delete
@@ -265,58 +335,82 @@ export default function EventsTab(props) {
                   </div>
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 text-left">
-                <h3 className="text-lg sm:text-xl font-extrabold text-blue-900 dark:text-blue-100 mb-2 sm:mb-0 tracking-tight">
-                  {ev.title}
-                </h3>
-                <span className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-                  {formatDistanceToNow(new Date(ev.createdAt))} ago
-                </span>
+
+              {/* Author block */}
+              <div className="flex items-center mb-4 text-left">
+                <div className="w-10 h-10 bg-gradient-to-r from-white/30 to-white/50 backdrop-blur-sm rounded-full mr-3 flex items-center justify-center border border-white/20">
+                  <span className="text-white font-medium text-sm">
+                    {authorInitial}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-semibold text-white">
+                    {authorName}
+                  </p>
+                  <p className="text-xs text-white/80">
+                    {formatDistanceToNow(
+                      new Date(
+                        ev.createdAt || ev.updatedAt || Date.now()
+                      )
+                    )}{" "}
+                    ago
+                  </p>
+                </div>
               </div>
+
+              {/* Title */}
+              <h3 className="text-lg sm:text-xl font-extrabold text-white mb-3 text-left tracking-tight drop-shadow-sm">
+                {ev.title}
+              </h3>
+
+              {/* Description */}
               {ev.description && (
-                <p className="text-indigo-800 dark:text-indigo-200 mb-4 leading-relaxed text-left">
+                <p className="text-white/90 mb-4 leading-relaxed text-left">
                   {ev.description}
                 </p>
               )}
+
+              {/* Meta */}
               <div className="space-y-2 mb-4">
                 {ev.dateFilter && (
-                  <p className="flex items-center text-sm text-gray-600">
+                  <p className="flex items-center text-sm text-white/80">
                     <span className="font-medium mr-2">📅 Date:</span>
                     {new Date(ev.dateFilter).toLocaleDateString()}
                   </p>
                 )}
                 {ev.location && (
-                  <p className="flex items-center text-sm text-gray-600">
+                  <p className="flex items-center text-sm text-white/80">
                     <span className="font-medium mr-2">📍 Location:</span>
                     {ev.location}
                   </p>
                 )}
               </div>
+
+              {/* Photos */}
               {ev.photos
-                ?.filter((u) => u)
+                ?.filter(Boolean)
                 .map((url, i) => (
                   <img
                     key={i}
                     src={url}
                     alt={`Event photo ${i + 1}`}
-                    className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-md"
+                    className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-lg border border-white/20"
                   />
                 ))}
-              <RSVPButtons
-                eventId={ev.id}
-                user={user}
-                authHeaders={authHeaders}
-              />
+
+              {/* Actions */}
+              <RSVPButtons eventId={ev.id} user={user} authHeaders={authHeaders} />
               <ReactionButtons
                 entityType="event"
                 entityId={ev.id}
                 user={user}
                 authHeaders={authHeaders}
               />
+
               <div className="flex items-center gap-4 mt-4">
                 {/* Comment Button */}
                 <button
-                  className="flex items-center gap-2 text-gray-500 hover:text-blue-600 text-sm"
+                  className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
                   onClick={() =>
                     setOpenComments((prev) => ({
                       ...prev,
@@ -327,48 +421,71 @@ export default function EventsTab(props) {
                   {CommentIcon} Comments
                 </button>
 
-                {/* Share Button */}
-
-                <button
-                  className="flex items-center gap-2 text-gray-500 hover:text-green-600 text-sm"
-                  onClick={() => {
-                    const shareData = {
-                      title: p.title || "Check out this post!",
-                      text: p.description || "",
-                      url: `${window.location.origin}?post=${p.id}`,
-                    };
-
-                    // If post has an image and browser supports file sharing
-                    if (
-                      p.image &&
-                      navigator.canShare &&
-                      navigator.canShare({ files: [] })
-                    ) {
-                      fetch(p.image)
-                        .then((res) => res.blob())
-                        .then((blob) => {
-                          const file = new File([blob], "post-image.jpg", {
-                            type: blob.type,
-                          });
-                          shareData.files = [file];
-                          return navigator.share(shareData);
-                        })
-                        .catch((err) =>
-                          console.error("Error sharing image:", err)
-                        );
-                    } else if (navigator.share) {
-                      navigator
-                        .share(shareData)
-                        .catch((err) => console.error("Error sharing:", err));
-                    } else {
-                      navigator.clipboard.writeText(shareData.url);
-                      alert("Post link copied to clipboard!");
+                {/* Enhanced Share Button */}
+                <div className="relative">
+                  <button
+                    className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
+                    onClick={() =>
+                      setShowShareDropdown((prev) => ({
+                        ...prev,
+                        [key]: !prev[key],
+                      }))
                     }
-                  }}
-                >
-                  <FaShare /> Share
-                </button>
+                  >
+                    <FaShare /> Share
+                  </button>
+
+                  {/* Share Dropdown */}
+                  {showShareDropdown[key] && (
+                    <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-600 p-3 z-20 min-w-[160px] backdrop-blur-sm">
+                      <div className="flex justify-center gap-3">
+                        <button
+                          onClick={() => {
+                            shareToSocial('facebook', ev);
+                            setShowShareDropdown({});
+                          }}
+                          className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-110"
+                          title="Share to Facebook"
+                        >
+                          <FaFacebook className="text-blue-600 text-xl" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            shareToSocial('twitter', ev);
+                            setShowShareDropdown({});
+                          }}
+                          className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
+                          title="Share to X"
+                        >
+                          <FaXTwitter className="text-gray-800 dark:text-white text-xl" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            shareToSocial('instagram', ev);
+                            setShowShareDropdown({});
+                          }}
+                          className="p-3 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-all duration-200 hover:scale-110"
+                          title="Share to Instagram"
+                        >
+                          <FaInstagram className="text-pink-600 text-xl" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            shareToSocial('tiktok', ev);
+                            setShowShareDropdown({});
+                          }}
+                          className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
+                          title="Share to TikTok"
+                        >
+                          <FaTiktok className="text-gray-800 dark:text-white text-xl" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Comments */}
               {openComments[key] && (
                 <Comments
                   parentType="events"

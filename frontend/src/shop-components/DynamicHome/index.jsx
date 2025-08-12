@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ItemUploader from '../ItemUploader';
 import ItemProductList from '../ItemProductList';
-import { isPetShopOwner } from '../../utils/auth'; // Adjust import as needed
-import { getCurrentUser } from '../../services/userService'; // Add this import
+import { getCurrentUser } from '../../services/userService';
 import { FaPaw, FaArrowLeft, FaStore, FaShoppingCart, FaPlus, FaTimes } from 'react-icons/fa';
 import { MdPets, MdInventory } from 'react-icons/md';
 
@@ -21,18 +20,10 @@ const DynamicHome = () => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("userToken");
-        console.log("Token found:", !!token); // Debug log
-        
         if (token) {
           const response = await getCurrentUser(token);
-          console.log("User data response:", response.data); // Debug log
-          
           setUserData(response.data);
-          
-          // Check for different possible userType formats
           const type = response.data.userType || response.data.user_type || response.data.type;
-          console.log("User type detected:", type); // Debug log
-          
           setUserType(type);
         }
       } catch (error) {
@@ -41,7 +32,6 @@ const DynamicHome = () => {
         setLoading(false);
       }
     };
-    
     fetchUserData();
   }, []);
 
@@ -57,7 +47,7 @@ const DynamicHome = () => {
   // Check if user is pet parent (handle different possible values)
   const isPetParent = () => {
     if (!userType) return false;
-    const type = userType.toLowerCase().replace(/[^a-z]/g, ''); // Remove spaces and special chars
+    const type = userType.toLowerCase().replace(/[^a-z]/g, '');
     return type === 'petparent' || type === 'pet_parent' || type === 'parent';
   };
 
@@ -68,34 +58,24 @@ const DynamicHome = () => {
     return type === 'petshopowner' || type === 'pet_shop_owner' || type === 'shopowner' || type === 'owner';
   };
 
-  console.log("Current userType:", userType); // Debug log
-  console.log("Is Pet Parent:", isPetParent()); // Debug log
-  console.log("Is Pet Shop Owner:", isPetShopOwnerCheck()); // Debug log
-
   if (loading) {
+    // Inherit body background; no extra page background here
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-purple-600 font-semibold">Loading your pet store...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center text-white/80">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="font-semibold">Loading your pet store...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100">
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-20 h-20 bg-purple-200 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute top-1/3 right-20 w-16 h-16 bg-pink-200 rounded-full opacity-30 animate-bounce"></div>
-        <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-indigo-200 rounded-full opacity-25 animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/2 w-8 h-8 bg-purple-300 rounded-full opacity-20 animate-ping"></div>
-      </div>
-
+    // Inherit the body background — no page-level gradient or fixed overlays
+    <div className="min-h-screen">
       <div className="relative z-10 p-4 sm:p-6 max-w-7xl mx-auto">
         {/* Debug Info - Remove in production */}
-        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg text-sm">
+        <div className="mb-4 p-3 bg-yellow-100/90 border border-yellow-300 rounded-lg text-sm">
           <p><strong>Debug Info:</strong></p>
           <p>UserType: {userType || 'null'}</p>
           <p>Is Pet Parent: {isPetParent() ? 'Yes' : 'No'}</p>
@@ -122,7 +102,7 @@ const DynamicHome = () => {
 
         {/* Welcome Header Section */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8 mb-8 border border-white/50 relative overflow-hidden">
-          {/* Decorative elements */}
+          {/* Decorative elements (keep them inside the card only) */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full -translate-y-16 translate-x-16 opacity-50"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-200 to-purple-200 rounded-full translate-y-12 -translate-x-12 opacity-50"></div>
           
@@ -244,27 +224,12 @@ const DynamicHome = () => {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        
         @keyframes modalSlideIn {
           from { opacity: 0; transform: scale(0.9) translateY(20px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.6s ease-out;
-        }
-        
-        .animate-modalSlideIn {
-          animation: modalSlideIn 0.4s ease-out;
-        }
-
-        /* Ensure proper centering for product cards */
-        @media (max-width: 640px) {
-          .max-w-7xl {
-            padding-left: 1rem;
-            padding-right: 1rem;
-          }
-        }
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out; }
+        .animate-modalSlideIn { animation: modalSlideIn 0.4s ease-out; }
       `}</style>
     </div>
   );

@@ -1,10 +1,21 @@
+// src/components/shop/Header.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { buildApiUrl } from "../../config/api";
-import { isPetShopOwner } from '../../utils/auth';
 import { getCurrentUser } from '../../services/userService';
-import { FaPaw, FaArrowLeft, FaSearch, FaShoppingCart, FaPlus, FaTachometerAlt, FaStore, FaBars, FaTimes } from 'react-icons/fa';
+import {
+  FaPaw,
+  FaArrowLeft,
+  FaSearch,
+  FaShoppingCart,
+  FaPlus,
+  FaTachometerAlt,
+  FaStore,
+  FaBars,
+  FaTimes,
+  FaUserCircle,     // <-- added
+} from 'react-icons/fa';
 import { MdPets } from 'react-icons/md';
 import { FiLogOut } from 'react-icons/fi';
 
@@ -33,20 +44,14 @@ const Header = ({
       if (token) {
         const response = await getCurrentUser(token);
         let type = null;
-        if (response.data.userType) {
-          type = response.data.userType;
-        } else if (response.data.user_type) {
-          type = response.data.user_type;
-        } else if (response.data.type) {
-          type = response.data.type;
-        } else if (response.data.user && response.data.user.userType) {
-          type = response.data.user.userType;
-        } else if (response.data.user && response.data.user.user_type) {
-          type = response.data.user.user_type;
-        }
+        if (response.data.userType) type = response.data.userType;
+        else if (response.data.user_type) type = response.data.user_type;
+        else if (response.data.type) type = response.data.type;
+        else if (response.data.user?.userType) type = response.data.user.userType;
+        else if (response.data.user?.user_type) type = response.data.user.user_type;
         setUserType(type);
       }
-    } catch (error) {
+    } catch {
       setUserType(null);
     } finally {
       setLoading(false);
@@ -57,8 +62,8 @@ const Header = ({
     try {
       const response = await axios.get(buildApiUrl('/api/categories'));
       setCategories(['All Categories', ...response.data]);
-    } catch (err) {
-      // Ignore for now
+    } catch {
+      // ignore
     }
   };
 
@@ -71,49 +76,30 @@ const Header = ({
     navigate('/home');
   };
 
-  // Utility for pet parent
+  const handleUserProfile = () => {
+    navigate('/profile');
+  };
+
   const isPetParent = () => {
     if (!userType) return false;
     const normalizedType = userType.toString().toLowerCase().replace(/[^a-z]/g, '');
-    const petParentVariations = [
-      'petparent', 'pet_parent', 'Pet Parent', 'petparent'
-    ];
-    for (const variation of petParentVariations) {
-      if (userType.toString().toLowerCase() === variation.toLowerCase()) {
-        return true;
-      }
-    }
     return normalizedType === 'petparent';
   };
 
-  // Utility for pet shop owner
   const isPetShopOwnerCheck = () => {
     if (!userType) return false;
     const normalizedType = userType.toString().toLowerCase().replace(/[^a-z]/g, '');
-    const shopOwnerVariations = [
-      'petshopowner', 'pet_shop_owner', 'Pet Shop Owner', 'petshopowner'
-    ];
-    for (const variation of shopOwnerVariations) {
-      if (userType.toString().toLowerCase() === variation.toLowerCase()) {
-        return true;
-      }
-    }
     return normalizedType === 'petshopowner';
   };
 
-  // Display-friendly user type
   const getDisplayUserType = () => {
     if (!userType) return 'Unknown';
     const type = userType.toString().toLowerCase();
-    if (type === 'pet_parent' || type === 'petparent' || type === 'pet parent') {
-      return 'Pet Parent';
-    } else if (type === 'pet_shop_owner' || type === 'petshopowner' || type === 'pet shop owner') {
-      return 'Pet Shop Owner';
-    }
+    if (['pet_parent', 'petparent', 'pet parent'].includes(type)) return 'Pet Parent';
+    if (['pet_shop_owner', 'petshopowner', 'pet shop owner'].includes(type)) return 'Pet Shop Owner';
     return userType.toString().charAt(0).toUpperCase() + userType.toString().slice(1);
   };
 
-  // Logout handler
   const handleLogout = () => {
     localStorage.removeItem('userToken');
     localStorage.removeItem('userData');
@@ -122,7 +108,7 @@ const Header = ({
 
   if (loading) {
     return (
-      <div className="min-h-[200px] bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800 flex items-center justify-center">
+      <div className="min-h-[200px] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
       </div>
     );
@@ -130,19 +116,9 @@ const Header = ({
 
   return (
     <div className="relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-10 left-10 w-20 h-20 bg-purple-400 rounded-full opacity-10 animate-pulse"></div>
-          <div className="absolute top-1/4 right-20 w-16 h-16 bg-pink-400 rounded-full opacity-15 animate-bounce"></div>
-          <div className="absolute bottom-10 left-1/4 w-12 h-12 bg-indigo-400 rounded-full opacity-20 animate-pulse"></div>
-          <div className="absolute top-1/2 right-1/3 w-8 h-8 bg-purple-300 rounded-full opacity-10 animate-ping"></div>
-        </div>
-      </div>
-
+      {/* header inherits page background */}
       <header className="relative z-10 text-white shadow-2xl backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 sm:py-6">
-          {/* Back Button for Pet Parents */}
           {isPetParent() && (
             <div className="mb-4 sm:mb-6 animate-fadeIn">
               <button
@@ -160,25 +136,22 @@ const Header = ({
             </div>
           )}
 
-          {/* Main Header Content */}
           <div className="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-white/20 shadow-2xl">
-            {/* Top row with logo and mobile menu button */}
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <a href="/shop" className="group flex items-center gap-2 sm:gap-4 flex-1">
                 <div className="p-2 sm:p-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl sm:rounded-2xl group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <FaStore className="text-lg sm:text-2xl text-white" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-xl sm:text-4xl font-bold bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300 truncate">
+                  <h1 className="text-xl sm:text-4xl font-bold bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 bg-clip-text text-transparent truncate">
                     🐾 Pet Paradise
                   </h1>
                   <p className="text-purple-200 text-xs sm:text-sm font-medium hidden sm:block">Your Pet's Dream Store</p>
                 </div>
               </a>
 
-              {/* Mobile Menu Button */}
+              {/* Mobile menu & cart */}
               <div className="flex items-center gap-2 sm:hidden">
-                {/* Cart Button (always visible) */}
                 <button
                   onClick={onCartClick}
                   className="relative bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white p-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -190,8 +163,6 @@ const Header = ({
                     </span>
                   )}
                 </button>
-                
-                {/* Mobile Menu Toggle */}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   className="bg-white/20 backdrop-blur-sm p-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-300"
@@ -200,16 +171,14 @@ const Header = ({
                 </button>
               </div>
 
-              {/* Desktop Action Buttons */}
+              {/* Desktop buttons */}
               <div className="hidden sm:flex items-center gap-3 lg:gap-4">
-                {/* User Type Indicator */}
                 <div className="bg-white/20 backdrop-blur-sm px-3 lg:px-4 py-2 rounded-xl border border-white/30">
                   <span className="text-xs lg:text-sm font-medium text-white">
                     {getDisplayUserType()}
                   </span>
                 </div>
 
-                {/* Pet Shop Owner Buttons */}
                 {isPetShopOwnerCheck() && (
                   <>
                     <button
@@ -218,57 +187,58 @@ const Header = ({
                     >
                       <FaPlus className="text-sm lg:text-lg group-hover:rotate-90 transition-transform duration-300" />
                       <span className="text-xs lg:text-sm">Add</span>
-                      <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </button>
+
                     <a
                       href="/shop/dashboard"
                       className="group relative bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-3 lg:px-6 py-2 lg:py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-1 lg:gap-2"
                     >
-                      <FaTachometerAlt className="text-sm lg:text-lg group-hover:scale-110 transition-transform duration-300" />
+                      <FaTachometerAlt className="text-sm lg:text-lg" />
                       <span className="text-xs lg:text-sm">Dashboard</span>
-                      <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </a>
+
+                    {/* NEW: User Profile (only for pet_shop_owner) */}
+                    <button
+                      onClick={handleUserProfile}
+                      className="group relative bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-3 lg:px-6 py-2 lg:py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-1 lg:gap-2"
+                    >
+                      <FaUserCircle className="text-sm lg:text-lg" />
+                      <span className="text-xs lg:text-sm">My Profile</span>
+                    </button>
+
                     <button
                       onClick={handleLogout}
                       className="group relative bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-3 lg:px-6 py-2 lg:py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-1 lg:gap-2"
-                      title="Logout"
                     >
-                      <FiLogOut className="text-sm lg:text-lg group-hover:scale-110 transition-transform duration-300" />
+                      <FiLogOut className="text-sm lg:text-lg" />
                       <span className="text-xs lg:text-sm">Logout</span>
-                      <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </button>
                   </>
                 )}
 
-                {/* Desktop Cart Button */}
                 <button
                   onClick={onCartClick}
                   className="group relative bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-1 lg:gap-2"
                 >
-                  <FaShoppingCart className="text-sm lg:text-lg group-hover:scale-110 transition-transform duration-300" />
+                  <FaShoppingCart className="text-sm lg:text-lg" />
                   <span className="text-xs lg:text-sm">Cart</span>
                   {cartItemCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse shadow-lg">
                       {cartItemCount}
                     </span>
                   )}
-                  <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </button>
               </div>
             </div>
 
-            {/* Mobile Menu Dropdown */}
+            {/* Mobile menu */}
             {mobileMenuOpen && (
               <div className="sm:hidden mb-4 bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30 animate-fadeIn">
                 <div className="space-y-3">
-                  {/* User Type Indicator */}
                   <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/30 text-center">
-                    <span className="text-sm font-medium text-white">
-                      {getDisplayUserType()}
-                    </span>
+                    <span className="text-sm font-medium text-white">{getDisplayUserType()}</span>
                   </div>
 
-                  {/* Pet Shop Owner Mobile Buttons */}
                   {isPetShopOwnerCheck() && (
                     <div className="grid grid-cols-1 gap-2">
                       <button
@@ -281,6 +251,7 @@ const Header = ({
                         <FaPlus className="text-lg" />
                         <span>Add Product</span>
                       </button>
+
                       <a
                         href="/shop/dashboard"
                         className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"
@@ -289,6 +260,19 @@ const Header = ({
                         <FaTachometerAlt className="text-lg" />
                         <span>Dashboard</span>
                       </a>
+
+                      {/* NEW: User Profile in mobile menu */}
+                      <button
+                        onClick={() => {
+                          handleUserProfile();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="bg-gradient-to-r from-sky-500 to-blue-600 text-white px-4 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <FaUserCircle className="text-lg" />
+                        <span>My Profile</span>
+                      </button>
+
                       <button
                         onClick={() => {
                           handleLogout();
@@ -305,12 +289,11 @@ const Header = ({
               </div>
             )}
 
-            {/* Search and Categories Section */}
+            {/* Search + categories */}
             <div className="bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/30">
               <div className="space-y-3 sm:space-y-0 sm:flex sm:gap-4">
-                {/* Search Form */}
                 <div className="flex-1">
-                  <form onSubmit={handleSearchSubmit} className="group">
+                  <form onSubmit={handleSearchSubmit}>
                     <div className="flex rounded-xl sm:rounded-2xl overflow-hidden shadow-lg">
                       <div className="relative flex-1">
                         <input
@@ -318,13 +301,13 @@ const Header = ({
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           placeholder="Search pet products..."
-                          className="w-full px-3 sm:px-4 py-3 sm:py-4 text-gray-800 bg-white/95 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/70 focus:bg-white transition-all duration-300 placeholder-gray-500 font-medium text-sm sm:text-base pr-10 sm:pr-12"
+                          className="w-full px-3 sm:px-4 py-3 sm:py-4 text-gray-800 bg-white/95 focus:outline-none focus:ring-2 focus:ring-yellow-400/70 transition-all duration-300 placeholder-gray-500 font-medium text-sm sm:text-base pr-10 sm:pr-12"
                         />
                         <MdPets className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-base sm:text-xl" />
                       </div>
                       <button
                         type="submit"
-                        className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-3 sm:px-6 py-3 sm:py-4 font-bold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center min-w-[50px] sm:min-w-[120px]"
+                        className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-3 sm:px-6 py-3 sm:py-4 font-bold shadow-lg hover:shadow-xl flex items-center justify-center min-w-[50px] sm:min-w-[120px]"
                       >
                         <FaSearch className="text-sm sm:text-base" />
                         <span className="hidden sm:inline ml-2">Search</span>
@@ -333,13 +316,12 @@ const Header = ({
                   </form>
                 </div>
 
-                {/* Category Selector */}
                 <div className="relative sm:min-w-[180px] lg:min-w-[220px]">
                   <select
                     onChange={(e) =>
                       onCategoryChange(e.target.value === 'All Categories' ? '' : e.target.value)
                     }
-                    className="appearance-none w-full px-3 sm:px-4 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-gray-800 bg-white/95 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-400/70 font-medium shadow-lg cursor-pointer hover:bg-white transition-all duration-300 text-sm sm:text-base pr-10"
+                    className="appearance-none w-full px-3 sm:px-4 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-gray-800 bg-white/95 focus:outline-none focus:ring-2 focus:ring-purple-400/70 font-medium shadow-lg cursor-pointer hover:bg-white transition-all duration-300 text-sm sm:text-base pr-10"
                   >
                     {categories.map((category) => (
                       <option key={category} value={category} className="font-medium bg-white">
@@ -359,7 +341,6 @@ const Header = ({
         </div>
       </header>
 
-      {/* Custom Animations */}
       <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-20px); }
