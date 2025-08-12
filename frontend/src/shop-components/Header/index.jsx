@@ -1,9 +1,21 @@
+// src/components/shop/Header.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { buildApiUrl } from "../../config/api";
 import { getCurrentUser } from '../../services/userService';
-import { FaPaw, FaArrowLeft, FaSearch, FaShoppingCart, FaPlus, FaTachometerAlt, FaStore, FaBars, FaTimes } from 'react-icons/fa';
+import {
+  FaPaw,
+  FaArrowLeft,
+  FaSearch,
+  FaShoppingCart,
+  FaPlus,
+  FaTachometerAlt,
+  FaStore,
+  FaBars,
+  FaTimes,
+  FaUserCircle,     // <-- added
+} from 'react-icons/fa';
 import { MdPets } from 'react-icons/md';
 import { FiLogOut } from 'react-icons/fi';
 
@@ -64,6 +76,10 @@ const Header = ({
     navigate('/home');
   };
 
+  const handleUserProfile = () => {
+    navigate('/profile');
+  };
+
   const isPetParent = () => {
     if (!userType) return false;
     const normalizedType = userType.toString().toLowerCase().replace(/[^a-z]/g, '');
@@ -100,8 +116,7 @@ const Header = ({
 
   return (
     <div className="relative">
-      {/* Removed gradient background — header now inherits page background */}
-
+      {/* header inherits page background */}
       <header className="relative z-10 text-white shadow-2xl backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 sm:py-6">
           {isPetParent() && (
@@ -163,6 +178,7 @@ const Header = ({
                     {getDisplayUserType()}
                   </span>
                 </div>
+
                 {isPetShopOwnerCheck() && (
                   <>
                     <button
@@ -172,6 +188,7 @@ const Header = ({
                       <FaPlus className="text-sm lg:text-lg group-hover:rotate-90 transition-transform duration-300" />
                       <span className="text-xs lg:text-sm">Add</span>
                     </button>
+
                     <a
                       href="/shop/dashboard"
                       className="group relative bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-3 lg:px-6 py-2 lg:py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-1 lg:gap-2"
@@ -179,6 +196,16 @@ const Header = ({
                       <FaTachometerAlt className="text-sm lg:text-lg" />
                       <span className="text-xs lg:text-sm">Dashboard</span>
                     </a>
+
+                    {/* NEW: User Profile (only for pet_shop_owner) */}
+                    <button
+                      onClick={handleUserProfile}
+                      className="group relative bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-3 lg:px-6 py-2 lg:py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-1 lg:gap-2"
+                    >
+                      <FaUserCircle className="text-sm lg:text-lg" />
+                      <span className="text-xs lg:text-sm">My Profile</span>
+                    </button>
+
                     <button
                       onClick={handleLogout}
                       className="group relative bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-3 lg:px-6 py-2 lg:py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-1 lg:gap-2"
@@ -188,6 +215,7 @@ const Header = ({
                     </button>
                   </>
                 )}
+
                 <button
                   onClick={onCartClick}
                   className="group relative bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-1 lg:gap-2"
@@ -210,6 +238,7 @@ const Header = ({
                   <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/30 text-center">
                     <span className="text-sm font-medium text-white">{getDisplayUserType()}</span>
                   </div>
+
                   {isPetShopOwnerCheck() && (
                     <div className="grid grid-cols-1 gap-2">
                       <button
@@ -222,6 +251,7 @@ const Header = ({
                         <FaPlus className="text-lg" />
                         <span>Add Product</span>
                       </button>
+
                       <a
                         href="/shop/dashboard"
                         className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"
@@ -230,6 +260,19 @@ const Header = ({
                         <FaTachometerAlt className="text-lg" />
                         <span>Dashboard</span>
                       </a>
+
+                      {/* NEW: User Profile in mobile menu */}
+                      <button
+                        onClick={() => {
+                          handleUserProfile();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="bg-gradient-to-r from-sky-500 to-blue-600 text-white px-4 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <FaUserCircle className="text-lg" />
+                        <span>My Profile</span>
+                      </button>
+
                       <button
                         onClick={() => {
                           handleLogout();
