@@ -1,7 +1,7 @@
 # shop_backend/products.py
 
 from flask import Blueprint, jsonify, request
-from shop_backend.models import Product, db
+from shop_backend.models import Product, OrderItem, Order, db
 from shop_backend.auth_utils import require_auth, require_owner
 
 products_bp = Blueprint('products_bp', __name__)
@@ -11,6 +11,8 @@ def get_products():
     """Get all products in the database (visible to everyone)"""
     try:
         products = Product.query.all()
+        # Note: This endpoint does not include buyer information per product
+        # as it's intended for a general product listing, not the owner dashboard.
         return jsonify([p.to_dict() for p in products])
     except Exception as e:
         print(f"Error fetching products: {e}")
@@ -223,10 +225,43 @@ def get_my_products():
     """Get all products belonging to the authenticated shop owner (dashboard view)"""
     try:
         uid = request.user.get('uid')
-        products = Product.query.filter_by(owner_uid=uid).all()
+        owner_products = Product.query.filter_by(owner_uid=uid).all()
+        
+        products_with_buyers = []
+        for product in owner_products:
+            product_dict = product.to_dict()
+            
+            # Fetch order items for this product
+            order_items = OrderItem.query.filter_by(product_id=product.id).all()
+            
+            buyers = []
+            for item in order_items:
+                # Fetch the order associated with the order item
+                order = Order.query.get(item.order_id)
+                if order:
+                    # Use the helper function to parse address (assuming it exists)
+                    from shop_backend.helpers import parse_address
+                    phone, location = parse_address(order.shipping_address or '')
+                    
+                    buyers.append({
+                        'buyer_name': order.buyer_name or '',
+                        'product_name': product.name, # Redundant but matches requested format
+                        'quantity': item.quantity,
+                        'price_paid': item.price, # Price per item at time of order
+                        'payment_method': 'PayPal', # Hardcoded as per example
+                        'phone_number': phone,
+                        'location': location
+                    })
+            
+            # Add buyers list and sold quantity to the product dictionary
+            product_dict['buyers'] = buyers
+            product_dict['sold'] = sum(item.quantity for item in order_items) # Calculate sold quantity
+            
+            products_with_buyers.append(product_dict)
+            
         return jsonify({
-            'products': [p.to_dict() for p in products],
-            'count': len(products)
+            'products': products_with_buyers,
+            'count': len(owner_products)
         })
     except Exception as e:
         print(f"❌ Error fetching user products: {e}")
