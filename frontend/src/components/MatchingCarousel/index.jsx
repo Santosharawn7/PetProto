@@ -32,11 +32,11 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
   }, [visibleIndex]);
 
   return (
-    <div className="relative">
-      {/* Left Button */}
+    <div className="relative -mt-16 md:mt-4">
+      {/* Left Button - Hidden on mobile */}
       <button
         onClick={scrollPrev}
-        className="absolute z-10 -left-13 sm:left-2 top-1/2 -translate-y-1/2 bg-white text-gray-700 w-15 h-15 flex items-center justify-center rounded-full shadow-lg hover:bg-blue-800 hover:text-white transition text-3xl"
+        className="absolute z-10 -left-13 sm:left-2 top-1/2 -translate-y-1/2 bg-white text-gray-700 w-15 h-15 items-center justify-center rounded-full shadow-lg hover:bg-blue-800 hover:text-white transition text-3xl hidden md:flex"
         disabled={visibleIndex === 0}
       >
         ‹
@@ -74,10 +74,10 @@ const MatchingCarousel = ({ matches, onMatchClick }) => {
         ))}
       </div>
 
-      {/* Right Button */}
+      {/* Right Button - Hidden on mobile */}
       <button
         onClick={scrollNext}
-        className="absolute z-10 -right-13 sm:right-2 top-1/2 -translate-y-1/2 bg-white text-gray-700 w-15 h-15 flex items-center justify-center rounded-full shadow-lg hover:bg-blue-800 hover:text-white transition text-3xl"
+        className="absolute z-10 -right-13 sm:right-2 top-1/2 -translate-y-1/2 bg-white text-gray-700 w-15 h-15 items-center justify-center rounded-full shadow-lg hover:bg-blue-800 hover:text-white transition text-3xl hidden md:flex"
         disabled={visibleIndex === matches.length - 1}
       >
         ›
