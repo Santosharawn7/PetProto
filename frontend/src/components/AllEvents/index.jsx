@@ -30,7 +30,7 @@ export default function AllEvents(props) {
   // Ensure ref object exists
   if (dropdownRefs && !dropdownRefs.current) dropdownRefs.current = {};
 
-  // Share dropdown state/refs (match Events.jsx behavior)
+  // Share dropdown state/refs
   const [showShareDropdown, setShowShareDropdown] = useState({});
   const shareDropdownRefs = useRef({});
 
@@ -50,7 +50,7 @@ export default function AllEvents(props) {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [showShareDropdown]);
 
-  // Reusable author helpers (same as Events.jsx behavior)
+  // Reusable author helpers
   const getAuthorName = (it) =>
     it?.authorName ||
     it?.author?.displayName ||
@@ -64,7 +64,7 @@ export default function AllEvents(props) {
   const getAuthorInitial = (name) =>
     (name || "U").trim().charAt(0).toUpperCase() || "U";
 
-  // Filter out past events (same as Events.jsx logic)
+  // Filter out past events (today+)
   const now = new Date();
   const visibleEvents = events.filter(
     (ev) => !ev.dateFilter || new Date(ev.dateFilter) >= now
@@ -92,45 +92,47 @@ export default function AllEvents(props) {
     </svg>
   );
 
-  // Social share (identical behavior to Events.jsx)
-  const shareToSocial = (platform, item) => {
+  // Social share (FB/Twitter popups; IG/TikTok copy to clipboard + open site)
+  const shareToSocial = async (platform, item) => {
     const isEvent = item.__type === "event";
     const itemUrl = `${window.location.origin}?${isEvent ? "event" : "post"}=${item.id}`;
     const baseText = isEvent ? "Check out this event: " : "Check out this post: ";
-    const itemText = `${baseText}${item.title || (isEvent ? "Awesome Event" : "Great Post")}`;
-    const itemDescription = item.description ? ` - ${item.description}` : "";
-
-    let shareUrl = "";
+    const text = `${baseText}${item.title || (isEvent ? "Awesome Event" : "Great Post")}`;
+    const desc = item.description ? ` - ${item.description}` : "";
+    const combined = `${text}${desc}\n\n${itemUrl}`;
+    const popup = "width=600,height=640";
 
     switch (platform) {
-      case "facebook":
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      case "facebook": {
+        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
           itemUrl
-        )}&quote=${encodeURIComponent(itemText + itemDescription)}`;
-        break;
-      case "twitter":
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          itemText + itemDescription
+        )}&quote=${encodeURIComponent(text + desc)}`;
+        window.open(url, "_blank", popup);
+        return;
+      }
+      case "twitter": {
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+          text + desc
         )}&url=${encodeURIComponent(itemUrl)}`;
-        break;
-      case "instagram":
-        navigator.clipboard.writeText(itemUrl + "\n\n" + itemText + itemDescription);
-        alert(
-          "Details copied to clipboard! You can now paste this in your Instagram story or post."
-        );
+        window.open(url, "_blank", popup);
         return;
-      case "tiktok":
-        navigator.clipboard.writeText(itemUrl + "\n\n" + itemText + itemDescription);
-        alert(
-          "Details copied to clipboard! You can now paste this in your TikTok video description."
-        );
+      }
+      case "instagram": {
+        try {
+          await navigator.clipboard.writeText(combined);
+        } catch {}
+        window.open("https://www.instagram.com/", "_blank", popup);
         return;
+      }
+      case "tiktok": {
+        try {
+          await navigator.clipboard.writeText(combined);
+        } catch {}
+        window.open("https://www.tiktok.com/upload?lang=en", "_blank", popup);
+        return;
+      }
       default:
         return;
-    }
-
-    if (shareUrl) {
-      window.open(shareUrl, "_blank", "width=600,height=400");
     }
   };
 
@@ -158,7 +160,7 @@ export default function AllEvents(props) {
                 "linear-gradient(135deg, rgba(120, 53, 15, 0.9) 0%, rgba(88, 28, 135, 0.95) 100%)",
             }}
           >
-            {/* Dropdown menu (author controls) */}
+            {/* Author controls */}
             {isAuthor(item) && (
               <div
                 className="absolute top-4 right-4 z-10"
@@ -244,10 +246,10 @@ export default function AllEvents(props) {
               </div>
             )}
 
-            {/* POST or EVENT BODY */}
+            {/* BODY */}
             {item.__type === "post" ? (
               <>
-                {/* Author block (match Events look) */}
+                {/* Author block */}
                 <div className="flex items-center mb-4 text-left">
                   <div className="w-10 h-10 bg-gradient-to-r from-white/30 to-white/50 backdrop-blur-sm rounded-full mr-3 flex items-center justify-center border border-white/20">
                     <span className="text-white font-medium text-sm">
@@ -262,16 +264,21 @@ export default function AllEvents(props) {
                   </div>
                 </div>
 
-                <h3 className="text-lg sm:text-xl font-extrabold mb-3 text-white text-left tracking-tight drop-shadow-sm">
-                  {item.title}
-                </h3>
+                {/* Title */}
+                {item.title && (
+                  <h3 className="text-lg sm:text-xl font-extrabold mb-3 text-white text-left tracking-tight drop-shadow-sm">
+                    {item.title}
+                  </h3>
+                )}
 
+                {/* Desc */}
                 {item.description && (
                   <p className="text-white/90 mb-4 leading-relaxed text-left">
                     {item.description}
                   </p>
                 )}
 
+                {/* Image */}
                 {item.image && (
                   <img
                     src={item.image}
@@ -280,6 +287,7 @@ export default function AllEvents(props) {
                   />
                 )}
 
+                {/* Reactions */}
                 <ReactionButtons
                   entityType="post"
                   entityId={item.id}
@@ -287,8 +295,9 @@ export default function AllEvents(props) {
                   authHeaders={authHeaders}
                 />
 
+                {/* Comments + Share (responsive labels) */}
                 <div className="flex items-center gap-4 mt-4">
-                  {/* Comment Button */}
+                  {/* Comment */}
                   <button
                     className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
                     onClick={() =>
@@ -298,10 +307,15 @@ export default function AllEvents(props) {
                       }))
                     }
                   >
-                    {CommentIcon} Comments
+                    {/* mobile */}
+                    <span className="sm:hidden">{CommentIcon}</span>
+                    {/* desktop */}
+                    <span className="hidden sm:flex items-center gap-2">
+                      {CommentIcon} Comments
+                    </span>
                   </button>
 
-                  {/* Share Button (social dropdown) */}
+                  {/* Share */}
                   <div
                     className="relative"
                     ref={(el) => (shareDropdownRefs.current[key] = el)}
@@ -315,7 +329,14 @@ export default function AllEvents(props) {
                         }))
                       }
                     >
-                      <FaShare /> Share
+                      {/* mobile */}
+                      <span className="sm:hidden">
+                        <FaShare />
+                      </span>
+                      {/* desktop */}
+                      <span className="hidden sm:flex items-center gap-2">
+                        <FaShare /> Share
+                      </span>
                     </button>
 
                     {showShareDropdown[key] && (
@@ -390,7 +411,7 @@ export default function AllEvents(props) {
               </>
             ) : (
               <>
-                {/* Event body (match Events.jsx) */}
+                {/* Event body */}
                 <div className="flex items-center mb-4 text-left">
                   <div className="w-10 h-10 bg-gradient-to-r from-white/30 to-white/50 backdrop-blur-sm rounded-full mr-3 flex items-center justify-center border border-white/20">
                     <span className="text-white font-medium text-sm">
@@ -408,19 +429,16 @@ export default function AllEvents(props) {
                   </div>
                 </div>
 
-                {/* Title */}
                 <h3 className="text-lg sm:text-xl font-extrabold text-white mb-3 text-left tracking-tight drop-shadow-sm">
                   {item.title}
                 </h3>
 
-                {/* Description */}
                 {item.description && (
                   <p className="text-white/90 mb-4 leading-relaxed text-left">
                     {item.description}
                   </p>
                 )}
 
-                {/* Meta */}
                 <div className="space-y-2 mb-4">
                   {item.dateFilter && (
                     <p className="flex items-center text-sm text-white/80">
@@ -436,7 +454,6 @@ export default function AllEvents(props) {
                   )}
                 </div>
 
-                {/* Photos */}
                 {item.photos?.filter(Boolean).map((url, i) => (
                   <img
                     key={i}
@@ -446,7 +463,6 @@ export default function AllEvents(props) {
                   />
                 ))}
 
-                {/* Actions */}
                 <RSVPButtons
                   eventId={item.id}
                   user={user}
@@ -460,7 +476,7 @@ export default function AllEvents(props) {
                 />
 
                 <div className="flex items-center gap-4 mt-4">
-                  {/* Comment Button */}
+                  {/* Comment */}
                   <button
                     className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
                     onClick={() =>
@@ -470,10 +486,15 @@ export default function AllEvents(props) {
                       }))
                     }
                   >
-                    {CommentIcon} Comments
+                    {/* mobile */}
+                    <span className="sm:hidden">{CommentIcon}</span>
+                    {/* desktop */}
+                    <span className="hidden sm:flex items-center gap-2">
+                      {CommentIcon} Comments
+                    </span>
                   </button>
 
-                  {/* Share Button (same dropdown as Events.jsx) */}
+                  {/* Share */}
                   <div
                     className="relative"
                     ref={(el) => (shareDropdownRefs.current[key] = el)}
@@ -487,7 +508,14 @@ export default function AllEvents(props) {
                         }))
                       }
                     >
-                      <FaShare /> Share
+                      {/* mobile */}
+                      <span className="sm:hidden">
+                        <FaShare />
+                      </span>
+                      {/* desktop */}
+                      <span className="hidden sm:flex items-center gap-2">
+                        <FaShare /> Share
+                      </span>
                     </button>
 
                     {showShareDropdown[key] && (

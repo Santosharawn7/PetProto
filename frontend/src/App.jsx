@@ -60,9 +60,9 @@ function BodyTheme() {
     const prev = document.body.className;
 
     if (isShop) {
-      // Match the Shop Header gradient exactly
+      // Pet shop gradient - warmer and lighter than the dark purple, but more sophisticated than home
       document.body.className =
-        "bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800 min-h-screen w-screen overflow-x-hidden";
+        "bg-gradient-to-br from-purple-300 via-indigo-200 to-pink-200 min-h-screen w-screen overflow-x-hidden";
     } else {
       // Default app look
       document.body.className =

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { buildApiUrl } from "../../config/api";
 import { getAuthToken } from '../../utils/auth';
@@ -26,7 +26,7 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
     try {
       setLoading(true);
       const response = await axios.get(buildApiUrl(`/api/cart/${sessionId}`), authConfig());
-      setCartItems(response.data || []);
+      setCartItems(Array.isArray(response.data) ? response.data : []);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch cart from backend:', err.message);
@@ -62,7 +62,6 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
   };
 
   const updateQuantity = async (itemId, newQuantity) => {
-    // If decrementing past 1, remove the item (clean UX)
     if (newQuantity < 1) {
       await removeItem(itemId);
       return;
@@ -79,20 +78,23 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
     }
   };
 
-  const getTotalPrice = () => {
-    const total = cartItems.reduce((sum, item) => {
+  const getTotalPriceNum = () => {
+    return cartItems.reduce((sum, item) => {
       const price = Number(item?.product?.price || 0);
-      return sum + price * (item?.quantity || 0);
+      const qty = Number(item?.quantity || 0);
+      return sum + price * qty;
     }, 0);
-    return total.toFixed(2);
   };
+
+  const getTotalPrice = () => getTotalPriceNum().toFixed(2);
 
   const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + (item?.quantity || 0), 0);
-  };
+    return cartItems.reduce((total, item) => total + Number(item?.quantity || 0), 0);
+    };
 
   const handleCheckout = () => {
-    onCheckout(cartItems, getTotalPrice());
+    // hand both items and numeric total to the checkout
+    onCheckout(cartItems, getTotalPriceNum().toFixed(2));
   };
 
   if (loading) {
@@ -212,7 +214,7 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center bg-gray-100 rounded-2xl p-1 border border-gray-200 shadow-inner">
                           <button
-                            onClick={() => updateQuantity(item.id, (item.quantity || 0) - 1)}
+                            onClick={() => updateQuantity(item.id, Number(item.quantity || 0) - 1)}
                             disabled={updatingItem === item.id}
                             className="p-3 hover:bg-white hover:shadow-md rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                           >
@@ -222,11 +224,11 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
                             {updatingItem === item.id ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mx-auto"></div>
                             ) : (
-                              item?.quantity || 0
+                              Number(item?.quantity || 0)
                             )}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.id, (item.quantity || 0) + 1)}
+                            onClick={() => updateQuantity(item.id, Number(item.quantity || 0) + 1)}
                             disabled={updatingItem === item.id}
                             className="p-3 hover:bg-white hover:shadow-md rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                           >
@@ -238,7 +240,7 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
                       {/* Item Total & Remove */}
                       <div className="text-center sm:text-right">
                         <div className="text-2xl font-bold text-gray-800 mb-3">
-                          ${(Number(item?.product?.price || 0) * (item?.quantity || 0)).toFixed(2)}
+                          ${(Number(item?.product?.price || 0) * Number(item?.quantity || 0)).toFixed(2)}
                         </div>
                         <button
                           onClick={() => removeItem(item.id)}
@@ -297,15 +299,13 @@ const Cart = ({ sessionId, onClose, onCheckout }) => {
       </div>
 
       {/* Custom Animations */}
-      <style jsx>{`
+      {/* NOTE: remove `jsx` attribute to avoid the React warning */}
+      <style>{`
         @keyframes modalSlideIn {
           from { opacity: 0; transform: scale(0.9) translateY(20px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        
-        .animate-modalSlideIn {
-          animation: modalSlideIn 0.4s ease-out;
-        }
+        .animate-modalSlideIn { animation: modalSlideIn 0.4s ease-out; }
       `}</style>
     </div>
   );

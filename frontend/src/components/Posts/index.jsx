@@ -56,47 +56,46 @@ export default function PostsTab(props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showShareDropdown]);
 
-  // Social media share (mirrors Events.jsx)
-  const shareToSocial = (platform, post) => {
+  // Social media share (FB/Twitter popups; IG/TikTok copy + open site)
+  const shareToSocial = async (platform, post) => {
     const postUrl = `${window.location.origin}?post=${post.id}`;
-    const postText = `Check out this post: ${post.title || "Awesome Post"}`;
-    const postDescription = post.description ? ` - ${post.description}` : "";
-
-    let shareUrl = "";
+    const text = `Check out this post: ${post.title || "Awesome Post"}`;
+    const desc = post.description ? ` - ${post.description}` : "";
+    const combined = `${text}${desc}\n\n${postUrl}`;
+    const popup = "width=600,height=640";
 
     switch (platform) {
-      case "facebook":
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      case "facebook": {
+        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
           postUrl
-        )}&quote=${encodeURIComponent(postText + postDescription)}`;
-        break;
-      case "twitter":
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          postText + postDescription
+        )}&quote=${encodeURIComponent(text + desc)}`;
+        window.open(url, "_blank", popup);
+        return;
+      }
+      case "twitter": {
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+          text + desc
         )}&url=${encodeURIComponent(postUrl)}`;
-        break;
-      case "instagram":
-        navigator.clipboard.writeText(
-          postUrl + "\n\n" + postText + postDescription
-        );
-        alert(
-          "Post details copied to clipboard! You can now paste this in your Instagram story or post."
-        );
+        window.open(url, "_blank", popup);
         return;
-      case "tiktok":
-        navigator.clipboard.writeText(
-          postUrl + "\n\n" + postText + postDescription
-        );
-        alert(
-          "Post details copied to clipboard! You can now share this in your TikTok video description."
-        );
+      }
+      case "instagram": {
+        try {
+          await navigator.clipboard.writeText(combined);
+        } catch {}
+        window.open("https://www.instagram.com/", "_blank", popup);
         return;
+      }
+      case "tiktok": {
+        try {
+          await navigator.clipboard.writeText(combined);
+        } catch {}
+        // Opening TikTok upload page so user can paste into caption
+        window.open("https://www.tiktok.com/upload?lang=en", "_blank", popup);
+        return;
+      }
       default:
         return;
-    }
-
-    if (shareUrl) {
-      window.open(shareUrl, "_blank", "width=600,height=400");
     }
   };
 
@@ -119,7 +118,7 @@ export default function PostsTab(props) {
 
   return (
     <div className="space-y-8">
-      {/* Create/Edit toggle (restyled to match Events) */}
+      {/* Create/Edit toggle */}
       <button
         className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-orange-500 to-purple-600 text-white rounded-lg hover:from-orange-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg"
         onClick={() => {
@@ -193,12 +192,16 @@ export default function PostsTab(props) {
       {/* Posts List */}
       {posts.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No posts yet. Create the first one!</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            No posts yet. Create the first one!
+          </p>
         </div>
       ) : (
         posts.map((p) => {
           const key = "post-" + p.id;
-          const authorInitial = (p.authorName || "User").charAt(0).toUpperCase();
+          const authorInitial = (p.authorName || "User")
+            .charAt(0)
+            .toUpperCase();
 
           return (
             <div
@@ -209,7 +212,7 @@ export default function PostsTab(props) {
                   "linear-gradient(135deg, rgba(120, 53, 15, 0.9) 0%, rgba(88, 28, 135, 0.95) 100%)",
               }}
             >
-              {/* Author controls */}
+              {/* Author actions */}
               {isAuthor(p) && (
                 <div
                   className="absolute top-4 right-4 z-10"
@@ -217,7 +220,10 @@ export default function PostsTab(props) {
                 >
                   <button
                     onClick={() =>
-                      setShowDropdown((prev) => ({ ...prev, [key]: !prev[key] }))
+                      setShowDropdown((prev) => ({
+                        ...prev,
+                        [key]: !prev[key],
+                      }))
                     }
                     className="p-2 rounded-full hover:bg-white/20 transition-colors duration-200"
                     aria-label="More actions"
@@ -248,7 +254,10 @@ export default function PostsTab(props) {
                         className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
                         onClick={() => {
                           setShowDropdown({});
-                          setShowDeleteModal((prev) => ({ ...prev, [key]: true }));
+                          setShowDeleteModal((prev) => ({
+                            ...prev,
+                            [key]: true,
+                          }));
                         }}
                       >
                         Delete
@@ -272,7 +281,10 @@ export default function PostsTab(props) {
                       <button
                         className="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-200"
                         onClick={() =>
-                          setShowDeleteModal((prev) => ({ ...prev, [key]: false }))
+                          setShowDeleteModal((prev) => ({
+                            ...prev,
+                            [key]: false,
+                          }))
                         }
                       >
                         No
@@ -288,13 +300,17 @@ export default function PostsTab(props) {
                 </div>
               )}
 
-              {/* Author block (glass + white) */}
+              {/* Author block */}
               <div className="flex items-center mb-4 text-left">
                 <div className="w-10 h-10 bg-gradient-to-r from-white/30 to_white/50 backdrop-blur-sm rounded-full mr-3 flex items-center justify-center border border-white/20">
-                  <span className="text-white font-medium text-sm">{authorInitial}</span>
+                  <span className="text-white font-medium text-sm">
+                    {authorInitial}
+                  </span>
                 </div>
                 <div>
-                  <p className="font-semibold text-white">{p.authorName || "You"}</p>
+                  <p className="font-semibold text-white">
+                    {p.authorName || "You"}
+                  </p>
                   <p className="text-xs text-white/80">
                     {formatDistanceToNow(new Date(p.createdAt))} ago
                   </p>
@@ -302,22 +318,26 @@ export default function PostsTab(props) {
               </div>
 
               {/* Title */}
-              <h3 className="text-lg sm:text-xl font-extrabold text-white mb-3 text-left tracking-tight drop-shadow-sm">
-                {p.title}
-              </h3>
+              {p.title && (
+                <h3 className="text-lg sm:text-xl font-extrabold text-white mb-3 text-left tracking-tight drop-shadow-sm">
+                  {p.title}
+                </h3>
+              )}
 
               {/* Image */}
               {p.image && (
                 <img
                   src={p.image}
-                  alt={p.title}
+                  alt={p.title || "Post image"}
                   className="w-full max-h-96 object-cover mb-4 mx-auto block rounded-xl shadow-lg border border-white/20"
                 />
               )}
 
               {/* Description */}
               {p.description && (
-                <p className="text-white/90 mb-4 leading-relaxed text-left">{p.description}</p>
+                <p className="text-white/90 mb-4 leading-relaxed text-left">
+                  {p.description}
+                </p>
               )}
 
               {/* Reactions */}
@@ -328,19 +348,24 @@ export default function PostsTab(props) {
                 authHeaders={authHeaders}
               />
 
-              {/* Comments + Share row */}
+              {/* Comments + Share row (mobile = icons only) */}
               <div className="flex items-center gap-4 mt-4">
-                {/* Comment Button */}
+                {/* Comment */}
                 <button
                   className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
                   onClick={() =>
                     setOpenComments((prev) => ({ ...prev, [key]: !prev[key] }))
                   }
                 >
-                  {CommentIcon} Comments
+                  {/* mobile */}
+                  <span className="sm:hidden">{CommentIcon}</span>
+                  {/* desktop */}
+                  <span className="hidden sm:flex items-center gap-2">
+                    {CommentIcon} Comments
+                  </span>
                 </button>
 
-                {/* Enhanced Share (same as Events) */}
+                {/* Share */}
                 <div
                   className="relative"
                   ref={(el) => (shareDropdownRefs.current[key] = el)}
@@ -354,7 +379,14 @@ export default function PostsTab(props) {
                       }))
                     }
                   >
-                    <FaShare /> Share
+                    {/* mobile */}
+                    <span className="sm:hidden">
+                      <FaShare />
+                    </span>
+                    {/* desktop */}
+                    <span className="hidden sm:flex items-center gap-2">
+                      <FaShare /> Share
+                    </span>
                   </button>
 
                   {showShareDropdown[key] && (
