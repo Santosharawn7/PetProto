@@ -48,7 +48,7 @@ export default function EventsTab(props) {
   // Ensure ref object exists
   if (dropdownRefs && !dropdownRefs.current) dropdownRefs.current = {};
 
-  // Author helpers to mirror Posts.jsx behavior (keep your version)
+  // Helpers for author display
   const getAuthorName = (ev) =>
     ev?.authorName ||
     ev?.author?.displayName ||
@@ -62,42 +62,58 @@ export default function EventsTab(props) {
   const getAuthorInitial = (name) =>
     (name || "U").trim().charAt(0).toUpperCase() || "U";
 
+  // Only show events today+ (original logic kept)
   const now = new Date();
   const visibleEvents = events.filter(
     (ev) => !ev.dateFilter || new Date(ev.dateFilter) >= now
   );
 
-  // Social media share functions
-  const shareToSocial = (platform, event) => {
+  // Social share: FB/Twitter compose, IG/TikTok = copy text + open site in popup
+  const shareToSocial = async (platform, event) => {
     const eventUrl = `${window.location.origin}?event=${event.id}`;
-    const eventText = `Check out this event: ${event.title || 'Awesome Event'}`;
-    const eventDescription = event.description ? ` - ${event.description}` : '';
-    
-    let shareUrl = '';
-    
+    const eventText = `Check out this event: ${event.title || "Awesome Event"}`;
+    const eventDescription = event.description ? ` - ${event.description}` : "";
+
+    const combined = `${eventText}${eventDescription}\n\n${eventUrl}`;
+    let shareUrl = "";
+    let popupUrl = "";
+    const popupFeatures = "width=600,height=640";
+
     switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}&quote=${encodeURIComponent(eventText + eventDescription)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(eventText + eventDescription)}&url=${encodeURIComponent(eventUrl)}`;
-        break;
-      case 'instagram':
-        // Instagram doesn't support direct URL sharing, so we'll copy to clipboard with instructions
-        navigator.clipboard.writeText(eventUrl + '\n\n' + eventText + eventDescription);
-        alert('Event details copied to clipboard! You can now paste this in your Instagram story or post.');
+      case "facebook":
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+          eventUrl
+        )}&quote=${encodeURIComponent(eventText + eventDescription)}`;
+        window.open(shareUrl, "_blank", popupFeatures);
         return;
-      case 'tiktok':
-        // TikTok doesn't support direct URL sharing, so we'll copy to clipboard with instructions
-        navigator.clipboard.writeText(eventUrl + '\n\n' + eventText + eventDescription);
-        alert('Event details copied to clipboard! You can now share this in your TikTok video description.');
+
+      case "twitter":
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+          eventText + eventDescription
+        )}&url=${encodeURIComponent(eventUrl)}`;
+        window.open(shareUrl, "_blank", popupFeatures);
         return;
+
+      case "instagram":
+        try {
+          await navigator.clipboard.writeText(combined);
+        } catch {}
+        // No official web share compose; open site so user can paste
+        popupUrl = "https://www.instagram.com/";
+        window.open(popupUrl, "_blank", popupFeatures);
+        return;
+
+      case "tiktok":
+        try {
+          await navigator.clipboard.writeText(combined);
+        } catch {}
+        // TikTok web upload exists; open so user can paste in description
+        popupUrl = "https://www.tiktok.com/upload?lang=en";
+        window.open(popupUrl, "_blank", popupFeatures);
+        return;
+
       default:
         return;
-    }
-    
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=400');
     }
   };
 
@@ -234,7 +250,9 @@ export default function EventsTab(props) {
       {/* Events List */}
       {visibleEvents.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No events yet. Create the first one!</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            No events yet. Create the first one!
+          </p>
         </div>
       ) : (
         visibleEvents.map((ev) => {
@@ -247,7 +265,8 @@ export default function EventsTab(props) {
               key={key}
               className="rounded-2xl border border-orange-300/50 dark:border-purple-700/50 shadow-xl p-4 sm:p-6 mb-8 text-left relative backdrop-blur-sm"
               style={{
-                background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.9) 0%, rgba(88, 28, 135, 0.95) 100%)'
+                background:
+                  "linear-gradient(135deg, rgba(120, 53, 15, 0.9) 0%, rgba(88, 28, 135, 0.95) 100%)",
               }}
             >
               {/* Author controls */}
@@ -309,7 +328,9 @@ export default function EventsTab(props) {
               {showDeleteModal[key] && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-30">
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-sm w-full relative">
-                    <h3 className="font-semibold text-lg mb-3 text-gray-800 dark:text-white">Are you sure?</h3>
+                    <h3 className="font-semibold text-lg mb-3 text-gray-800 dark:text-white">
+                      Are you sure?
+                    </h3>
                     <p className="mb-4 text-gray-600 dark:text-gray-300">
                       This will permanently delete your event.
                     </p>
@@ -344,14 +365,10 @@ export default function EventsTab(props) {
                   </span>
                 </div>
                 <div>
-                  <p className="font-semibold text-white">
-                    {authorName}
-                  </p>
+                  <p className="font-semibold text-white">{authorName}</p>
                   <p className="text-xs text-white/80">
                     {formatDistanceToNow(
-                      new Date(
-                        ev.createdAt || ev.updatedAt || Date.now()
-                      )
+                      new Date(ev.createdAt || ev.updatedAt || Date.now())
                     )}{" "}
                     ago
                   </p>
@@ -359,9 +376,11 @@ export default function EventsTab(props) {
               </div>
 
               {/* Title */}
-              <h3 className="text-lg sm:text-xl font-extrabold text-white mb-3 text-left tracking-tight drop-shadow-sm">
-                {ev.title}
-              </h3>
+              {ev.title && (
+                <h3 className="text-lg sm:text-xl font-extrabold text-white mb-3 text-left tracking-tight drop-shadow-sm">
+                  {ev.title}
+                </h3>
+              )}
 
               {/* Description */}
               {ev.description && (
@@ -387,16 +406,14 @@ export default function EventsTab(props) {
               </div>
 
               {/* Photos */}
-              {ev.photos
-                ?.filter(Boolean)
-                .map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`Event photo ${i + 1}`}
-                    className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-lg border border-white/20"
-                  />
-                ))}
+              {ev.photos?.filter(Boolean).map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`Event photo ${i + 1}`}
+                  className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-lg border border-white/20"
+                />
+              ))}
 
               {/* Actions */}
               <RSVPButtons eventId={ev.id} user={user} authHeaders={authHeaders} />
@@ -407,21 +424,24 @@ export default function EventsTab(props) {
                 authHeaders={authHeaders}
               />
 
+              {/* Comments + Share (mobile: icons only; desktop: icon+label) */}
               <div className="flex items-center gap-4 mt-4">
-                {/* Comment Button */}
+                {/* Comment */}
                 <button
                   className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
                   onClick={() =>
-                    setOpenComments((prev) => ({
-                      ...prev,
-                      [key]: !prev[key],
-                    }))
+                    setOpenComments((prev) => ({ ...prev, [key]: !prev[key] }))
                   }
                 >
-                  {CommentIcon} Comments
+                  {/* mobile */}
+                  <span className="sm:hidden">{CommentIcon}</span>
+                  {/* desktop */}
+                  <span className="hidden sm:flex items-center gap-2">
+                    {CommentIcon} Comments
+                  </span>
                 </button>
 
-                {/* Enhanced Share Button */}
+                {/* Share */}
                 <div className="relative">
                   <button
                     className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
@@ -432,7 +452,14 @@ export default function EventsTab(props) {
                       }))
                     }
                   >
-                    <FaShare /> Share
+                    {/* mobile */}
+                    <span className="sm:hidden">
+                      <FaShare />
+                    </span>
+                    {/* desktop */}
+                    <span className="hidden sm:flex items-center gap-2">
+                      <FaShare /> Share
+                    </span>
                   </button>
 
                   {/* Share Dropdown */}
@@ -441,7 +468,7 @@ export default function EventsTab(props) {
                       <div className="flex justify-center gap-3">
                         <button
                           onClick={() => {
-                            shareToSocial('facebook', ev);
+                            shareToSocial("facebook", ev);
                             setShowShareDropdown({});
                           }}
                           className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-110"
@@ -451,7 +478,7 @@ export default function EventsTab(props) {
                         </button>
                         <button
                           onClick={() => {
-                            shareToSocial('twitter', ev);
+                            shareToSocial("twitter", ev);
                             setShowShareDropdown({});
                           }}
                           className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
@@ -461,7 +488,7 @@ export default function EventsTab(props) {
                         </button>
                         <button
                           onClick={() => {
-                            shareToSocial('instagram', ev);
+                            shareToSocial("instagram", ev);
                             setShowShareDropdown({});
                           }}
                           className="p-3 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-all duration-200 hover:scale-110"
@@ -471,7 +498,7 @@ export default function EventsTab(props) {
                         </button>
                         <button
                           onClick={() => {
-                            shareToSocial('tiktok', ev);
+                            shareToSocial("tiktok", ev);
                             setShowShareDropdown({});
                           }}
                           className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"

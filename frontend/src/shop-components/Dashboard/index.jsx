@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { buildApiUrl } from "../../config/api";
 import { getAuthToken } from "../../utils/auth";
+import ItemUploader from "../ItemUploader"; // <-- NEW: bring in the uploader
 import { 
   ShoppingBag, 
   Package, 
@@ -257,6 +258,17 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // NEW: local uploader state (mirrors Header behavior)
+  const [showUploader, setShowUploader] = useState(false);
+
+  const openUploader = () => setShowUploader(true);
+  const closeUploader = () => setShowUploader(false);
+  const handleUploaded = () => {
+    // refresh and close just like you'd expect
+    fetchProducts();
+    setShowUploader(false);
+  };
+
   // Fetch owner-scoped products
   const fetchProducts = async () => {
     setLoading(true);
@@ -276,7 +288,7 @@ export default function Dashboard() {
       const normalized = raw.map((p) => {
         const buyers = Array.isArray(p?.buyers) ? p.buyers : [];
 
-        // Recompute sold from buyers if backend didn’t (or returned 0)
+        // Recompute sold from buyers if backend didn't (or returned 0)
         const soldFromBuyers = buyers.reduce(
           (sum, b) => sum + Number(b?.quantity ?? 0),
           0
@@ -386,19 +398,19 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen p-6">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
+            <div className="h-8 bg-white/20 rounded w-64 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl">
+                <div key={i} className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl">
                   <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
                   <div className="h-8 bg-gray-200 rounded w-16"></div>
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-2xl p-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6">
               <div className="h-6 bg-gray-200 rounded w-40 mb-4"></div>
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
@@ -413,7 +425,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
@@ -425,12 +437,12 @@ export default function Dashboard() {
                 </div>
                 Inventory Dashboard
               </h1>
-              <p className="text-gray-600 mt-1">Manage your pet shop products and track sales</p>
+              <p className="text-gray-700 mt-1">Manage your pet shop products and track sales</p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={fetchProducts}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm border border-gray-300 rounded-lg hover:bg-white/90 transition-colors"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
@@ -438,11 +450,14 @@ export default function Dashboard() {
                 </svg>
                 Refresh
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm border border-gray-300 rounded-lg hover:bg-white/90 transition-colors">
                 <Download className="w-4 h-4" />
                 Export
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <button
+                onClick={openUploader} // <-- NEW: same behavior as header Add Product
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
                 <Plus className="w-4 h-4" />
                 Add Product
               </button>
@@ -452,10 +467,10 @@ export default function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Products</p>
+                <p className="text-sm font-medium text-gray-700">Total Products</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalProducts}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -470,48 +485,48 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Stock</p>
+                <p className="text-sm font-medium text-gray-700">Total Stock</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalStock.toLocaleString()}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <ShoppingBag className="w-6 h-6 text-green-600" />
               </div>
             </div>
-            <p className="text-sm text-gray-500 mt-1">{stats.totalSold} sold</p>
+            <p className="text-sm text-gray-600 mt-1">{stats.totalSold} sold</p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Revenue</p>
+                <p className="text-sm font-medium text-gray-700">Revenue</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">${stats.totalRevenue.toFixed(2)}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-purple-600" />
               </div>
             </div>
-            <p className="text-sm text-gray-500 mt-1">Total earnings</p>
+            <p className="text-sm text-gray-600 mt-1">Total earnings</p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Customers</p>
+                <p className="text-sm font-medium text-gray-700">Customers</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalBuyers}</p>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
                 <Users className="w-6 h-6 text-orange-600" />
               </div>
             </div>
-            <p className="text-sm text-gray-500 mt-1">Total buyers</p>
+            <p className="text-sm text-gray-600 mt-1">Total buyers</p>
           </div>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 mb-6">
           <div className="p-6 border-b border-gray-100">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
@@ -521,10 +536,10 @@ export default function Dashboard() {
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/90"
                 />
               </div>
-              <button className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <button className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-white/50 transition-colors">
                 <Filter className="w-4 h-4" />
                 Filter
               </button>
@@ -545,7 +560,10 @@ export default function Dashboard() {
                   {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first product'}
                 </p>
                 {!searchTerm && (
-                  <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto">
+                  <button
+                    onClick={openUploader} // <-- NEW
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                  >
                     <Plus className="w-4 h-4" />
                     Add Your First Product
                   </button>
@@ -553,7 +571,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <table className="min-w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50/50 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Stock Status</th>
@@ -563,10 +581,10 @@ export default function Dashboard() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white/40 divide-y divide-gray-200">
                   {filteredProducts.map((product) => (
                     <React.Fragment key={product.id}>
-                      <tr className="hover:bg-gray-50 transition-colors">
+                      <tr className="hover:bg-white/60 transition-colors">
                         {/* Product Info */}
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
@@ -647,14 +665,14 @@ export default function Dashboard() {
                                 0
                               );
                               const fallback = Number(product.sold || 0) * Number(product.price || 0);
-                              return `$${(buyersRevenue || fallback).toFixed(2)}`;
+                              return `${(buyersRevenue || fallback).toFixed(2)}`;
                             })()}
                           </span>
                         </td>
 
                         {/* Customers */}
                         <td className="px-6 py-4">
-                          <div className="flex items:center gap-2">
+                          <div className="flex items-center gap-2">
                             <Users className="w-4 h-4 text-purple-500" />
                             <span className="font-semibold text-gray-900">{product.buyers.length}</span>
                           </div>
@@ -691,8 +709,8 @@ export default function Dashboard() {
                       {/* Expanded Customer Details */}
                       {activeProductId === product.id && (
                         <tr>
-                          <td colSpan="6" className="px-6 pb-6 bg-gray-50">
-                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+                          <td colSpan="6" className="px-6 pb-6 bg-gray-50/50">
+                            <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
                               <div className="px-6 py-4 border-b border-gray-200">
                                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                                   <Users className="w-5 h-5 text-blue-600" />
@@ -812,6 +830,22 @@ export default function Dashboard() {
         onConfirm={handleDeleteConfirm}
         loading={deleting}
       />
+
+      {/* NEW: Same uploader modal behavior as in Header/App */}
+      {showUploader && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 relative">
+            <button
+              onClick={closeUploader}
+              className="absolute top-3 right-4 text-gray-600 hover:text-black text-2xl"
+              aria-label="Close uploader"
+            >
+              &times;
+            </button>
+            <ItemUploader onProductUpload={handleUploaded} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
