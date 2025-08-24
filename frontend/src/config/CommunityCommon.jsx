@@ -66,7 +66,7 @@ export function ReactionButtons({ entityType, entityId, user, authHeaders }) {
         {Object.entries(EMOJIS).map(([type, emoji]) => (
           <div
             key={type}
-            className="flex items-center px-3 py-1 bg-gray-100 rounded-full"
+            className="flex items-center px-3 py-1 bg-white rounded-full"
           >
             <span className="text-lg mr-1">{emoji}</span>
             <span className="text-sm text-gray-600">{counts[type] || 0}</span>
@@ -103,7 +103,7 @@ export function ReactionButtons({ entityType, entityId, user, authHeaders }) {
         <button
           key={type}
           onClick={() => react(type)}
-          className="flex items-center px-3 py-1 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+          className="flex items-center px-3 py-1 bg-white rounded-full hover:bg-gray-200 transition-colors"
         >
           <span className="text-lg mr-1">{emoji}</span>
           <span className="text-sm">{counts[type] || 0}</span>
@@ -315,7 +315,7 @@ export function Comments({ parentType, parentId, user, authHeaders }) {
               <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">
                 {authorInitial}
               </div>
-              <span className="font-medium text-blue-900 dark:text-blue-200">
+              <span className="font-medium text-black">
                 {c.authorName || c.author}
               </span>
               <span className="text-xs text-gray-500">
@@ -332,7 +332,7 @@ export function Comments({ parentType, parentId, user, authHeaders }) {
                     onClick={() =>
                       setMenuOpen((prev) => ({ ...prev, [key]: !prev[key] }))
                     }
-                    className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="p-2 rounded-full hover:bg-gray-100 transition-all duration-200"
                     aria-label="More"
                   >
                     <svg
@@ -349,15 +349,15 @@ export function Comments({ parentType, parentId, user, authHeaders }) {
                   </button>
 
                   {menuOpen[key] && (
-                    <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20">
+                    <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20">
                       <button
-                        className="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                        className="w-full text-left px-4 py-2 text-black hover:bg-gray-200 rounded-t-lg transition-all duration-200"
                         onClick={() => startEdit(c)}
                       >
                         Edit
                       </button>
                       <button
-                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-200 rounded-b-lg transition-all duration-200"
                         onClick={() => openDelete(c)}
                       >
                         Delete
@@ -398,7 +398,7 @@ export function Comments({ parentType, parentId, user, authHeaders }) {
                 </div>
               </div>
             ) : (
-              <div className="text-indigo-800 dark:text-indigo-200 mb-2 break-words text-left">
+              <div className="text-black mb-2 break-words text-left">
                 {c.text}
               </div>
             )}
@@ -430,10 +430,8 @@ export function Comments({ parentType, parentId, user, authHeaders }) {
       });
 
   return (
-    <div className="mt-4 pt-4 text-left">
-      <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3">
-        Comments
-      </h4>
+    <div className="mt-2 pt-2 text-left">
+
 
       {renderThread(null)}
 
@@ -456,13 +454,13 @@ export function Comments({ parentType, parentId, user, authHeaders }) {
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="flex-1 p-3 border-2 border-gray-400 focus:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
               rows={2}
               placeholder="Add a comment..."
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors sm:self-start"
+              className="px-4 py-3 md:py-6 text-lg text-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors sm:self-start"
             >
               Post
             </button>
@@ -553,54 +551,54 @@ export function RSVPButtons({ eventId, user, authHeaders }) {
       toast.error('RSVP failed');
     }
   };
-
+  
   const base =
-    'flex-1 sm:flex-none px-4 py-2 rounded-lg backdrop-blur-md border transition-all duration-300 font-medium text-white';
+    'flex-1 sm:flex-none px-4 py-2 rounded-lg backdrop-blur-md border transition-all duration-300 font-medium text-black';
+  
+const btnClass = (s) => {
+  if (s === 'yes') {
+    return status === 'yes'
+      ? `${base} bg-green-100 text-green-700 border-green-400 shadow-[0_0_12px_rgba(34,197,94,0.5)] scale-105`
+      : `${base} bg-green-50 text-green-600 border-green-300 hover:bg-green-100 hover:border-green-400`;
+  }
+  if (s === 'no') {
+    return status === 'no'
+      ? `${base} bg-rose-100 text-rose-700 border-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.5)] scale-105`
+      : `${base} bg-rose-50 text-rose-600 border-rose-300 hover:bg-rose-100 hover:border-rose-400`;
+  }
+  return status === 'maybe'
+    ? `${base} bg-indigo-100 text-indigo-700 border-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.5)] scale-105`
+    : `${base} bg-indigo-50 text-indigo-600 border-indigo-300 hover:bg-indigo-100 hover:border-indigo-400`;
+};
 
-  const btnClass = (s) => {
-    if (s === 'yes') {
-      return status === 'yes'
-        ? `${base} bg-green-500/90 border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)] scale-105`
-        : `${base} bg-green-500/20 border-white/30 hover:bg-green-500/40 hover:border-green-400/60 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]`;
-    }
-    if (s === 'no') {
-      return status === 'no'
-        ? `${base} bg-red-500/90 border-red-400 shadow-[0_0_20px_rgba(239,68,68,0.6)] scale-105`
-        : `${base} bg-red-500/20 border-white/30 hover:bg-red-500/40 hover:border-red-400/60 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]`;
-    }
-    return status === 'maybe'
-      ? `${base} bg-green-500/90 border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)] scale-105`
-      : `${base} bg-blue-500/20 border-white/30 hover:bg-blue-500/40 hover:border-blue-400/60 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]`;
-  };
-
+    
+  
   if (!user) {
     return (
-      <div className="mt-3 space-y-3 text-left">
-        <div className="rounded-xl bg-white/10 border border-white/20 backdrop-blur-md p-3 text-sm text-white space-y-1 shadow-[0_0_18px_rgba(255,255,255,0.12)]">
-          <div>
-            <span className="font-semibold text-white/90">Going:</span>{' '}
-            <span className="text-white/90">
-              {summary.yes.length ? summary.yes.join(', ') : 'None'}
-            </span>
-          </div>
-          <div>
-            <span className="font-semibold text-white/90">Maybe:</span>{' '}
-            <span className="text-white/90">
-              {summary.maybe.length ? summary.maybe.join(', ') : 'None'}
-            </span>
-          </div>
-          <div>
-            <span className="font-semibold text-white/90">Not Going:</span>{' '}
-            <span className="text-white/90">
-              {summary.no.length ? summary.no.join(', ') : 'None'}
-            </span>
-          </div>
-        </div>
-        <p className="text-xs text-white/80">Sign in to RSVP</p>
-      </div>
+      <div className="rounded-xl bg-gradient-to-r from-pink-50/90 to-purple-50/90 border border-purple-200 p-4 text-sm space-y-2 shadow-md backdrop-blur-md">
+  <div>
+    <span className="font-semibold text-purple-800">Going:</span>{' '}
+    <span className="text-gray-900">
+      {summary.yes.length ? summary.yes.join(', ') : 'None'}
+    </span>
+  </div>
+  <div>
+    <span className="font-semibold text-purple-800">Maybe:</span>{' '}
+    <span className="text-gray-900">
+      {summary.maybe.length ? summary.maybe.join(', ') : 'None'}
+    </span>
+  </div>
+  <div>
+    <span className="font-semibold text-purple-800">Not Going:</span>{' '}
+    <span className="text-gray-900">
+      {summary.no.length ? summary.no.join(', ') : 'None'}
+    </span>
+  </div>
+</div>
+
     );
   }
-
+  
   return (
     <div className="mt-3 space-y-3 text-left">
       <div className="flex flex-col sm:flex-row gap-2">
@@ -614,27 +612,30 @@ export function RSVPButtons({ eventId, user, authHeaders }) {
           ? Maybe
         </button>
       </div>
+  
+      <div className="rounded-xl bg-white border border-gray-200 shadow-md p-4 my-4 text-sm space-y-2">
+  <div>
+    <span className="font-semibold text-gray-900">Going:</span>{' '}
+    <span className="text-gray-800">
+      {summary.yes.length ? summary.yes.join(', ') : 'None'}
+    </span>
+  </div>
+  <div>
+    <span className="font-semibold text-gray-900">Maybe:</span>{' '}
+    <span className="text-gray-800">
+      {summary.maybe.length ? summary.maybe.join(', ') : 'None'}
+    </span>
+  </div>
+  <div>
+    <span className="font-semibold text-gray-900">Not Going:</span>{' '}
+    <span className="text-gray-800">
+      {summary.no.length ? summary.no.join(', ') : 'None'}
+    </span>
+  </div>
+</div>
 
-      <div className="rounded-xl bg-white/10 border border-white/20 backdrop-blur-md p-3 text-sm text-white space-y-1 shadow-[0_0_18px_rgba(255,255,255,0.12)]">
-        <div>
-          <span className="font-semibold text-white/90">Going:</span>{' '}
-          <span className="text-white/90">
-            {summary.yes.length ? summary.yes.join(', ') : 'None'}
-          </span>
-        </div>
-        <div>
-          <span className="font-semibold text-white/90">Maybe:</span>{' '}
-          <span className="text-white/90">
-            {summary.maybe.length ? summary.maybe.join(', ') : 'None'}
-          </span>
-        </div>
-        <div>
-          <span className="font-semibold text-white/90">Not Going:</span>{' '}
-          <span className="text-white/90">
-            {summary.no.length ? summary.no.join(', ') : 'None'}
-          </span>
-        </div>
-      </div>
+
+
     </div>
   );
 }

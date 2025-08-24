@@ -833,7 +833,7 @@ export default function Dashboard() {
 
       {/* NEW: Same uploader modal behavior as in Header/App */}
       {showUploader && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full p-6 relative">
             <button
               onClick={closeUploader}

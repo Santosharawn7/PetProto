@@ -244,7 +244,7 @@ export default function CommunityPage() {
         )}
 
         {/* Tabs */}
-        <div className="flex space-x-1 mb-6 border-b border-gray-200 overflow-x-auto text-left">
+        <div className="flex space-x-1 mb-6 border-b-2 border-gray-700 overflow-x-auto text-left">
           {getAvailableTabs().map(({ key, label }) => (
             <button
               key={key}

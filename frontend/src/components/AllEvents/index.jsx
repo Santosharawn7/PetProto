@@ -8,6 +8,7 @@ import {
 } from "../../config/CommunityCommon";
 import { FaShare, FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import { motion } from "framer-motion";
 
 export default function AllEvents(props) {
   const {
@@ -139,26 +140,35 @@ export default function AllEvents(props) {
   if (combined.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No posts or events yet</p>
+        <p className="text-gray-500 dark:text-gray-400">No posts or events yet</p>
       </div>
     );
   }
 
   return (
-    <div>
-      {combined.map((item) => {
+    <div className="space-y-8">
+      {combined.map((item, index) => {
         const key = item.__type + "-" + item.id;
         const authorName = getAuthorName(item);
         const authorInitial = getAuthorInitial(authorName);
 
         return (
-          <div
+          <motion.div
             key={key}
-            className="rounded-2xl border border-orange-300/50 dark:border-purple-700/50 shadow-xl p-4 sm:p-6 mb-8 text-left relative backdrop-blur-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            className="rounded-3xl p-6 mb-6 text-left relative transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]"
             style={{
               background:
-                "linear-gradient(135deg, rgba(120, 53, 15, 0.9) 0%, rgba(88, 28, 135, 0.95) 100%)",
+                "linear-gradient(135deg, rgba(255, 228, 235, 0.4) 0%, rgba(255, 222, 230, 0.35) 40%, rgba(245, 220, 255, 0.3) 100%)",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              boxShadow:
+                "0 6px 20px rgba(0,0,0,0.08), inset 0 1px 2px rgba(255,255,255,0.35)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
             }}
+            whileHover={{ y: -4, scale: 1.02 }}
           >
             {/* Author controls */}
             {isAuthor(item) && (
@@ -170,11 +180,11 @@ export default function AllEvents(props) {
                   onClick={() =>
                     setShowDropdown((prev) => ({ ...prev, [key]: !prev[key] }))
                   }
-                  className="p-2 rounded-full hover:bg-white/20 transition-colors duration-200"
+                  className="p-2 rounded-full hover:bg-gray-100 transition-all duration-200"
                   aria-label="More actions"
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-6 h-6 text-gray-700"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -185,9 +195,9 @@ export default function AllEvents(props) {
                   </svg>
                 </button>
                 {showDropdown[key] && (
-                  <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20">
+                  <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20">
                     <button
-                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-200 rounded-t-lg transition-all duration-200"
                       onClick={() => {
                         setShowDropdown({});
                         handleEdit(item);
@@ -196,7 +206,7 @@ export default function AllEvents(props) {
                       Edit
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                      className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-200 rounded-b-lg transition-all duration-200"
                       onClick={() => {
                         setShowDropdown({});
                         setShowDeleteModal((prev) => ({
@@ -216,16 +226,16 @@ export default function AllEvents(props) {
             {showDeleteModal[key] && (
               <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-30">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-sm w-full relative">
-                  <h3 className="font-semibold text-lg mb-3 text-gray-800 dark:text-white">
+                  <h3 className="font-semibold text-lg mb-3 text-black dark:text-white">
                     Are you sure?
                   </h3>
-                  <p className="mb-4 text-gray-600 dark:text-gray-300">
+                  <p className="mb-4 text-black dark:text-gray-300">
                     This will permanently delete your{" "}
                     {item.__type === "post" ? "post" : "event"}.
                   </p>
                   <div className="flex justify-end space-x-2">
                     <button
-                      className="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-200"
+                      className="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-600 text-black dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-200"
                       onClick={() =>
                         setShowDeleteModal((prev) => ({
                           ...prev,
@@ -251,14 +261,14 @@ export default function AllEvents(props) {
               <>
                 {/* Author block */}
                 <div className="flex items-center mb-4 text-left">
-                  <div className="w-10 h-10 bg-gradient-to-r from-white/30 to-white/50 backdrop-blur-sm rounded-full mr-3 flex items-center justify-center border border-white/20">
-                    <span className="text-white font-medium text-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full mr-3 flex items-center justify-center shadow-sm">
+                    <span className="text-white font-semibold text-sm">
                       {authorInitial}
                     </span>
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{authorName}</p>
-                    <p className="text-xs text-white/80">
+                    <p className="font-semibold text-gray-700">{authorName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatDistanceToNow(new Date(item.createdAt))} ago
                     </p>
                   </div>
@@ -266,25 +276,27 @@ export default function AllEvents(props) {
 
                 {/* Title */}
                 {item.title && (
-                  <h3 className="text-lg sm:text-xl font-extrabold mb-3 text-white text-left tracking-tight drop-shadow-sm">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-3 text-left tracking-tight">
                     {item.title}
                   </h3>
                 )}
 
                 {/* Desc */}
                 {item.description && (
-                  <p className="text-white/90 mb-4 leading-relaxed text-left">
+                  <p className="text-gray-700 mb-4 leading-relaxed text-left">
                     {item.description}
                   </p>
                 )}
 
                 {/* Image */}
                 {item.image && (
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full max-h-96 object-cover mb-4 mx-auto block rounded-xl shadow-lg border border-white/20"
-                  />
+                  <div className="mb-6 overflow-hidden rounded-2xl">
+                    <img
+                      src={item.image}
+                      alt={item.title || "Post image"}
+                      className="w-full max-h-96 object-cover hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
                 )}
 
                 {/* Reactions */}
@@ -295,108 +307,126 @@ export default function AllEvents(props) {
                   authHeaders={authHeaders}
                 />
 
-                {/* Comments + Share (responsive labels) */}
-                <div className="flex items-center gap-4 mt-4">
-                  {/* Comment */}
-                  <button
-                    className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
-                    onClick={() =>
-                      setOpenComments((prev) => ({
-                        ...prev,
-                        [key]: !prev[key],
-                      }))
-                    }
-                  >
-                    {/* mobile */}
-                    <span className="sm:hidden">{CommentIcon}</span>
-                    {/* desktop */}
-                    <span className="hidden sm:flex items-center gap-2">
-                      {CommentIcon} Comments
-                    </span>
-                  </button>
-
-                  {/* Share */}
-                  <div
-                    className="relative"
-                    ref={(el) => (shareDropdownRefs.current[key] = el)}
-                  >
-                    <button
-                      className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
+                {/* Comments + Share row */}
+                <div className="flex items-center justify-between pt-4 border-gray-100">
+                  <div className="flex items-center gap-6">
+                    {/* Comment */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300  -ml-2 px-4 py-2 rounded-full ${
+                        openComments[key]
+                          ? "bg-blue-50 text-blue-600 border border-blue-200"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                      }`}
                       onClick={() =>
-                        setShowShareDropdown((prev) => ({
+                        setOpenComments((prev) => ({
                           ...prev,
                           [key]: !prev[key],
                         }))
                       }
                     >
-                      {/* mobile */}
-                      <span className="sm:hidden">
-                        <FaShare />
-                      </span>
-                      {/* desktop */}
-                      <span className="hidden sm:flex items-center gap-2">
-                        <FaShare /> Share
-                      </span>
-                    </button>
+                      {CommentIcon}
+                      <span className="hidden sm:inline">Comments</span>
+                    </motion.button>
 
-                    {showShareDropdown[key] && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-600 p-3 z-20 min-w-[160px] backdrop-blur-sm">
-                        <div className="flex justify-center gap-3">
-                          <button
-                            onClick={() => {
-                              shareToSocial("facebook", item);
-                              setShowShareDropdown((p) => ({
-                                ...p,
-                                [key]: false,
-                              }));
-                            }}
-                            className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Share to Facebook"
-                          >
-                            <FaFacebook className="text-blue-600 text-xl" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              shareToSocial("twitter", item);
-                              setShowShareDropdown((p) => ({
-                                ...p,
-                                [key]: false,
-                              }));
-                            }}
-                            className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Share to X"
-                          >
-                            <FaXTwitter className="text-gray-800 dark:text-white text-xl" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              shareToSocial("instagram", item);
-                              setShowShareDropdown((p) => ({
-                                ...p,
-                                [key]: false,
-                              }));
-                            }}
-                            className="p-3 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Share to Instagram"
-                          >
-                            <FaInstagram className="text-pink-600 text-xl" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              shareToSocial("tiktok", item);
-                              setShowShareDropdown((p) => ({
-                                ...p,
-                                [key]: false,
-                              }));
-                            }}
-                            className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Share to TikTok"
-                          >
-                            <FaTiktok className="text-gray-800 dark:text-white text-xl" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    {/* Share */}
+                    <div
+                      className="relative"
+                      ref={(el) => (shareDropdownRefs.current[key] = el)}
+                    >
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 -ml-4 px-4 py-2 rounded-full ${
+                          showShareDropdown[key]
+                            ? "bg-green-50 text-green-600 border border-green-200"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                        }`}
+                        onClick={() =>
+                          setShowShareDropdown((prev) => ({
+                            ...prev,
+                            [key]: !prev[key],
+                          }))
+                        }
+                      >
+                        <FaShare className="text-sm" />
+                        <span className="hidden sm:inline">Share</span>
+                      </motion.button>
+
+                      {showShareDropdown[key] && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute bottom-full left-0 mb-3 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-20 min-w-[200px]"
+                        >
+                          <div className="flex justify-center gap-4">
+                            <motion.button
+                              whileHover={{ scale: 1.15, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                shareToSocial("facebook", item);
+                                setShowShareDropdown((p) => ({
+                                  ...p,
+                                  [key]: false,
+                                }));
+                              }}
+                              className="p-3 hover:bg-blue-50 rounded-full transition-all duration-200"
+                              title="Share to Facebook"
+                            >
+                              <FaFacebook className="text-blue-600 text-xl" />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.15, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                shareToSocial("twitter", item);
+                                setShowShareDropdown((p) => ({
+                                  ...p,
+                                  [key]: false,
+                                }));
+                              }}
+                              className="p-3 hover:bg-gray-100 rounded-full transition-all duration-200"
+                              title="Share to X"
+                            >
+                              <FaXTwitter className="text-gray-800 text-xl" />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.15, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                shareToSocial("instagram", item);
+                                setShowShareDropdown((p) => ({
+                                  ...p,
+                                  [key]: false,
+                                }));
+                              }}
+                              className="p-3 hover:bg-pink-50 rounded-full transition-all duration-200"
+                              title="Share to Instagram"
+                            >
+                              <FaInstagram className="text-pink-600 text-xl" />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.15, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                shareToSocial("tiktok", item);
+                                setShowShareDropdown((p) => ({
+                                  ...p,
+                                  [key]: false,
+                                }));
+                              }}
+                              className="p-3 hover:bg-gray-100 rounded-full transition-all duration-200"
+                              title="Share to TikTok"
+                            >
+                              <FaTiktok className="text-gray-800 text-xl" />
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -413,14 +443,14 @@ export default function AllEvents(props) {
               <>
                 {/* Event body */}
                 <div className="flex items-center mb-4 text-left">
-                  <div className="w-10 h-10 bg-gradient-to-r from-white/30 to-white/50 backdrop-blur-sm rounded-full mr-3 flex items-center justify-center border border-white/20">
-                    <span className="text-white font-medium text-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full mr-3 flex items-center justify-center shadow-sm">
+                    <span className="text-white font-semibold text-sm">
                       {authorInitial}
                     </span>
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{authorName}</p>
-                    <p className="text-xs text-white/80">
+                    <p className="font-semibold text-gray-700">{authorName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatDistanceToNow(
                         new Date(item.createdAt || item.updatedAt || Date.now())
                       )}{" "}
@@ -429,25 +459,25 @@ export default function AllEvents(props) {
                   </div>
                 </div>
 
-                <h3 className="text-lg sm:text-xl font-extrabold text-white mb-3 text-left tracking-tight drop-shadow-sm">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-3 text-left tracking-tight">
                   {item.title}
                 </h3>
 
                 {item.description && (
-                  <p className="text-white/90 mb-4 leading-relaxed text-left">
+                  <p className="text-gray-700 mb-4 leading-relaxed text-left">
                     {item.description}
                   </p>
                 )}
 
                 <div className="space-y-2 mb-4">
                   {item.dateFilter && (
-                    <p className="flex items-center text-sm text-white/80">
+                    <p className="flex items-center text-sm text-gray-600">
                       <span className="font-medium mr-2">📅 Date:</span>
                       {new Date(item.dateFilter).toLocaleDateString()}
                     </p>
                   )}
                   {item.location && (
-                    <p className="flex items-center text-sm text-white/80">
+                    <p className="flex items-center text-sm text-gray-600">
                       <span className="font-medium mr-2">📍 Location:</span>
                       {item.location}
                     </p>
@@ -455,12 +485,13 @@ export default function AllEvents(props) {
                 </div>
 
                 {item.photos?.filter(Boolean).map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`Event photo ${i + 1}`}
-                    className="w-full max-h-64 object-cover mb-4 mx-auto block rounded-xl shadow-lg border border-white/20"
-                  />
+                  <div key={i} className="mb-6 overflow-hidden rounded-2xl">
+                    <img
+                      src={url}
+                      alt={`Event photo ${i + 1}`}
+                      className="w-full max-h-96 object-cover hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
                 ))}
 
                 <RSVPButtons
@@ -475,107 +506,126 @@ export default function AllEvents(props) {
                   authHeaders={authHeaders}
                 />
 
-                <div className="flex items-center gap-4 mt-4">
-                  {/* Comment */}
-                  <button
-                    className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
-                    onClick={() =>
-                      setOpenComments((prev) => ({
-                        ...prev,
-                        [key]: !prev[key],
-                      }))
-                    }
-                  >
-                    {/* mobile */}
-                    <span className="sm:hidden">{CommentIcon}</span>
-                    {/* desktop */}
-                    <span className="hidden sm:flex items-center gap-2">
-                      {CommentIcon} Comments
-                    </span>
-                  </button>
-
-                  {/* Share */}
-                  <div
-                    className="relative"
-                    ref={(el) => (shareDropdownRefs.current[key] = el)}
-                  >
-                    <button
-                      className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
+                {/* Comments + Share row */}
+                <div className="flex items-center justify-between pt-4 border-gray-100">
+                  <div className="flex items-center gap-6">
+                    {/* Comment */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 -ml-4 px-4 py-2 rounded-full ${
+                        openComments[key]
+                          ? "bg-blue-50 text-blue-600 border border-blue-200"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                      }`}
                       onClick={() =>
-                        setShowShareDropdown((prev) => ({
+                        setOpenComments((prev) => ({
                           ...prev,
                           [key]: !prev[key],
                         }))
                       }
                     >
-                      {/* mobile */}
-                      <span className="sm:hidden">
-                        <FaShare />
-                      </span>
-                      {/* desktop */}
-                      <span className="hidden sm:flex items-center gap-2">
-                        <FaShare /> Share
-                      </span>
-                    </button>
+                      {CommentIcon}
+                      <span className="hidden sm:inline">Comments</span>
+                    </motion.button>
 
-                    {showShareDropdown[key] && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-600 p-3 z-20 min-w-[160px] backdrop-blur-sm">
-                        <div className="flex justify-center gap-3">
-                          <button
-                            onClick={() => {
-                              shareToSocial("facebook", item);
-                              setShowShareDropdown((p) => ({
-                                ...p,
-                                [key]: false,
-                              }));
-                            }}
-                            className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Share to Facebook"
-                          >
-                            <FaFacebook className="text-blue-600 text-xl" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              shareToSocial("twitter", item);
-                              setShowShareDropdown((p) => ({
-                                ...p,
-                                [key]: false,
-                              }));
-                            }}
-                            className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Share to X"
-                          >
-                            <FaXTwitter className="text-gray-800 dark:text-white text-xl" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              shareToSocial("instagram", item);
-                              setShowShareDropdown((p) => ({
-                                ...p,
-                                [key]: false,
-                              }));
-                            }}
-                            className="p-3 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Share to Instagram"
-                          >
-                            <FaInstagram className="text-pink-600 text-xl" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              shareToSocial("tiktok", item);
-                              setShowShareDropdown((p) => ({
-                                ...p,
-                                [key]: false,
-                              }));
-                            }}
-                            className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Share to TikTok"
-                          >
-                            <FaTiktok className="text-gray-800 dark:text-white text-xl" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    {/* Share */}
+                    <div
+                      className="relative"
+                      ref={(el) => (shareDropdownRefs.current[key] = el)}
+                    >
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 -ml-4 px-4 py-2 rounded-full ${
+                          showShareDropdown[key]
+                            ? "bg-green-50 text-green-600 border border-green-200"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                        }`}
+                        onClick={() =>
+                          setShowShareDropdown((prev) => ({
+                            ...prev,
+                            [key]: !prev[key],
+                          }))
+                        }
+                      >
+                        <FaShare className="text-sm" />
+                        <span className="hidden sm:inline">Share</span>
+                      </motion.button>
+
+                      {showShareDropdown[key] && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute bottom-full left-0 mb-3 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-20 min-w-[200px]"
+                        >
+                          <div className="flex justify-center gap-4">
+                            <motion.button
+                              whileHover={{ scale: 1.15, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                shareToSocial("facebook", item);
+                                setShowShareDropdown((p) => ({
+                                  ...p,
+                                  [key]: false,
+                                }));
+                              }}
+                              className="p-3 hover:bg-blue-50 rounded-full transition-all duration-200"
+                              title="Share to Facebook"
+                            >
+                              <FaFacebook className="text-blue-600 text-xl" />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.15, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                shareToSocial("twitter", item);
+                                setShowShareDropdown((p) => ({
+                                  ...p,
+                                  [key]: false,
+                                }));
+                              }}
+                              className="p-3 hover:bg-gray-100 rounded-full transition-all duration-200"
+                              title="Share to X"
+                            >
+                              <FaXTwitter className="text-gray-800 text-xl" />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.15, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                shareToSocial("instagram", item);
+                                setShowShareDropdown((p) => ({
+                                  ...p,
+                                  [key]: false,
+                                }));
+                              }}
+                              className="p-3 hover:bg-pink-50 rounded-full transition-all duration-200"
+                              title="Share to Instagram"
+                            >
+                              <FaInstagram className="text-pink-600 text-xl" />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.15, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                shareToSocial("tiktok", item);
+                                setShowShareDropdown((p) => ({
+                                  ...p,
+                                  [key]: false,
+                                }));
+                              }}
+                              className="p-3 hover:bg-gray-100 rounded-full transition-all duration-200"
+                              title="Share to TikTok"
+                            >
+                              <FaTiktok className="text-gray-800 text-xl" />
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -590,7 +640,7 @@ export default function AllEvents(props) {
                 )}
               </>
             )}
-          </div>
+          </motion.div>
         );
       })}
     </div>
