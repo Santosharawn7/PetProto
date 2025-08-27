@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { buildApiUrl } from "../../config/api";
 import { getAuthToken } from '../../utils/auth';
-import { FaCreditCard, FaTimes, FaShoppingCart, FaPaw, FaUser, FaPhone, FaHome, FaCity, FaMapMarkerAlt, FaGlobe, FaLock } from 'react-icons/fa';
+import {
+  FaCreditCard, FaTimes, FaShoppingCart, FaPaw, FaUser, FaPhone,
+  FaHome, FaCity, FaMapMarkerAlt, FaGlobe, FaLock
+} from 'react-icons/fa';
 import { MdPets, MdLocalShipping } from 'react-icons/md';
 
 const Checkout = ({ cartItems, totalPrice, sessionId, onClose, onOrderComplete }) => {
@@ -23,7 +26,7 @@ const Checkout = ({ cartItems, totalPrice, sessionId, onClose, onOrderComplete }
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const isFormValid = Object.values(form).every((val) => val.trim() !== '');
+  const isFormValid = Object.values(form).every((val) => String(val || '').trim() !== '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,24 +47,31 @@ ${form.country}`.trim();
       setError(null);
 
       const token = getAuthToken();
-      const config = token
-        ? { headers: { Authorization: `Bearer ${token}` } }
-        : {};
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
-      const response = await axios.post(buildApiUrl('/api/orders'), {
-        session_id: sessionId,
-        shipping_address,
-        buyer_name: form.fullName
-      }, config);
+      const { data } = await axios.post(
+        buildApiUrl('/api/orders'),
+        {
+          session_id: sessionId,
+          shipping_address,
+          buyer_name: form.fullName
+        },
+        config
+      );
 
-      onOrderComplete(response.data);
+      // Be tolerant to backend shape: accept data.id or data.order.id
+      const orderId = data?.id ?? data?.order?.id ?? null;
+
+      onOrderComplete({ id: orderId, ...data });
     } catch (err) {
-      console.error('Failed to place order:', err.message);
-      setError('Order could not be placed.');
+      console.error('Failed to place order:', err);
+      setError(err?.response?.data?.error || 'Order could not be placed.');
     } finally {
       setLoading(false);
     }
   };
+
+  const formattedTotal = Number(totalPrice || 0).toFixed(2);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -141,7 +151,9 @@ ${form.country}`.trim();
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-green-600">${(item.product.price * item.quantity).toFixed(2)}</p>
+                      <p className="font-bold text-green-600">
+                        ${(Number(item.product.price || 0) * Number(item.quantity || 0)).toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -153,7 +165,7 @@ ${form.country}`.trim();
                       <span className="text-xl font-bold text-gray-800">Total Amount</span>
                     </div>
                     <span className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                      ${totalPrice}
+                      ${formattedTotal}
                     </span>
                   </div>
                 </div>
@@ -320,19 +332,15 @@ ${form.country}`.trim();
       </div>
 
       {/* Custom Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes modalSlideIn {
           from { opacity: 0; transform: scale(0.9) translateY(20px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        
         .animate-modalSlideIn {
           animation: modalSlideIn 0.4s ease-out;
         }
-
-        input:focus {
-          outline: none;
-        }
+        input:focus { outline: none; }
       `}</style>
     </div>
   );

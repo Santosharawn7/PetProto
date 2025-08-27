@@ -108,7 +108,7 @@ const Header = ({
 
   if (loading) {
     return (
-      <div className="min-h-[200px] flex items-center justify-center">
+      <div className="min-h-[200px] flex items-center justify-center bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
       </div>
     );
@@ -116,9 +116,17 @@ const Header = ({
 
   return (
     <div className="relative">
-      {/* header inherits page background */}
-      <header className="relative z-10 text-white shadow-2xl backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 sm:py-6">
+      {/* header with explicit purple gradient background */}
+      <header className="relative z-10 text-white shadow-2xl backdrop-blur-sm bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800">
+        {/* Add the same animated blobs as in body for continuity */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 w-20 h-20 bg-purple-400 rounded-full opacity-10 animate-pulse"></div>
+          <div className="absolute top-1/4 right-20 w-16 h-16 bg-pink-400 rounded-full opacity-15 animate-bounce"></div>
+          <div className="absolute bottom-10 left-1/4 w-12 h-12 bg-indigo-400 rounded-full opacity-20 animate-pulse"></div>
+          <div className="absolute top-1/2 right-1/3 w-8 h-8 bg-purple-300 rounded-full opacity-10 animate-ping"></div>
+        </div>
+
+        <div className="container mx-auto px-4 py-4 sm:py-6 relative z-10">
           {isPetParent() && (
             <div className="mb-4 sm:mb-6 animate-fadeIn">
               <button

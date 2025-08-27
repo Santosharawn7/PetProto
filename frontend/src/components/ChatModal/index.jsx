@@ -4,7 +4,7 @@ export default function ChatModal({ open, onClose, children }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+    <div className="fixed inset-0 z-50 flex items-center bg-black/50 backdrop-blur-sm justify-center">
       {/* Overlay click closes modal */}
       <div
         className="absolute inset-0"
@@ -13,7 +13,7 @@ export default function ChatModal({ open, onClose, children }) {
         tabIndex={-1}
         role="button"
       />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 md:mx-0 max-h-[90vh] flex flex-col animate-fadeIn z-10">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 md:mx-0 max-h-[90vh] flex flex-col animate-fadeIn z-10">
         {/* X icon in corner */}
         <button
           onClick={onClose}

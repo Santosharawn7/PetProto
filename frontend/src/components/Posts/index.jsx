@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ReactionButtons, Comments } from "../../config/CommunityCommon";
 import { FaShare, FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import { motion } from "framer-motion";
 
 export default function PostsTab(props) {
   const {
@@ -56,47 +57,46 @@ export default function PostsTab(props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showShareDropdown]);
 
-  // Social media share (mirrors Events.jsx)
-  const shareToSocial = (platform, post) => {
+  // Social media share (FB/Twitter popups; IG/TikTok copy + open site)
+  const shareToSocial = async (platform, post) => {
     const postUrl = `${window.location.origin}?post=${post.id}`;
-    const postText = `Check out this post: ${post.title || "Awesome Post"}`;
-    const postDescription = post.description ? ` - ${post.description}` : "";
-
-    let shareUrl = "";
+    const text = `Check out this post: ${post.title || "Awesome Post"}`;
+    const desc = post.description ? ` - ${post.description}` : "";
+    const combined = `${text}${desc}\n\n${postUrl}`;
+    const popup = "width=600,height=640";
 
     switch (platform) {
-      case "facebook":
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      case "facebook": {
+        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
           postUrl
-        )}&quote=${encodeURIComponent(postText + postDescription)}`;
-        break;
-      case "twitter":
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          postText + postDescription
+        )}&quote=${encodeURIComponent(text + desc)}`;
+        window.open(url, "_blank", popup);
+        return;
+      }
+      case "twitter": {
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+          text + desc
         )}&url=${encodeURIComponent(postUrl)}`;
-        break;
-      case "instagram":
-        navigator.clipboard.writeText(
-          postUrl + "\n\n" + postText + postDescription
-        );
-        alert(
-          "Post details copied to clipboard! You can now paste this in your Instagram story or post."
-        );
+        window.open(url, "_blank", popup);
         return;
-      case "tiktok":
-        navigator.clipboard.writeText(
-          postUrl + "\n\n" + postText + postDescription
-        );
-        alert(
-          "Post details copied to clipboard! You can now share this in your TikTok video description."
-        );
+      }
+      case "instagram": {
+        try {
+          await navigator.clipboard.writeText(combined);
+        } catch {}
+        window.open("https://www.instagram.com/", "_blank", popup);
         return;
+      }
+      case "tiktok": {
+        try {
+          await navigator.clipboard.writeText(combined);
+        } catch {}
+        // Opening TikTok upload page so user can paste into caption
+        window.open("https://www.tiktok.com/upload?lang=en", "_blank", popup);
+        return;
+      }
       default:
         return;
-    }
-
-    if (shareUrl) {
-      window.open(shareUrl, "_blank", "width=600,height=400");
     }
   };
 
@@ -119,7 +119,7 @@ export default function PostsTab(props) {
 
   return (
     <div className="space-y-8">
-      {/* Create/Edit toggle (restyled to match Events) */}
+      {/* Create/Edit toggle */}
       <button
         className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-orange-500 to-purple-600 text-white rounded-lg hover:from-orange-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg"
         onClick={() => {
@@ -145,25 +145,25 @@ export default function PostsTab(props) {
           onSubmit={handleCreatePost}
           className="rounded-2xl border border-orange-200 dark:border-purple-800 shadow-xl p-6 mb-8 text-left bg-gradient-to-br from-orange-100 to-purple-100 dark:from-gray-800 dark:to-gray-900"
         >
-          <h3 className="font-semibold text-lg text-gray-800 dark:text-white">
+          <h3 className="font-semibold text-lg text-black dark:text-white">
             {isEdit ? "Edit Post" : "Create New Post"}
           </h3>
           <input
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mt-3 dark:bg-gray-700 dark:text-white placeholder:text-white/70 dark:placeholder:text-white/70"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mt-3 dark:bg-gray-700 text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-white/70"
             placeholder="Post title"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             required
           />
           <textarea
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none mt-3 dark:bg-gray-700 dark:text-white placeholder:text-white/70 dark:placeholder:text-white/70"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none mt-3 dark:bg-gray-700 text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-white/70"
             rows={4}
             placeholder="What's on your mind?"
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
           />
           <input
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mt-3 dark:bg-gray-700 dark:text-white placeholder:text-white/70 dark:placeholder:text-white/70"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mt-3 dark:bg-gray-700 text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-white/70"
             placeholder="Image URL (optional)"
             value={newImage}
             onChange={(e) => setNewImage(e.target.value)}
@@ -193,23 +193,36 @@ export default function PostsTab(props) {
       {/* Posts List */}
       {posts.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No posts yet. Create the first one!</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            No posts yet. Create the first one!
+          </p>
         </div>
       ) : (
-        posts.map((p) => {
+        posts.map((p, index) => {
           const key = "post-" + p.id;
-          const authorInitial = (p.authorName || "User").charAt(0).toUpperCase();
+          const authorInitial = (p.authorName || "User")
+            .charAt(0)
+            .toUpperCase();
 
           return (
-            <div
+            <motion.div
               key={key}
-              className="rounded-2xl border border-orange-300/50 dark:border-purple-700/50 shadow-xl p-4 sm:p-6 mb-8 text-left relative backdrop-blur-sm"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="rounded-3xl p-6 mb-6 text-left relative transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]"
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(120, 53, 15, 0.9) 0%, rgba(88, 28, 135, 0.95) 100%)",
+                  "linear-gradient(135deg, rgba(255, 228, 235, 0.4) 0%, rgba(255, 222, 230, 0.35) 40%, rgba(245, 220, 255, 0.3) 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                boxShadow:
+                  "0 6px 20px rgba(0,0,0,0.08), inset 0 1px 2px rgba(255,255,255,0.35)",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
               }}
+              whileHover={{ y: -4, scale: 1.02 }}
             >
-              {/* Author controls */}
+              {/* Author actions */}
               {isAuthor(p) && (
                 <div
                   className="absolute top-4 right-4 z-10"
@@ -217,13 +230,16 @@ export default function PostsTab(props) {
                 >
                   <button
                     onClick={() =>
-                      setShowDropdown((prev) => ({ ...prev, [key]: !prev[key] }))
+                      setShowDropdown((prev) => ({
+                        ...prev,
+                        [key]: !prev[key],
+                      }))
                     }
-                    className="p-2 rounded-full hover:bg-white/20 transition-colors duration-200"
+                    className="p-2 rounded-full hover:bg-gray-100 transition-all duration-200"
                     aria-label="More actions"
                   >
                     <svg
-                      className="w-6 h-6 text-white"
+                      className="w-6 h-6 text-gray-700"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -234,9 +250,9 @@ export default function PostsTab(props) {
                     </svg>
                   </button>
                   {showDropdown[key] && (
-                    <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20">
+                    <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg z-20">
                       <button
-                        className="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                        className="w-full text-left px-4 py-2 text-black hover:bg-gray-200 rounded-t-lg transition-all duration-200"
                         onClick={() => {
                           setShowDropdown({});
                           handleEdit({ ...p, __type: "post" });
@@ -245,10 +261,13 @@ export default function PostsTab(props) {
                         Edit
                       </button>
                       <button
-                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-200 rounded-b-lg transition-all duration-200"
                         onClick={() => {
                           setShowDropdown({});
-                          setShowDeleteModal((prev) => ({ ...prev, [key]: true }));
+                          setShowDeleteModal((prev) => ({
+                            ...prev,
+                            [key]: true,
+                          }));
                         }}
                       >
                         Delete
@@ -262,17 +281,20 @@ export default function PostsTab(props) {
               {showDeleteModal[key] && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-30">
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-sm w-full relative">
-                    <h3 className="font-semibold text-lg mb-3 text-gray-800 dark:text-white">
+                    <h3 className="font-semibold text-lg mb-3 text-black dark:text-white">
                       Are you sure?
                     </h3>
-                    <p className="mb-4 text-gray-600 dark:text-gray-300">
+                    <p className="mb-4 text-black dark:text-gray-300">
                       This will permanently delete your post.
                     </p>
                     <div className="flex justify-end space-x-2">
                       <button
-                        className="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-200"
+                        className="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-600 text-black dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-200"
                         onClick={() =>
-                          setShowDeleteModal((prev) => ({ ...prev, [key]: false }))
+                          setShowDeleteModal((prev) => ({
+                            ...prev,
+                            [key]: false,
+                          }))
                         }
                       >
                         No
@@ -288,36 +310,46 @@ export default function PostsTab(props) {
                 </div>
               )}
 
-              {/* Author block (glass + white) */}
+              {/* Author block */}
               <div className="flex items-center mb-4 text-left">
-                <div className="w-10 h-10 bg-gradient-to-r from-white/30 to_white/50 backdrop-blur-sm rounded-full mr-3 flex items-center justify-center border border-white/20">
-                  <span className="text-white font-medium text-sm">{authorInitial}</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full mr-3 flex items-center justify-center shadow-sm">
+                  <span className="text-white font-semibold text-sm">
+                    {authorInitial}
+                  </span>
                 </div>
                 <div>
-                  <p className="font-semibold text-white">{p.authorName || "You"}</p>
-                  <p className="text-xs text-white/80">
+                  <p className="font-semibold text-gray-700">
+                    {p.authorName || "You"}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {formatDistanceToNow(new Date(p.createdAt))} ago
                   </p>
                 </div>
               </div>
 
               {/* Title */}
-              <h3 className="text-lg sm:text-xl font-extrabold text-white mb-3 text-left tracking-tight drop-shadow-sm">
-                {p.title}
-              </h3>
+              {p.title && (
+                <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-3 text-left tracking-tight">
+                  {p.title}
+                </h3>
+              )}
 
               {/* Image */}
               {p.image && (
-                <img
-                  src={p.image}
-                  alt={p.title}
-                  className="w-full max-h-96 object-cover mb-4 mx-auto block rounded-xl shadow-lg border border-white/20"
-                />
+                <div className="mb-6 overflow-hidden rounded-2xl">
+                  <img
+                    src={p.image}
+                    alt={p.title || "Post image"}
+                    className="w-full max-h-96 object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
               )}
 
               {/* Description */}
               {p.description && (
-                <p className="text-white/90 mb-4 leading-relaxed text-left">{p.description}</p>
+                <p className="text-gray-700 mb-4 leading-relaxed text-left">
+                  {p.description}
+                </p>
               )}
 
               {/* Reactions */}
@@ -329,92 +361,125 @@ export default function PostsTab(props) {
               />
 
               {/* Comments + Share row */}
-              <div className="flex items-center gap-4 mt-4">
-                {/* Comment Button */}
-                <button
-                  className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
-                  onClick={() =>
-                    setOpenComments((prev) => ({ ...prev, [key]: !prev[key] }))
-                  }
-                >
-                  {CommentIcon} Comments
-                </button>
-
-                {/* Enhanced Share (same as Events) */}
-                <div
-                  className="relative"
-                  ref={(el) => (shareDropdownRefs.current[key] = el)}
-                >
-                  <button
-                    className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
+              <div className="flex items-center justify-between pt-4 border-gray-100">
+                <div className="flex items-center gap-6">
+                  {/* Comment */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex items-start gap-2 text-sm font-semibold transition-all duration-300 -ml-2 px-4 py-2 rounded-full ${
+                      openComments[key]
+                        ? "bg-blue-50 text-blue-600 border border-blue-200"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                    }`}
                     onClick={() =>
-                      setShowShareDropdown((prev) => ({
+                      setOpenComments((prev) => ({
                         ...prev,
                         [key]: !prev[key],
                       }))
                     }
                   >
-                    <FaShare /> Share
-                  </button>
+                    {CommentIcon}
+                    <span className="hidden sm:inline">Comments</span>
+                  </motion.button>
 
-                  {showShareDropdown[key] && (
-                    <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-600 p-3 z-20 min-w-[160px] backdrop-blur-sm">
-                      <div className="flex justify-center gap-3">
-                        <button
-                          onClick={() => {
-                            shareToSocial("facebook", p);
-                            setShowShareDropdown((prev) => ({
-                              ...prev,
-                              [key]: false,
-                            }));
-                          }}
-                          className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 hover:scale-110"
-                          title="Share to Facebook"
-                        >
-                          <FaFacebook className="text-blue-600 text-xl" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            shareToSocial("twitter", p);
-                            setShowShareDropdown((prev) => ({
-                              ...prev,
-                              [key]: false,
-                            }));
-                          }}
-                          className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
-                          title="Share to X"
-                        >
-                          <FaXTwitter className="text-gray-800 dark:text-white text-xl" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            shareToSocial("instagram", p);
-                            setShowShareDropdown((prev) => ({
-                              ...prev,
-                              [key]: false,
-                            }));
-                          }}
-                          className="p-3 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-all duration-200 hover:scale-110"
-                          title="Share to Instagram"
-                        >
-                          <FaInstagram className="text-pink-600 text-xl" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            shareToSocial("tiktok", p);
-                            setShowShareDropdown((prev) => ({
-                              ...prev,
-                              [key]: false,
-                            }));
-                          }}
-                          className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
-                          title="Share to TikTok"
-                        >
-                          <FaTiktok className="text-gray-800 dark:text-white text-xl" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {/* Share */}
+                  <div
+                    className="relative"
+                    ref={(el) => (shareDropdownRefs.current[key] = el)}
+                  >
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 -ml-4 px-4 py-2 rounded-full ${
+                        showShareDropdown[key]
+                          ? "bg-green-50 text-green-600 border border-green-200"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                      }`}
+                      onClick={() =>
+                        setShowShareDropdown((prev) => ({
+                          ...prev,
+                          [key]: !prev[key],
+                        }))
+                      }
+                    >
+                      <FaShare className="text-sm" />
+                      <span className="hidden sm:inline">Share</span>
+                    </motion.button>
+
+                    {showShareDropdown[key] && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute bottom-full left-0 mb-3 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-20 min-w-[200px]"
+                      >
+                        <div className="flex justify-center gap-4">
+                          <motion.button
+                            whileHover={{ scale: 1.15, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              shareToSocial("facebook", p);
+                              setShowShareDropdown((prev) => ({
+                                ...prev,
+                                [key]: false,
+                              }));
+                            }}
+                            className="p-3 hover:bg-blue-50 rounded-full transition-all duration-200"
+                            title="Share to Facebook"
+                          >
+                            <FaFacebook className="text-blue-600 text-xl" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.15, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              shareToSocial("twitter", p);
+                              setShowShareDropdown((prev) => ({
+                                ...prev,
+                                [key]: false,
+                              }));
+                            }}
+                            className="p-3 hover:bg-gray-100 rounded-full transition-all duration-200"
+                            title="Share to X"
+                          >
+                            <FaXTwitter className="text-gray-800 text-xl" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.15, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              shareToSocial("instagram", p);
+                              setShowShareDropdown((prev) => ({
+                                ...prev,
+                                [key]: false,
+                              }));
+                            }}
+                            className="p-3 hover:bg-pink-50 rounded-full transition-all duration-200"
+                            title="Share to Instagram"
+                          >
+                            <FaInstagram className="text-pink-600 text-xl" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.15, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              shareToSocial("tiktok", p);
+                              setShowShareDropdown((prev) => ({
+                                ...prev,
+                                [key]: false,
+                              }));
+                            }}
+                            className="p-3 hover:bg-gray-100 rounded-full transition-all duration-200"
+                            title="Share to TikTok"
+                          >
+                            <FaTiktok className="text-gray-800 text-xl" />
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -427,7 +492,7 @@ export default function PostsTab(props) {
                   authHeaders={authHeaders}
                 />
               )}
-            </div>
+            </motion.div>
           );
         })
       )}
